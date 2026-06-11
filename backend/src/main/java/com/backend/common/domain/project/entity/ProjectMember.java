@@ -1,6 +1,7 @@
 package com.backend.common.domain.project.entity;
 
 import com.backend.common.domain.member.entity.Member;
+import com.backend.common.domain.member.entity.MemberStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -27,9 +28,14 @@ public class ProjectMember {
     @JoinColumn(name = "member_id")
     private Member member;
 
-    private String position;     // Backend, Frontend 등
-    private String role;         // Leader, Manager, Member 등
-    private String memberStatus; // ACTIVE, LEFT, REMOVED
+    @Enumerated(EnumType.STRING)
+    private PositionType position;     // BACKEND, FRONTEND 등
+
+    @Enumerated(EnumType.STRING)
+    private ProjectRole role;         // LEADER, MANAGER, MEMBER
+
+    @Enumerated(EnumType.STRING)
+    private MemberStatus memberStatus; // ACTIVE, LEFT, REMOVED
 
     private LocalDateTime joinedAt;
     private LocalDateTime leftAt;

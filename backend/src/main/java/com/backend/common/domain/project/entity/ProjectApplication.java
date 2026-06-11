@@ -27,12 +27,14 @@ public class ProjectApplication {
     @JoinColumn(name = "applicant_id")
     private Member applicant;
 
-    private String position;
+    @Enumerated(EnumType.STRING)
+    private PositionType position;
 
     @Column(columnDefinition = "TEXT")
     private String message;
 
-    private String status; // PENDING, ACCEPTED, REJECTED, CANCELLED
+    @Enumerated(EnumType.STRING)
+    private SelectionStatus status;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
