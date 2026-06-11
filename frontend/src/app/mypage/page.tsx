@@ -1,19 +1,18 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 import Link from 'next/link'
 
 import {
   Briefcase,
   ChevronRight,
-  Eye,
   FileText,
   LogOut,
   MessageSquare,
   Settings,
-  User,
+
 } from 'lucide-react'
 
 import { Badge, Button, Card } from '../../components/ui'

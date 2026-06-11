@@ -1,15 +1,16 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import React, { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
-import { Clock, Filter, Search, Sparkles, Users } from 'lucide-react'
+import { Clock, Search, Sparkles, Users } from 'lucide-react'
 
 import { Badge, Button, Card, Input } from '../../components/ui'
-import { mockProjects, popularTechStacks } from '../../data/mock'
+import { fetchPopularTechStacks, fetchProjects } from '../../lib/api'
+import type { Project } from '../../types'
 
 const categoryMap: Record<string, string> = {
   All: '전체',
@@ -30,6 +31,8 @@ export default function ProjectListingPage() {
   const searchParams = useSearchParams()
   const initialTech = searchParams.get('tech')
 
+  const [projects, setProjects] = useState<Project[]>([])
+  const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>(initialTech || 'All')
@@ -39,10 +42,22 @@ export default function ProjectListingPage() {
   const categories = ['All', 'Web', 'Mobile', 'AI', 'Game', 'Other']
   const statuses = ['All', 'Open', 'Closed']
 
-  const featuredProjects = mockProjects.filter((p) => p.featured)
+  useEffect(() => {
+    Promise.all([fetchProjects(), fetchPopularTechStacks()])
+      .then(([projectData, techStacks]) => {
+        setProjects(projectData)
+        setPopularTechStacks(techStacks)
+      })
+      .catch(() => {
+        setProjects([])
+        setPopularTechStacks([])
+      })
+  }, [])
+
+  const featuredProjects = projects.filter((p) => p.featured)
 
   const filteredProjects = useMemo(() => {
-    return mockProjects
+    return projects
       .filter((p) => {
         const matchesSearch =
           p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -64,7 +79,7 @@ export default function ProjectListingPage() {
           return b.popularity - a.popularity
         }
       })
-  }, [searchTerm, selectedCategory, selectedTech, selectedStatus, sortBy])
+  }, [projects, searchTerm, selectedCategory, selectedTech, selectedStatus, sortBy])
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">

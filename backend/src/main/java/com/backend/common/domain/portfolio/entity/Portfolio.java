@@ -35,4 +35,26 @@ public class Portfolio {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    public static Portfolio create(
+            Member member,
+            String title,
+            String introduction,
+            String githubUrl,
+            String blogUrl,
+            String deployUrl,
+            String desiredPosition
+    ) {
+        Portfolio portfolio = new Portfolio();
+        portfolio.member = member;
+        portfolio.title = title;
+        portfolio.introduction = introduction;
+        portfolio.githubUrl = githubUrl;
+        portfolio.blogUrl = blogUrl;
+        portfolio.deployUrl = deployUrl;
+        portfolio.desiredPosition = desiredPosition;
+        portfolio.isPublished = true;
+        portfolio.createdAt = LocalDateTime.now();
+        portfolio.updatedAt = portfolio.createdAt;
+        return portfolio;
+    }
 }

@@ -41,4 +41,15 @@ public class ProjectMember {
     private LocalDateTime leftAt;
 
     private boolean isHidden;    // 마이페이지 숨김 여부 플래그
+    public static ProjectMember create(Project project, Member member, PositionType position, ProjectRole role) {
+        ProjectMember projectMember = new ProjectMember();
+        projectMember.project = project;
+        projectMember.member = member;
+        projectMember.position = position;
+        projectMember.role = role;
+        projectMember.memberStatus = MemberStatus.ACTIVE;
+        projectMember.joinedAt = LocalDateTime.now();
+        projectMember.isHidden = false;
+        return projectMember;
+    }
 }

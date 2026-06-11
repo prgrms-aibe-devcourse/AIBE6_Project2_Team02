@@ -51,6 +51,7 @@ yarn-error.log*
 # ==========================================
 
 backend/.gradle/
+backend/.local-jdk/
 backend/build/
 backend/out/
 
@@ -90,4 +91,6 @@ bin/
 *.jks
 *.keystore
 *.p12
+
+package-lock.json
 

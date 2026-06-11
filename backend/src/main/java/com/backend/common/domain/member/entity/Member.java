@@ -30,4 +30,14 @@ public class Member {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
+    public static Member create(String nickname, String profileImageUrl) {
+        Member member = new Member();
+        member.nickname = nickname;
+        member.profileImageUrl = profileImageUrl;
+        member.status = "ACTIVE";
+        member.createdAt = LocalDateTime.now();
+        member.updatedAt = member.createdAt;
+        return member;
+    }
+
 }

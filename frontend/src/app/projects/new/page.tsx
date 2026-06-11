@@ -1,7 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { useRouter } from 'next/navigation'
@@ -9,10 +8,11 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, CheckCircle2, Plus, X } from 'lucide-react'
 
 import { Badge, Button, Card, Input } from '../../../components/ui'
-import { popularTechStacks } from '../../../data/mock'
+import { fetchPopularTechStacks } from '../../../lib/api'
 
 export default function ProjectCreatePage() {
   const router = useRouter()
+  const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [fullDescription, setFullDescription] = useState('')
@@ -27,6 +27,12 @@ export default function ProjectCreatePage() {
     },
   ])
   const [goals, setGoals] = useState([''])
+
+  useEffect(() => {
+    fetchPopularTechStacks()
+      .then(setPopularTechStacks)
+      .catch(() => setPopularTechStacks([]))
+  }, [])
 
   const handleAddTech = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && techInput.trim()) {

@@ -8,6 +8,8 @@ import java.util.List;
 
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
+    List<Project> findByDeletedAtIsNullOrderByCreatedAtDesc();
+
     /**
      * 1. 내가 올린 프로젝트 목록 조회
      * 조건: leader_id가 나이고, 소프트 딜리트(deletedAt) 되지 않은 프로젝트

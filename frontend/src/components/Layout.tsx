@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Button } from './ui';
-import { Code2, Search, Menu, X, Bell, User } from 'lucide-react';
+import { Code2, Search, Menu, X, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 export function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

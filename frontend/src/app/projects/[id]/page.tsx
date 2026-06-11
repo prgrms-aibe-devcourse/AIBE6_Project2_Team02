@@ -1,7 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import Link from 'next/link'
@@ -19,7 +18,8 @@ import {
 } from 'lucide-react'
 
 import { Badge, Button, Card, Modal } from '../../../components/ui'
-import { mockProjects } from '../../../data/mock'
+import { fetchProject } from '../../../lib/api'
+import type { Project } from '../../../types'
 
 const categoryMap: Record<string, string> = {
   Web: '웹',
@@ -38,9 +38,30 @@ export default function ProjectDetailPage() {
   const params = useParams()
   const id = params?.id as string
   const router = useRouter()
-  const project = mockProjects.find((p) => p.id === id)
+  const [project, setProject] = useState<Project | null>(null)
+  const [loading, setLoading] = useState(true)
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
   const [selectedRole, setSelectedRole] = useState<string>('')
+
+  useEffect(() => {
+    if (!id) {
+      setLoading(false)
+      return
+    }
+
+    fetchProject(id)
+      .then(setProject)
+      .catch(() => setProject(null))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-20 text-center text-slate-500">
+        프로젝트를 불러오는 중...
+      </div>
+    )
+  }
 
   if (!project) {
     return (
