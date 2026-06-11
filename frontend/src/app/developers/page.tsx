@@ -1,14 +1,15 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import React, { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import Link from 'next/link'
 
-import { Clock, Filter, MapPin, Search, Sparkles } from 'lucide-react'
+import { Clock, MapPin, Search, Sparkles } from 'lucide-react'
 
 import { Badge, Button, Card, Input } from '../../components/ui'
-import { allUsers, popularTechStacks } from '../../data/mock'
+import { fetchMembers, fetchPopularTechStacks } from '../../lib/api'
+import type { User } from '../../types'
 
 const roleMap: Record<string, string> = {
   All: '전체',
@@ -36,6 +37,8 @@ const getRoleCategory = (role: string) => {
 }
 
 export default function TalentListingPage() {
+  const [allUsers, setAllUsers] = useState<User[]>([])
+  const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>('All')
@@ -48,6 +51,18 @@ export default function TalentListingPage() {
     'AI',
     'Other',
   ]
+
+  useEffect(() => {
+    Promise.all([fetchMembers(), fetchPopularTechStacks()])
+      .then(([members, techStacks]) => {
+        setAllUsers(members)
+        setPopularTechStacks(techStacks)
+      })
+      .catch(() => {
+        setAllUsers([])
+        setPopularTechStacks([])
+      })
+  }, [])
 
   const featuredTalents = allUsers.filter((u) => u.featured)
   const filteredTalents = useMemo(() => {
@@ -67,7 +82,7 @@ export default function TalentListingPage() {
         (u.techStack && u.techStack.includes(selectedTech))
       return matchesSearch && matchesRole && matchesTech
     })
-  }, [searchTerm, selectedRole, selectedTech])
+  }, [allUsers, searchTerm, selectedRole, selectedTech])
 
   const containerVariants = {
     hidden: {

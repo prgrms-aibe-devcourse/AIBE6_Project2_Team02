@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
@@ -9,7 +9,8 @@ import { useParams } from 'next/navigation'
 import { Calendar, Code2, Github, Globe, Mail, MapPin } from 'lucide-react'
 
 import { Badge, Button, Card } from '../../../components/ui'
-import { mockProjects, mockUsers } from '../../../data/mock'
+import { fetchMember, fetchProjects } from '../../../lib/api'
+import type { Project, User } from '../../../types'
 
 const statusMap: Record<string, string> = {
   Open: '모집중',
@@ -27,14 +28,40 @@ const categoryMap: Record<string, string> = {
 export default function DeveloperProfilePage() {
   const params = useParams()
   const id = params.id as string
+  const [user, setUser] = useState<User | null>(null)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Fallback to u1 if not found, just for prototype purposes
-  const user = id && mockUsers[id] ? mockUsers[id] : mockUsers['u1']
+  useEffect(() => {
+    if (!id) {
+      setLoading(false)
+      return
+    }
 
-  const createdProjects = mockProjects.filter((p) => p.leader.id === user.id)
-  const participatedProjects = mockProjects.filter((p) =>
-    p.teamMembers.some((m) => m.id === user.id),
+    Promise.all([fetchMember(id), fetchProjects()])
+      .then(([member, projectData]) => {
+        setUser(member)
+        setProjects(projectData)
+      })
+      .catch(() => {
+        setUser(null)
+        setProjects([])
+      })
+      .finally(() => setLoading(false))
+  }, [id])
+
+  const createdProjects = projects.filter((p) => p.leader.id === id)
+  const participatedProjects = projects.filter((p) =>
+    p.teamMembers.some((m) => m.id === id),
   )
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-20 text-center text-slate-500">
+        프로필을 불러오는 중...
+      </div>
+    )
+  }
 
   if (!user) {
     return (

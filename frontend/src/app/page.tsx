@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import React from 'react'
+import { useEffect, useState } from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -9,7 +9,8 @@ import { useRouter } from 'next/navigation'
 import { ArrowRight, Code, Rocket, Users } from 'lucide-react'
 
 import { Badge, Button, Card } from '../components/ui'
-import { mockProjects, popularTechStacks } from '../data/mock'
+import { fetchPopularTechStacks, fetchProjects } from '../lib/api'
+import type { Project } from '../types'
 
 const categoryMap: Record<string, string> = {
   Web: '웹',
@@ -21,7 +22,22 @@ const categoryMap: Record<string, string> = {
 
 export default function LandingPage() {
   const router = useRouter()
-  const featuredProjects = mockProjects.filter((p) => p.featured).slice(0, 3)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
+
+  useEffect(() => {
+    Promise.all([fetchProjects(), fetchPopularTechStacks()])
+      .then(([projectData, techStacks]) => {
+        setProjects(projectData)
+        setPopularTechStacks(techStacks)
+      })
+      .catch(() => {
+        setProjects([])
+        setPopularTechStacks([])
+      })
+  }, [])
+
+  const featuredProjects = projects.filter((p) => p.featured).slice(0, 3)
 
   const containerVariants = {
     hidden: {

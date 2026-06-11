@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "projects")
@@ -40,6 +42,36 @@ public class Project {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
+
+    @ElementCollection
+    @CollectionTable(name = "project_tech_stacks", joinColumns = @JoinColumn(name = "project_id"))
+    @Column(name = "tech_stack_name")
+    private List<String> techStacks = new ArrayList<>();
+
+    public static Project create(
+            Member leader,
+            String title,
+            String description,
+            String goal,
+            LocalDate deadline,
+            ProjectStatus status,
+            boolean recruitmentOpen,
+            LocalDateTime createdAt,
+            List<String> techStacks
+    ) {
+        Project project = new Project();
+        project.leader = leader;
+        project.title = title;
+        project.description = description;
+        project.goal = goal;
+        project.deadline = deadline;
+        project.status = status;
+        project.recruitmentOpen = recruitmentOpen;
+        project.createdAt = createdAt;
+        project.updatedAt = createdAt;
+        project.techStacks = techStacks == null ? new ArrayList<>() : new ArrayList<>(techStacks);
+        return project;
+    }
 
     // ================= 비즈니스 로직 (상태 변경 메서드) =================
 
