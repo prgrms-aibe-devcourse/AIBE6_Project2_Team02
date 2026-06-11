@@ -31,7 +31,10 @@ public class Project {
     private String goal;
 
     private LocalDate deadline;
-    private String status; // RECRUITING, IN_PROGRESS, COMPLETED, DISBANDED, CANCELLED
+
+    @Enumerated(EnumType.STRING)
+    private ProjectStatus status;
+
     private boolean recruitmentOpen;
 
     private LocalDateTime createdAt;
