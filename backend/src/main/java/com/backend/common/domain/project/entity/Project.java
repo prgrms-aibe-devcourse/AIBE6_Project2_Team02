@@ -40,4 +40,72 @@ public class Project {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
+
+    // ================= 비즈니스 로직 (상태 변경 메서드) =================
+
+    /**
+     * 1. 프로젝트 진행 시작 (IN_PROGRESS)
+     * 허용 조건: RECRUITING 상태에서만 시작 가능
+     */
+    public void startProject() {
+        if (this.status != ProjectStatus.RECRUITING) {
+            throw new IllegalStateException("모집 중인 프로젝트만 진행 상태로 변경할 수 있습니다.");
+        }
+        this.status = ProjectStatus.IN_PROGRESS;
+        this.recruitmentOpen = false; // 진행이 시작되면 팀원 모집은 자동으로 마감
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 2. 프로젝트 성공적 완료 (COMPLETED)
+     * 허용 조건: IN_PROGRESS(진행 중) 상태에서만 완료 가능
+     */
+    public void completeProject() {
+        if (this.status != ProjectStatus.IN_PROGRESS) {
+            throw new IllegalStateException("진행 중인 프로젝트만 완료 처리할 수 있습니다.");
+        }
+        this.status = ProjectStatus.COMPLETED;
+        this.recruitmentOpen = false;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 3. 프로젝트 중도 해산/폭파 (DISBANDED)
+     * 허용 조건: 시작 전(RECRUITING)이거나 진행 중(IN_PROGRESS)일 때만 폭파 가능
+     * (이미 완수된 프로젝트나 취소된 프로젝트는 폭파 불가)
+     */
+    public void disbandProject() {
+        if (this.status == ProjectStatus.COMPLETED || this.status == ProjectStatus.CANCELLED) {
+            throw new IllegalStateException("이미 종료되었거나 취소된 프로젝트는 해산할 수 없습니다.");
+        }
+        this.status = ProjectStatus.DISBANDED;
+        this.recruitmentOpen = false;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 4. 프로젝트 시작 전 취소 (CANCELLED)
+     * 허용 조건: 팀원을 모집하던 중(RECRUITING) 아예 엎어지는 경우에만 가능
+     */
+    public void cancelProject() {
+        if (this.status != ProjectStatus.RECRUITING) {
+            throw new IllegalStateException("모집 중인 상태에서만 프로젝트를 취소할 수 있습니다.");
+        }
+        this.status = ProjectStatus.CANCELLED;
+        this.recruitmentOpen = false;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 5. 모집 일시 중지 및 재개 (Recruitment Open/Close 관련 보조 메서드)
+     * 프로젝트 상태가 RECRUITING 일 때만 수동으로 켜고 끌 수 있음
+     */
+    public void toggleRecruitment(boolean open) {
+        if (this.status != ProjectStatus.RECRUITING) {
+            throw new IllegalStateException("모집 중인 프로젝트만 모집 여부를 변경할 수 있습니다.");
+        }
+        this.recruitmentOpen = open;
+        this.updatedAt = LocalDateTime.now();
+    }
+
 }
