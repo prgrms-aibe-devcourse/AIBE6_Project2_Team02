@@ -3,6 +3,7 @@ package com.backend.common.domain.project.project.controller;
 import com.backend.common.domain.project.project.entity.Project;
 import com.backend.common.domain.project.project.service.MyPageProjectService;
 import com.backend.common.global.rsdata.RsData;
+import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,9 +26,9 @@ public class MyPageProjectController {
     @GetMapping("/owned")
     @PreAuthorize("isAuthenticated()")
     public RsData<List<Project>> getMyOwnedProjects(
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal CustomMemberDetails userDetails
     ) {
-        List<Project> projects = myPageProjectService.getMyOwnedProjects(userDetails.getId());
+        List<Project> projects = myPageProjectService.getMyOwnedProjects(userDetails.getMemberId());
         return RsData.of("200", "내가 올린 프로젝트 목록 조회가 완료되었습니다.", projects);
     }
 
@@ -37,9 +38,9 @@ public class MyPageProjectController {
     @GetMapping("/participating")
     @PreAuthorize("isAuthenticated()")
     public RsData<List<Project>> getMyParticipatingProjects(
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal CustomMemberDetails userDetails
     ) {
-        List<Project> projects = myPageProjectService.getMyParticipatingProjects(userDetails.getId());
+        List<Project> projects = myPageProjectService.getMyParticipatingProjects(userDetails.getMemberId());
         return RsData.of("200", "내가 참여 중인 프로젝트 목록 조회가 완료되었습니다.", projects);
     }
 
@@ -49,9 +50,9 @@ public class MyPageProjectController {
     @GetMapping("/applied")
     @PreAuthorize("isAuthenticated()")
     public RsData<List<Project>> getMyAppliedProjects(
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal CustomMemberDetails userDetails
     ) {
-        List<Project> projects = myPageProjectService.getMyAppliedProjects(userDetails.getId());
+        List<Project> projects = myPageProjectService.getMyAppliedProjects(userDetails.getMemberId());
         return RsData.of("200", "내가 지원한 프로젝트 목록 조회가 완료되었습니다.", projects);
     }
 
@@ -61,9 +62,9 @@ public class MyPageProjectController {
     @GetMapping("/completed")
     @PreAuthorize("isAuthenticated()")
     public RsData<List<Project>> getMyCompletedProjects(
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal CustomMemberDetails userDetails
     ) {
-        List<Project> projects = myPageProjectService.getMyCompletedProjects(userDetails.getId());
+        List<Project> projects = myPageProjectService.getMyCompletedProjects(userDetails.getMemberId());
         return RsData.of("200", "내가 완료/해산한 프로젝트 목록 조회가 완료되었습니다.", projects);
     }
 
@@ -73,9 +74,9 @@ public class MyPageProjectController {
     @GetMapping("/recent-views")
     @PreAuthorize("isAuthenticated()")
     public RsData<List<Project>> getMyRecentlyViewedProjects(
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal CustomMemberDetails userDetails
     ) {
-        List<Project> projects = myPageProjectService.getMyRecentlyViewedProjects(userDetails.getId());
+        List<Project> projects = myPageProjectService.getMyRecentlyViewedProjects(userDetails.getMemberId());
         return RsData.of("200", "최근 본 프로젝트 목록 조회가 완료되었습니다.", projects);
     }
 }
