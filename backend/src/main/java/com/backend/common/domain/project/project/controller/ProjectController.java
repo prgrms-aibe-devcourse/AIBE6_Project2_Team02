@@ -1,5 +1,6 @@
 package com.backend.common.domain.project.project.controller;
 
+import com.backend.common.domain.project.exception.ProjectNotFoundException;
 import com.backend.common.global.exception.exception.ResourceNotFoundException;
 import com.backend.api.dto.ProjectResponse;
 import com.backend.api.service.PublicApiService;
@@ -29,7 +30,7 @@ public class ProjectController {
         try {
             return publicApiService.getProject(id);
         } catch (NoSuchElementException ex) {
-            throw new ResourceNotFoundException("Project not found");
+            throw new ProjectNotFoundException("404","Project not found");
         }
     }
 
