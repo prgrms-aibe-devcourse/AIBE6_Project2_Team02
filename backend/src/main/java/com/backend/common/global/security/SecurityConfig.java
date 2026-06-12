@@ -12,7 +12,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
-@Profile("!local")
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
