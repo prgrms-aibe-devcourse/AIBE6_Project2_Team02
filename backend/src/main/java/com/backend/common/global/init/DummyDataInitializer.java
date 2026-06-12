@@ -1,7 +1,7 @@
 package com.backend.common.global.init;
 
 import com.backend.common.domain.member.entity.Member;
-import com.backend.common.domain.member.entity.MemberTechStack;
+import com.backend.common.domain.techstack.entity.MemberTechStack;
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.member.repository.MemberTechStackRepository;
 import com.backend.common.domain.portfolio.entity.Portfolio;
@@ -80,9 +80,16 @@ public class DummyDataInitializer implements ApplicationRunner {
             Map<String, Member> members,
             Map<String, TechStack> techStacks
     ) {
-        memberSeeds.forEach((id, seed) -> seed.techStacks().forEach(techStack ->
-                memberTechStackRepository.save(MemberTechStack.create(members.get(id), techStacks.get(techStack)))
-        ));
+        memberSeeds.forEach((id, seed) ->
+                seed.techStacks().forEach(techStackName ->
+                        memberTechStackRepository.save(
+                                MemberTechStack.builder()
+                                        .member(members.get(id))
+                                        .techStack(techStacks.get(techStackName))
+                                        .build()
+                        )
+                )
+        );
     }
 
     private void savePortfolios(Map<String, MemberSeed> memberSeeds, Map<String, Member> members) {
