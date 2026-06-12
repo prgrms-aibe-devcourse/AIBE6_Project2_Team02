@@ -1,4 +1,4 @@
-package com.backend.common.domain.project.application.entity;
+package com.backend.common.domain.project.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
