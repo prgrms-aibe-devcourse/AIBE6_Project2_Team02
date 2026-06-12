@@ -1,10 +1,10 @@
 package com.backend.common.domain.project.project.entity;
 
 import com.backend.common.domain.member.entity.Member;
-import com.backend.common.domain.member.entity.MemberStatus;
 import com.backend.common.domain.project.enums.PositionType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
@@ -36,21 +36,24 @@ public class ProjectMember {
     private ProjectRole role;         // LEADER, MANAGER, MEMBER
 
     @Enumerated(EnumType.STRING)
-    private MemberStatus memberStatus; // ACTIVE, LEFT, REMOVED
+    private ProjectMemberStatus memberStatus; // ACTIVE, LEFT, REMOVED
 
     private LocalDateTime joinedAt;
     private LocalDateTime leftAt;
 
     private boolean isHidden;    // 마이페이지 숨김 여부 플래그
-    public static ProjectMember create(Project project, Member member, PositionType position, ProjectRole role) {
-        ProjectMember projectMember = new ProjectMember();
-        projectMember.project = project;
-        projectMember.member = member;
-        projectMember.position = position;
-        projectMember.role = role;
-        projectMember.memberStatus = MemberStatus.ACTIVE;
-        projectMember.joinedAt = LocalDateTime.now();
-        projectMember.isHidden = false;
-        return projectMember;
+
+    @Builder
+    public ProjectMember(Project project, Member member, PositionType position, ProjectRole role) {
+        this.project = project;
+        this.member = member;
+        this.position = position;
+        this.role = role;
+
+        // 중요: 초기 생성 시점의 기본 비즈니스 규칙은 빌더로 받지 않고 내부에서 강제 세팅!
+        this.memberStatus = ProjectMemberStatus.ACTIVE;
+        this.joinedAt = LocalDateTime.now();
+        this.isHidden = false;
     }
+
 }

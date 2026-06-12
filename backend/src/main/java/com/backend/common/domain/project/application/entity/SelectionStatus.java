@@ -1,8 +1,16 @@
 package com.backend.common.domain.project.application.entity;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
 public enum SelectionStatus {
-    PENDING,   // 대기 중 (검토 중)
-    ACCEPTED,  // 수락/합격
-    REJECTED,  // 거절/불합격
-    CANCELLED  // 지원자 또는 제안자가 스스로 취소
+    PENDING("PENDING", "대기 중"),
+    ACCEPTED("ACCEPTED", "승인됨"),
+    REJECTED("REJECTED", "거절됨"),
+    CANCELLED("CANCELLED", "취소됨");
+
+    private final String code;
+    private final String description;
 }
