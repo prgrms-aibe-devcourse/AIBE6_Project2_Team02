@@ -1,8 +1,9 @@
-package com.backend.common.domain.project.entity;
+package com.backend.common.domain.project.project.entity;
 
 import com.backend.common.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
@@ -48,29 +49,19 @@ public class Project {
     @Column(name = "tech_stack_name")
     private List<String> techStacks = new ArrayList<>();
 
-    public static Project create(
-            Member leader,
-            String title,
-            String description,
-            String goal,
-            LocalDate deadline,
-            ProjectStatus status,
-            boolean recruitmentOpen,
-            LocalDateTime createdAt,
-            List<String> techStacks
-    ) {
-        Project project = new Project();
-        project.leader = leader;
-        project.title = title;
-        project.description = description;
-        project.goal = goal;
-        project.deadline = deadline;
-        project.status = status;
-        project.recruitmentOpen = recruitmentOpen;
-        project.createdAt = createdAt;
-        project.updatedAt = createdAt;
-        project.techStacks = techStacks == null ? new ArrayList<>() : new ArrayList<>(techStacks);
-        return project;
+    @Builder
+    public Project(Member leader, String title, String description, String goal, LocalDate deadline) {
+        this.leader = leader;
+        this.title = title;
+        this.description = description;
+        this.goal = goal;
+        this.deadline = deadline;
+
+        // 중요: 기본값이나 초기화 로직은 빌더 파라미터로 받지 않고 내부에서 강제 세팅
+        this.status = ProjectStatus.RECRUITING; // 처음 만들 땐 무조건 모집중
+        this.recruitmentOpen = true;            // 처음 만들 땐 무조건 활성화
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     // ================= 비즈니스 로직 (상태 변경 메서드) =================

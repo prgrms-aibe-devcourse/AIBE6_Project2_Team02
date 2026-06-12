@@ -1,3 +1,6 @@
+package com.backend.common.domain.project.project.repository;
+
+import com.backend.common.domain.project.project.entity.ProjectMember;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

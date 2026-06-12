@@ -1,16 +1,19 @@
-package com.backend.common.domain.member.entity;
+package com.backend.common.domain.project.project.entity;
 
-import com.backend.common.domain.techstack.entity.TechStack;
+import com.backend.common.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "member_tech_stacks")
+@Table(name = "project_views", indexes = {
+        @Index(name = "idx_member_project_view", columnList = "member_id, project_id")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class MemberTechStack {
+public class ProjectView {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,6 +24,8 @@ public class MemberTechStack {
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tech_stack_id")
-    private TechStack techStack;
+    @JoinColumn(name = "project_id")
+    private Project project;
+
+    private LocalDateTime viewedAt;
 }

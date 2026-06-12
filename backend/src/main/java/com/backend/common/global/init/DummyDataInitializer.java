@@ -1,14 +1,15 @@
 package com.backend.common.global.init;
 
 import com.backend.common.domain.member.entity.Member;
-import com.backend.common.domain.member.entity.MemberTechStack;
+import com.backend.common.domain.techstack.entity.MemberTechStack;
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.member.repository.MemberTechStackRepository;
 import com.backend.common.domain.portfolio.entity.Portfolio;
 import com.backend.common.domain.portfolio.repository.PortfolioRepository;
-import com.backend.common.domain.project.entity.*;
-import com.backend.common.domain.project.repository.ProjectMemberRepository;
-import com.backend.common.domain.project.repository.ProjectRepository;
+import com.backend.common.domain.project.project.entity.*;
+import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
+import com.backend.common.domain.project.project.repository.ProjectRepository;
+import com.backend.common.domain.project.enums.PositionType;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import lombok.RequiredArgsConstructor;
@@ -62,7 +63,11 @@ public class DummyDataInitializer implements ApplicationRunner {
         Map<String, TechStack> techStacks = new LinkedHashMap<>();
         memberSeeds.values().forEach(seed -> putTechStacks(techStacks, seed.techStacks()));
         projectSeeds.forEach(seed -> putTechStacks(techStacks, seed.techStacks()));
-        techStacks.replaceAll((name, ignored) -> techStackRepository.save(TechStack.create(name)));
+        techStacks.replaceAll((name, ignored) -> techStackRepository.save(
+                TechStack.builder()
+                        .name(name)
+                        .build()
+        ));
         return techStacks;
     }
 
@@ -75,9 +80,16 @@ public class DummyDataInitializer implements ApplicationRunner {
             Map<String, Member> members,
             Map<String, TechStack> techStacks
     ) {
-        memberSeeds.forEach((id, seed) -> seed.techStacks().forEach(techStack ->
-                memberTechStackRepository.save(MemberTechStack.create(members.get(id), techStacks.get(techStack)))
-        ));
+        memberSeeds.forEach((id, seed) ->
+                seed.techStacks().forEach(techStackName ->
+                        memberTechStackRepository.save(
+                                MemberTechStack.builder()
+                                        .member(members.get(id))
+                                        .techStack(techStacks.get(techStackName))
+                                        .build()
+                        )
+                )
+        );
     }
 
     private void savePortfolios(Map<String, MemberSeed> memberSeeds, Map<String, Member> members) {
@@ -94,31 +106,45 @@ public class DummyDataInitializer implements ApplicationRunner {
 
     private void saveProjects(Map<String, Member> members) {
         for (ProjectSeed seed : projectSeeds()) {
-            ProjectStatus status = seed.open() ? ProjectStatus.RECRUITING : ProjectStatus.IN_PROGRESS;
-            Project project = projectRepository.save(Project.create(
-                    members.get(seed.leaderId()),
-                    seed.title(),
-                    seed.description(),
-                    seed.goal(),
-                    LocalDate.parse(seed.deadline()),
-                    status,
-                    seed.open(),
-                    LocalDate.parse(seed.createdAt()).atStartOfDay(),
-                    seed.techStacks()
-            ));
 
-            projectMemberRepository.save(ProjectMember.create(
-                    project,
-                    members.get(seed.leaderId()),
-                    inferPosition(memberSeeds().get(seed.leaderId()).role()),
-                    ProjectRole.LEADER
-            ));
-            seed.memberIds().forEach(memberId -> projectMemberRepository.save(ProjectMember.create(
-                    project,
-                    members.get(memberId),
-                    inferPosition(memberSeeds().get(memberId).role()),
-                    ProjectRole.MEMBER
-            )));
+            // 필수값들만 우선 빌더로 바인딩하여 생성 (이때 내부적으로 RECRUITING 상태로 생성됨)
+            Project project = Project.builder()
+                    .leader(members.get(seed.leaderId()))
+                    .title(seed.title())
+                    .description(seed.description())
+                    .goal(seed.goal())
+                    .deadline(LocalDate.parse(seed.deadline()))
+                    .build();
+
+            // 만약 seed 데이터가 '진행 중(open = false)' 상태라면 엔티티가 가진 비즈니스 로직 구동!
+            // 내부적으로 status = IN_PROGRESS, recruitmentOpen = false로 자연스럽게 전이됩니다.
+            if (!seed.open()) {
+                project.startProject();
+            }
+
+            projectRepository.save(project);
+
+            //  프로젝트 리더(생성자)를 첫 번째 팀원으로 등록
+            ProjectMember leaderMember = ProjectMember.builder()
+                    .project(project)
+                    .member(members.get(seed.leaderId()))
+                    .position(inferPosition(memberSeeds().get(seed.leaderId()).role()))
+                    .role(ProjectRole.LEADER)
+                    .build();
+
+            projectMemberRepository.save(leaderMember);
+
+            //  나머지 팀원들을 일반 멤버로 등록
+            seed.memberIds().forEach(memberId -> {
+                ProjectMember generalMember = ProjectMember.builder()
+                        .project(project)
+                        .member(members.get(memberId))
+                        .position(inferPosition(memberSeeds().get(memberId).role()))
+                        .role(ProjectRole.MEMBER)
+                        .build();
+
+                projectMemberRepository.save(generalMember);
+            });
         }
     }
 
