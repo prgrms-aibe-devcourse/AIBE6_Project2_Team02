@@ -6,9 +6,9 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
 import { ArrowLeft, CheckCircle2, Plus, X } from 'lucide-react'
+import { fetchPopularTechStacks } from '../../../lib/api'
 
 import { Badge, Button, Card, Input } from '../../../components/ui'
-import { fetchPopularTechStacks } from '../../../lib/api'
 
 export default function ProjectCreatePage() {
   const router = useRouter()
@@ -30,8 +30,8 @@ export default function ProjectCreatePage() {
 
   useEffect(() => {
     fetchPopularTechStacks()
-      .then(setPopularTechStacks)
-      .catch(() => setPopularTechStacks([]))
+        .then(setPopularTechStacks)
+        .catch(() => setPopularTechStacks([]))
   }, [])
 
   const handleAddTech = (e: React.KeyboardEvent<HTMLInputElement>) => {

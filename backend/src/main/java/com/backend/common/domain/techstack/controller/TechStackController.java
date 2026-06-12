@@ -1,4 +1,4 @@
-package com.backend.api.controller;
+package com.backend.common.domain.techstack.controller;
 
 import com.backend.api.service.PublicApiService;
 import lombok.RequiredArgsConstructor;

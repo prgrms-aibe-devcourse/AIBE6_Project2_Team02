@@ -21,6 +21,16 @@ public class OauthAccount {
     @JoinColumn(name = "member_id")
     private Member member;
 
-    private String provider;
+    @Enumerated(EnumType.STRING)
+    private OauthProvider provider;
+
     private String providerMemberId;
+
+    public static OauthAccount create(Member member, OauthProvider provider, String providerMemberId) {
+        OauthAccount account = new OauthAccount();
+        account.member = member;
+        account.provider = provider;
+        account.providerMemberId = providerMemberId;
+        return account;
+    }
 }
