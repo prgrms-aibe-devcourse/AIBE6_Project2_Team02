@@ -34,3 +34,24 @@ export type Project = {
   popularity: number
   featured?: boolean
 }
+
+export type ReportReason = '음란' | '분탕' | '기타'
+
+export interface BaseReport {
+  id: string
+  reason: ReportReason
+  detail: string
+  reporterId: string
+  createdAt: string
+  status: 'pending' | 'resolved'
+}
+
+export interface UserReport extends BaseReport {
+  type: 'user'
+  targetUserId: string
+}
+
+export interface ProjectReport extends BaseReport {
+  type: 'project'
+  targetProjectId: string
+}
