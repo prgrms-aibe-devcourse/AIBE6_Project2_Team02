@@ -17,9 +17,4 @@ public class TechStack {
 
     @Column(unique = true)
     private String name;
-    public static TechStack create(String name) {
-        TechStack techStack = new TechStack();
-        techStack.name = name;
-        return techStack;
-    }
 }
