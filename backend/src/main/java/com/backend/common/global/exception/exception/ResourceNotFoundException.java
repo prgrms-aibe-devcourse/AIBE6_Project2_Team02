@@ -1,12 +1,16 @@
 package com.backend.common.global.exception.exception;
 
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-@ResponseStatus(HttpStatus.NOT_FOUND)
+@Getter
 public class ResourceNotFoundException extends RuntimeException {
 
-    public ResourceNotFoundException(String message) {
+    private final String code;
+    public ResourceNotFoundException(String code, String message) {
         super(message);
+        this.code = code;
     }
+    public int getStatusCode() { return Integer.parseInt(code);}
 }
