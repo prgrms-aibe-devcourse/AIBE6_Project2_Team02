@@ -1,6 +1,4 @@
 spring:
-  profiles:
-    include: secret, oauth
   datasource:
     url: jdbc:h2:mem:teamproject
     driver-class-name: org.h2.Driver
