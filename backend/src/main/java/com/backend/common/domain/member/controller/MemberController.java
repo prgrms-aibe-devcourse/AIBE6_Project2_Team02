@@ -1,5 +1,6 @@
 package com.backend.common.domain.member.controller;
 
+import com.backend.common.domain.member.exception.MemberNotFoundException;
 import com.backend.common.global.exception.exception.ResourceNotFoundException;
 import com.backend.api.dto.UserResponse;
 import com.backend.api.service.PublicApiService;
@@ -29,7 +30,7 @@ public class MemberController {
         try {
             return publicApiService.getMember(id);
         } catch (NoSuchElementException ex) {
-            throw new ResourceNotFoundException("Member not found");
+            throw new MemberNotFoundException("404","Member not found");
         }
     }
 }
