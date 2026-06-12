@@ -6,10 +6,14 @@ import { usePathname } from 'next/navigation';
 import { Button } from './ui';
 import { Code2, Search, Menu, X, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../app/providers';
+import { LoginModal } from './LoginModal';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const pathname = usePathname();
+  const { user, logout } = useAuth();
   
   const navLinks = [
     { name: '프로젝트 찾기', path: '/projects' },
@@ -54,30 +58,43 @@ export function Header() {
               className="h-9 w-64 rounded-full border border-slate-200 bg-slate-50 pl-9 pr-4 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
             />
           </div>
-          <Link href="/projects">
-            <Button variant="ghost" size="sm">
-              로그인
-            </Button>
-          </Link>
-          <Link href="/projects/new">
-            <Button size="sm" variant="gradient">
-              프로젝트 만들기
-            </Button>
-          </Link>
-          <div className="h-8 w-px bg-slate-200 mx-1" />
-          <button className="text-slate-500 hover:text-slate-900 transition-colors">
-            <Bell className="h-5 w-5" />
-          </button>
-          <Link
-            href="/mypage"
-            className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors border border-slate-200 overflow-hidden"
-          >
-            <img
-              src="https://i.pravatar.cc/150?u=current"
-              alt="Avatar"
-              className="h-full w-full object-cover"
-            />
-          </Link>
+          {user ? (
+            <>
+              <Link href="/projects/new">
+                <Button size="sm" variant="gradient">
+                  프로젝트 만들기
+                </Button>
+              </Link>
+              <div className="h-8 w-px bg-slate-200 mx-1" />
+              <button className="text-slate-500 hover:text-slate-900 transition-colors">
+                <Bell className="h-5 w-5" />
+              </button>
+              <Link
+                href="/mypage"
+                className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors border border-slate-200 overflow-hidden"
+              >
+                <img
+                  src="https://i.pravatar.cc/150?u=current"
+                  alt="Avatar"
+                  className="h-full w-full object-cover"
+                />
+              </Link>
+              <Button variant="ghost" size="sm" onClick={logout}>
+                로그아웃
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setIsLoginModalOpen(true)}>
+                로그인
+              </Button>
+              <Link href="/projects/new">
+                <Button size="sm" variant="gradient">
+                  프로젝트 만들기
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -114,15 +131,24 @@ export function Header() {
                 </Link>
               ))}
               <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
-                <Link href="/projects" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full justify-center">
+                {user ? (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-center"
+                    onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+                  >
+                    로그아웃
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-center"
+                    onClick={() => { setIsLoginModalOpen(true); setIsMobileMenuOpen(false); }}
+                  >
                     로그인
                   </Button>
-                </Link>
-                <Link
-                  href="/projects/new"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
+                )}
+                <Link href="/projects/new" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button variant="gradient" className="w-full justify-center">
                     프로젝트 만들기
                   </Button>
@@ -132,6 +158,10 @@ export function Header() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {isLoginModalOpen && (
+        <LoginModal onClose={() => setIsLoginModalOpen(false)} />
+      )}
     </header>
   );
 }
