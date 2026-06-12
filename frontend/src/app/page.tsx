@@ -141,7 +141,7 @@ export default function LandingPage() {
             </div>
             <Link
               href="/projects"
-              className="hidden md:flex items-center text-blue-600 font-medium hover:text-blue-700"
+              className="md:flex items-center text-blue-600 font-medium hover:text-blue-700"
             >
               전체 보기 <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
@@ -149,7 +149,6 @@ export default function LandingPage() {
 
           <motion.div
             variants={containerVariants}
-            initial="hidden"
             whileInView="visible"
             viewport={{
               once: true,
