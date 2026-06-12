@@ -1,5 +1,6 @@
 package com.backend.common.global.security;
 
+import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -30,7 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Long memberId = jwtTokenProvider.getMemberId(token);
             String nickname = jwtTokenProvider.getNickname(token);
 
-            MemberPrincipal principal = new MemberPrincipal(memberId, nickname);
+            CustomMemberDetails principal = new CustomMemberDetails(memberId, nickname, "ACTIVE");
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(principal, null, Collections.emptyList());
 
