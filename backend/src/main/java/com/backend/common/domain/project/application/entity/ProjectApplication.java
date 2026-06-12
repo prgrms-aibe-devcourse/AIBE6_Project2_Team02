@@ -2,6 +2,7 @@ package com.backend.common.domain.project.application.entity;
 
 import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.project.enums.PositionType;
+import com.backend.common.domain.project.enums.SelectionStatus;
 import com.backend.common.domain.project.project.entity.Project;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -9,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
+// 프로젝트 지원 내역 -> 프로젝트 상세에서 지원
 @Entity
 @Table(name = "project_applications", indexes = {
         @Index(name = "idx_project_applicant", columnList = "project_id, applicant_id", unique = true)

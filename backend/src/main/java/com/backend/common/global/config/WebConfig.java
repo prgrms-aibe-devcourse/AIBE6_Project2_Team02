@@ -1,4 +1,4 @@
-package com.backend.api.config;
+package com.backend.common.global.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -15,4 +15,5 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }
+
 }

@@ -1,4 +1,4 @@
-package com.backend.api.controller;
+package com.backend.common.global.exception.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
