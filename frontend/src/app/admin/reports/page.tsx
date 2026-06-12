@@ -1,99 +1,45 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { CheckCircle2, FolderX, ShieldAlert, UserX } from 'lucide-react'
 
 import { Badge, Button, Card } from '../../../components/ui'
-
-// Mock Data (Ideally these would come from an API or a shared data file)
-const mockUsers: Record<string, { name: string; avatar: string }> = {
-  u1: { name: '김철수', avatar: 'https://i.pravatar.cc/150?u=u1' },
-  u2: { name: '이영희', avatar: 'https://i.pravatar.cc/150?u=u2' },
-  u3: { name: '박지민', avatar: 'https://i.pravatar.cc/150?u=u3' },
-  u5: { name: '최범석', avatar: 'https://i.pravatar.cc/150?u=u5' },
-  u6: { name: '정예린', avatar: 'https://i.pravatar.cc/150?u=u6' },
-  u7: { name: '강현우', avatar: 'https://i.pravatar.cc/150?u=u7' },
-}
-
-const mockProjects = [
-  { id: '4', title: 'AI 기반 식단 관리 서비스' },
-  { id: '5', title: '개발자 커뮤니티 플랫폼' },
-]
-
-type ReportReason = '음란' | '분탕' | '기타'
-interface BaseReport {
-  id: string
-  reason: ReportReason
-  detail: string
-  reporterId: string
-  createdAt: string
-  status: 'pending' | 'resolved'
-}
-interface UserReport extends BaseReport {
-  type: 'user'
-  targetUserId: string
-}
-interface ProjectReport extends BaseReport {
-  type: 'project'
-  targetProjectId: string
-}
-
-const mockUserReports: UserReport[] = [
-  {
-    id: 'ur1',
-    type: 'user',
-    reason: '분탕',
-    detail:
-      '프로젝트 채팅방에서 지속적으로 다른 팀원들에게 공격적인 언행을 합니다.',
-    reporterId: 'u1',
-    targetUserId: 'u5',
-    createdAt: '2026-06-09T10:00:00Z',
-    status: 'pending',
-  },
-  {
-    id: 'ur2',
-    type: 'user',
-    reason: '기타',
-    detail: '포트폴리오 링크가 악성 사이트로 연결됩니다.',
-    reporterId: 'u3',
-    targetUserId: 'u7',
-    createdAt: '2026-06-08T15:30:00Z',
-    status: 'pending',
-  },
-]
-
-const mockProjectReports: ProjectReport[] = [
-  {
-    id: 'pr1',
-    type: 'project',
-    reason: '음란',
-    detail: '프로젝트 설명에 부적절한 이미지 링크가 포함되어 있습니다.',
-    reporterId: 'u2',
-    targetProjectId: '4',
-    createdAt: '2026-06-10T09:15:00Z',
-    status: 'pending',
-  },
-  {
-    id: 'pr2',
-    type: 'project',
-    reason: '분탕',
-    detail:
-      '실제 프로젝트가 아니라 특정 사용자를 비방하기 위해 만들어진 가짜 프로젝트입니다.',
-    reporterId: 'u6',
-    targetProjectId: '5',
-    createdAt: '2026-06-07T11:20:00Z',
-    status: 'pending',
-  },
-]
+import { fetchProjectReports, fetchUserReports } from '../../../lib/api'
+import type { Project, ProjectReport, User, UserReport } from '../../../types'
 
 export default function AdminReportsPage() {
-  const [userReports, setUserReports] = useState<UserReport[]>(mockUserReports)
-  const [projectReports, setProjectReports] =
-    useState<ProjectReport[]>(mockProjectReports)
+  const [userReports, setUserReports] = useState<UserReport[]>([])
+  const [projectReports, setProjectReports] = useState<ProjectReport[]>([])
+  const [users, setUsers] = useState<Record<string, User>>({})
+  const [projects, setProjects] = useState<Record<string, Project>>({})
+  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'user' | 'project'>('user')
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true)
+      try {
+        const [uReports, pReports] = await Promise.all([
+          fetchUserReports(),
+          fetchProjectReports(),
+        ])
+        setUserReports(uReports)
+        setProjectReports(pReports)
+
+        // Fetch related user/project details (simplification for this example)
+        // In a real app, the report objects might already contain nested target/reporter data
+      } catch (err) {
+        console.error('Failed to load reports:', err)
+        toast.error('신고 내역을 불러오는데 실패했습니다.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
 
   const handleResolve = (id: string, type: 'user' | 'project') => {
     if (type === 'user') {
@@ -104,15 +50,23 @@ export default function AdminReportsPage() {
     toast.success('신고가 처리되었습니다.')
   }
 
-  const getReasonBadgeColor = (reason: ReportReason) => {
+  const getReasonBadgeColor = (reason: string) => {
     switch (reason) {
       case '음란':
         return 'bg-red-100 text-red-700 border-red-200'
       case '분탕':
         return 'bg-orange-100 text-orange-700 border-orange-200'
-      case '기타':
+      default:
         return 'bg-slate-100 text-slate-700 border-slate-200'
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-20 text-center text-slate-500">
+        신고 내역을 불러오는 중...
+      </div>
+    )
   }
 
   return (
@@ -179,83 +133,66 @@ export default function AdminReportsPage() {
                 </p>
               </div>
             ) : (
-              userReports.map((report) => {
-                const targetUser = mockUsers[report.targetUserId]
-                const reporter = mockUsers[report.reporterId]
-                return (
-                  <motion.div
-                    key={report.id}
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <Card className="p-5 border-l-4 border-l-red-500 hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-start mb-4">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getReasonBadgeColor(
-                            report.reason,
-                          )}`}
+              userReports.map((report) => (
+                <motion.div
+                  key={report.id}
+                  layout
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <Card className="p-5 border-l-4 border-l-red-500 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-4">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getReasonBadgeColor(report.reason)}`}
+                      >
+                        {report.reason}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {new Date(report.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                        <div className="text-xs text-slate-500 mb-1">
+                          신고당한 유저 ID
+                        </div>
+                        <div className="font-medium text-slate-900 text-sm">
+                          {report.targetUserId}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">
+                          신고 상세사유
+                        </div>
+                        <p className="text-sm text-slate-700 bg-white border border-slate-200 rounded-lg p-3 leading-relaxed">
+                          {report.detail}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500">
+                            신고자 ID:
+                          </span>
+                          <span className="text-xs font-medium text-slate-700">
+                            {report.reporterId}
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleResolve(report.id, 'user')}
+                          className="h-8 text-xs"
                         >
-                          {report.reason}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          {new Date(report.createdAt).toLocaleDateString()}
-                        </span>
+                          처리 완료
+                        </Button>
                       </div>
-
-                      <div className="space-y-3">
-                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                          <div className="text-xs text-slate-500 mb-1">
-                            신고당한 사람
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <img
-                              src={
-                                targetUser?.avatar ||
-                                'https://i.pravatar.cc/150'
-                              }
-                              alt=""
-                              className="w-6 h-6 rounded-full"
-                            />
-                            <span className="font-medium text-slate-900 text-sm">
-                              {targetUser?.name || '알 수 없는 유저'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="text-xs text-slate-500 mb-1">
-                            신고 상세사유
-                          </div>
-                          <p className="text-sm text-slate-700 bg-white border border-slate-200 rounded-lg p-3 leading-relaxed">
-                            {report.detail}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-500">
-                              신고자:
-                            </span>
-                            <span className="text-xs font-medium text-slate-700">
-                              {reporter?.name || '알 수 없는 유저'}
-                            </span>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleResolve(report.id, 'user')}
-                            className="h-8 text-xs"
-                          >
-                            처리 완료
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  </motion.div>
-                )
-              })
+                    </div>
+                  </Card>
+                </motion.div>
+              ))
             )}
           </div>
         </div>
@@ -283,75 +220,66 @@ export default function AdminReportsPage() {
                 </p>
               </div>
             ) : (
-              projectReports.map((report) => {
-                const targetProject = mockProjects.find(
-                  (p) => p.id === report.targetProjectId,
-                )
-                const reporter = mockUsers[report.reporterId]
-                return (
-                  <motion.div
-                    key={report.id}
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <Card className="p-5 border-l-4 border-l-orange-500 hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-start mb-4">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getReasonBadgeColor(
-                            report.reason,
-                          )}`}
+              projectReports.map((report) => (
+                <motion.div
+                  key={report.id}
+                  layout
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <Card className="p-5 border-l-4 border-l-orange-500 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-4">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getReasonBadgeColor(report.reason)}`}
+                      >
+                        {report.reason}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {new Date(report.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                        <div className="text-xs text-slate-500 mb-1">
+                          신고당한 프로젝트 ID
+                        </div>
+                        <div className="font-medium text-slate-900 text-sm">
+                          {report.targetProjectId}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">
+                          신고 상세사유
+                        </div>
+                        <p className="text-sm text-slate-700 bg-white border border-slate-200 rounded-lg p-3 leading-relaxed">
+                          {report.detail}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500">
+                            신고자 ID:
+                          </span>
+                          <span className="text-xs font-medium text-slate-700">
+                            {report.reporterId}
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleResolve(report.id, 'project')}
+                          className="h-8 text-xs"
                         >
-                          {report.reason}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          {new Date(report.createdAt).toLocaleDateString()}
-                        </span>
+                          처리 완료
+                        </Button>
                       </div>
-
-                      <div className="space-y-3">
-                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                          <div className="text-xs text-slate-500 mb-1">
-                            신고당한 프로젝트
-                          </div>
-                          <div className="font-medium text-slate-900 text-sm truncate">
-                            {targetProject?.title || '알 수 없는 프로젝트'}
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="text-xs text-slate-500 mb-1">
-                            신고 상세사유
-                          </div>
-                          <p className="text-sm text-slate-700 bg-white border border-slate-200 rounded-lg p-3 leading-relaxed">
-                            {report.detail}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-500">
-                              신고자:
-                            </span>
-                            <span className="text-xs font-medium text-slate-700">
-                              {reporter?.name || '알 수 없는 유저'}
-                            </span>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleResolve(report.id, 'project')}
-                            className="h-8 text-xs"
-                          >
-                            처리 완료
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  </motion.div>
-                )
-              })
+                    </div>
+                  </Card>
+                </motion.div>
+              ))
             )}
           </div>
         </div>

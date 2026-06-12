@@ -1,4 +1,4 @@
-import type { Project, User } from '../types'
+import type { Project, ProjectReport, User, UserReport } from '../types'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -11,7 +11,7 @@ async function fetchJson<T>(path: string): Promise<T> {
     throw new Error(`API request failed: ${response.status}`)
   }
 
-  return await response.json() as Promise<T>
+  return (await response.json()) as Promise<T>
 }
 
 export function fetchProjects() {
@@ -32,4 +32,12 @@ export function fetchMember(id: string) {
 
 export function fetchPopularTechStacks() {
   return fetchJson<string[]>('/api/tech-stacks')
+}
+
+export function fetchUserReports() {
+  return fetchJson<UserReport[]>('/api/reports/users')
+}
+
+export function fetchProjectReports() {
+  return fetchJson<ProjectReport[]>('/api/reports/projects')
 }
