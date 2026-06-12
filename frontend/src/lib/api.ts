@@ -1,4 +1,4 @@
-import type { Project, ProjectReport, User, UserReport } from '../types'
+import type { Project, ReportResponse, RsData, User } from '../types'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -12,6 +12,19 @@ async function fetchJson<T>(path: string): Promise<T> {
   }
 
   return (await response.json()) as Promise<T>
+}
+
+async function fetchRsDataJson<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status}`)
+  }
+
+  const rsData = (await response.json()) as RsData<T>
+  return rsData.data
 }
 
 export function fetchProjects() {
@@ -35,9 +48,11 @@ export function fetchPopularTechStacks() {
 }
 
 export function fetchUserReports() {
-  return fetchJson<UserReport[]>('/api/reports/users')
+  return fetchRsDataJson<ReportResponse[]>(
+    '/admin/reports?targetType=PORTFOLIO',
+  )
 }
 
 export function fetchProjectReports() {
-  return fetchJson<ProjectReport[]>('/api/reports/projects')
+  return fetchRsDataJson<ReportResponse[]>('/admin/reports?targetType=PROJECT')
 }

@@ -35,23 +35,23 @@ export type Project = {
   featured?: boolean
 }
 
-export type ReportReason = '음란' | '분탕' | '기타'
+export interface RsData<T> {
+  resultCode: string
+  msg: string
+  data: T
+}
 
-export interface BaseReport {
-  id: string
-  reason: ReportReason
-  detail: string
-  reporterId: string
+export type ReportTargetType = 'PORTFOLIO' | 'PROJECT'
+export type ReportStatus = 'PENDING' | 'REVIEWED'
+
+export interface ReportResponse {
+  reportId: number
+  reporterId: number
+  targetType: ReportTargetType
+  targetId: number
+  reasonType: string
+  reasonDetail: string
+  status: ReportStatus
   createdAt: string
-  status: 'pending' | 'resolved'
-}
-
-export interface UserReport extends BaseReport {
-  type: 'user'
-  targetUserId: string
-}
-
-export interface ProjectReport extends BaseReport {
-  type: 'project'
-  targetProjectId: string
+  reviewedAt: string | null
 }

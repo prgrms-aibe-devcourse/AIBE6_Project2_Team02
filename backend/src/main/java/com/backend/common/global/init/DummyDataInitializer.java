@@ -1,15 +1,21 @@
 package com.backend.common.global.init;
 
 import com.backend.common.domain.member.entity.Member;
-import com.backend.common.domain.techstack.entity.MemberTechStack;
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.member.repository.MemberTechStackRepository;
 import com.backend.common.domain.portfolio.entity.Portfolio;
 import com.backend.common.domain.portfolio.repository.PortfolioRepository;
+import com.backend.common.domain.project.enums.PositionType;
 import com.backend.common.domain.project.project.entity.*;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.project.project.repository.ProjectRepository;
-import com.backend.common.domain.project.enums.PositionType;
+import com.backend.common.domain.report.entity.Report;
+import com.backend.common.domain.report.enums.ReportReasonType;
+import com.backend.common.domain.report.enums.ReportTargetType;
+import com.backend.common.domain.report.repository.ReportRepository;
+import com.backend.common.domain.review.entity.Review;
+import com.backend.common.domain.review.repository.ReviewRepository;
+import com.backend.common.domain.techstack.entity.MemberTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +26,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,6 +43,8 @@ public class DummyDataInitializer implements ApplicationRunner {
     private final PortfolioRepository portfolioRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final ReportRepository reportRepository;
+    private final ReviewRepository reviewRepository;
 
     @Override
     @Transactional
@@ -51,6 +60,8 @@ public class DummyDataInitializer implements ApplicationRunner {
         saveMemberTechStacks(memberSeeds, members, techStacks);
         savePortfolios(memberSeeds, members);
         saveProjects(members);
+        savePeerReviews();
+        saveReports(members);
     }
 
     private Map<String, Member> saveMembers(Map<String, MemberSeed> memberSeeds) {
@@ -146,6 +157,55 @@ public class DummyDataInitializer implements ApplicationRunner {
                 projectMemberRepository.save(generalMember);
             });
         }
+    }
+
+    private void savePeerReviews() {
+        List<Project> projects = projectRepository.findAll();
+        for (Project project : projects) {
+            List<ProjectMember> projectMembers = projectMemberRepository.findByProjectId(project.getId());
+            if (projectMembers.size() < 2) continue;
+
+            for (ProjectMember reviewerMember : projectMembers) {
+                for (ProjectMember revieweeMember : projectMembers) {
+                    if (reviewerMember.getId().equals(revieweeMember.getId())) continue;
+
+                    reviewRepository.save(Review.builder()
+                            .project(project)
+                            .reviewer(reviewerMember.getMember())
+                            .reviewee(revieweeMember.getMember())
+                            .content(reviewerMember.getMember().getNickname() + "님이 " +
+                                    revieweeMember.getMember().getNickname() + "님에게 남긴 리뷰입니다. " +
+                                    project.getTitle() + " 프로젝트에서 함께해서 즐거웠습니다!")
+                            .build());
+                }
+            }
+        }
+    }
+
+    private void saveReports(Map<String, Member> members) {
+        List<Member> memberList = new ArrayList<>(members.values());
+        List<Project> projects = projectRepository.findAll();
+        if (memberList.isEmpty() || projects.isEmpty()) return;
+
+        // 1. 프로젝트 신고
+        reportRepository.save(Report.builder()
+                .reporter(memberList.get(0))
+                .targetType(ReportTargetType.PROJECT)
+                .targetId(projects.get(0).getId())
+                .reasonType(ReportReasonType.SPAM)
+                .reasonDetail("스팸성 프로젝트 게시글입니다.")
+                .build());
+
+        // 2. 포트폴리오 신고
+        portfolioRepository.findAll().stream().findFirst().ifPresent(portfolio -> {
+            reportRepository.save(Report.builder()
+                    .reporter(memberList.get(1))
+                    .targetType(ReportTargetType.PORTFOLIO)
+                    .targetId(portfolio.getId())
+                    .reasonType(ReportReasonType.INAPPROPRIATE_CONTENT)
+                    .reasonDetail("부적절한 내용이 포함된 포트폴리오입니다.")
+                    .build());
+        });
     }
 
     private PositionType inferPosition(String role) {

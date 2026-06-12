@@ -8,13 +8,11 @@ import { CheckCircle2, FolderX, ShieldAlert, UserX } from 'lucide-react'
 
 import { Badge, Button, Card } from '../../../components/ui'
 import { fetchProjectReports, fetchUserReports } from '../../../lib/api'
-import type { Project, ProjectReport, User, UserReport } from '../../../types'
+import type { ReportResponse } from '../../../types'
 
 export default function AdminReportsPage() {
-  const [userReports, setUserReports] = useState<UserReport[]>([])
-  const [projectReports, setProjectReports] = useState<ProjectReport[]>([])
-  const [users, setUsers] = useState<Record<string, User>>({})
-  const [projects, setProjects] = useState<Record<string, Project>>({})
+  const [userReports, setUserReports] = useState<ReportResponse[]>([])
+  const [projectReports, setProjectReports] = useState<ReportResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'user' | 'project'>('user')
 
@@ -26,11 +24,8 @@ export default function AdminReportsPage() {
           fetchUserReports(),
           fetchProjectReports(),
         ])
-        setUserReports(uReports)
-        setProjectReports(pReports)
-
-        // Fetch related user/project details (simplification for this example)
-        // In a real app, the report objects might already contain nested target/reporter data
+        setUserReports(uReports || [])
+        setProjectReports(pReports || [])
       } catch (err) {
         console.error('Failed to load reports:', err)
         toast.error('신고 내역을 불러오는데 실패했습니다.')
@@ -41,24 +36,20 @@ export default function AdminReportsPage() {
     loadData()
   }, [])
 
-  const handleResolve = (id: string, type: 'user' | 'project') => {
-    if (type === 'user') {
-      setUserReports((prev) => prev.filter((r) => r.id !== id))
-    } else {
-      setProjectReports((prev) => prev.filter((r) => r.id !== id))
-    }
+  const handleResolve = (id: number) => {
+    // 실제 앱에서는 여기서 API를 호출하여 상태를 변경해야 함
+    setUserReports((prev) => prev.filter((r) => r.reportId !== id))
+    setProjectReports((prev) => prev.filter((r) => r.reportId !== id))
     toast.success('신고가 처리되었습니다.')
   }
 
-  const getReasonBadgeColor = (reason: string) => {
-    switch (reason) {
-      case '음란':
-        return 'bg-red-100 text-red-700 border-red-200'
-      case '분탕':
-        return 'bg-orange-100 text-orange-700 border-orange-200'
-      default:
-        return 'bg-slate-100 text-slate-700 border-slate-200'
-    }
+  const getReasonBadgeColor = (reasonType: string) => {
+    // 백엔드 Enum 값에 따라 색상 분기 (예시)
+    if (reasonType === 'OBSCENE')
+      return 'bg-red-100 text-red-700 border-red-200'
+    if (reasonType === 'DISRUPTIVE')
+      return 'bg-orange-100 text-orange-700 border-orange-200'
+    return 'bg-slate-100 text-slate-700 border-slate-200'
   }
 
   if (loading) {
@@ -135,7 +126,7 @@ export default function AdminReportsPage() {
             ) : (
               userReports.map((report) => (
                 <motion.div
-                  key={report.id}
+                  key={report.reportId}
                   layout
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -143,9 +134,9 @@ export default function AdminReportsPage() {
                   <Card className="p-5 border-l-4 border-l-red-500 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-4">
                       <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getReasonBadgeColor(report.reason)}`}
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getReasonBadgeColor(report.reasonType)}`}
                       >
-                        {report.reason}
+                        {report.reasonType}
                       </span>
                       <span className="text-xs text-slate-400">
                         {new Date(report.createdAt).toLocaleDateString()}
@@ -158,7 +149,7 @@ export default function AdminReportsPage() {
                           신고당한 유저 ID
                         </div>
                         <div className="font-medium text-slate-900 text-sm">
-                          {report.targetUserId}
+                          {report.targetId}
                         </div>
                       </div>
 
@@ -167,7 +158,7 @@ export default function AdminReportsPage() {
                           신고 상세사유
                         </div>
                         <p className="text-sm text-slate-700 bg-white border border-slate-200 rounded-lg p-3 leading-relaxed">
-                          {report.detail}
+                          {report.reasonDetail}
                         </p>
                       </div>
 
@@ -183,7 +174,7 @@ export default function AdminReportsPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleResolve(report.id, 'user')}
+                          onClick={() => handleResolve(report.reportId)}
                           className="h-8 text-xs"
                         >
                           처리 완료
@@ -222,7 +213,7 @@ export default function AdminReportsPage() {
             ) : (
               projectReports.map((report) => (
                 <motion.div
-                  key={report.id}
+                  key={report.reportId}
                   layout
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -230,9 +221,9 @@ export default function AdminReportsPage() {
                   <Card className="p-5 border-l-4 border-l-orange-500 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-4">
                       <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getReasonBadgeColor(report.reason)}`}
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getReasonBadgeColor(report.reasonType)}`}
                       >
-                        {report.reason}
+                        {report.reasonType}
                       </span>
                       <span className="text-xs text-slate-400">
                         {new Date(report.createdAt).toLocaleDateString()}
@@ -245,7 +236,7 @@ export default function AdminReportsPage() {
                           신고당한 프로젝트 ID
                         </div>
                         <div className="font-medium text-slate-900 text-sm">
-                          {report.targetProjectId}
+                          {report.targetId}
                         </div>
                       </div>
 
@@ -254,7 +245,7 @@ export default function AdminReportsPage() {
                           신고 상세사유
                         </div>
                         <p className="text-sm text-slate-700 bg-white border border-slate-200 rounded-lg p-3 leading-relaxed">
-                          {report.detail}
+                          {report.reasonDetail}
                         </p>
                       </div>
 
@@ -270,7 +261,7 @@ export default function AdminReportsPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleResolve(report.id, 'project')}
+                          onClick={() => handleResolve(report.reportId)}
                           className="h-8 text-xs"
                         >
                           처리 완료
