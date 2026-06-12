@@ -4,7 +4,7 @@ import com.backend.api.dto.PositionResponse;
 import com.backend.api.dto.ProjectResponse;
 import com.backend.api.dto.UserResponse;
 import com.backend.common.domain.member.entity.Member;
-import com.backend.common.domain.member.entity.MemberTechStack;
+import com.backend.common.domain.techstack.entity.MemberTechStack;
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.member.repository.MemberTechStackRepository;
 import com.backend.common.domain.portfolio.entity.Portfolio;
