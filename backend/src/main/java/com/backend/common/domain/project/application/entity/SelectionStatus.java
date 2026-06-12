@@ -1,4 +1,4 @@
-package com.backend.common.domain.project.entity;
+package com.backend.common.domain.project.application.entity;
 
 public enum SelectionStatus {
     PENDING,   // 대기 중 (검토 중)

@@ -1,5 +1,6 @@
-package com.backend.api.controller;
+package com.backend.common.domain.project.project.controller;
 
+import com.backend.api.controller.ResourceNotFoundException;
 import com.backend.api.dto.ProjectResponse;
 import com.backend.api.service.PublicApiService;
 import lombok.RequiredArgsConstructor;

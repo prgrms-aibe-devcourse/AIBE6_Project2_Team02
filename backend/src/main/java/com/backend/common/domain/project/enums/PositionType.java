@@ -1,4 +1,4 @@
-package com.backend.common.domain.project.entity;
+package com.backend.common.domain.project.enums;
 
 public enum PositionType {
     BACKEND,

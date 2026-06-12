@@ -1,4 +1,4 @@
-package com.backend.common.domain.project.entity;
+package com.backend.common.domain.project.project.entity;
 
 public enum ProjectRole {
     LEADER,   // 프로젝트 생성자/방장

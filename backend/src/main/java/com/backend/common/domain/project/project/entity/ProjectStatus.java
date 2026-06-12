@@ -1,4 +1,4 @@
-package com.backend.common.domain.project.entity;
+package com.backend.common.domain.project.project.entity;
 
 public enum ProjectStatus {
     RECRUITING,   // 팀원 모집 중
