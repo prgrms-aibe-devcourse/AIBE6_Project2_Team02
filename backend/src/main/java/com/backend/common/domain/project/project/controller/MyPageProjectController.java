@@ -51,7 +51,7 @@ public class MyPageProjectController {
     public ResponseEntity<List<Project>> getMyAppliedProjects(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        List<Project> projects = myPageProjectService.getTemplatesMyAppliedProjects(userDetails.getId());
+        List<Project> projects = myPageProjectService.getMyAppliedProjects(userDetails.getId());
         return ResponseEntity.ok(projects);
     }
 
