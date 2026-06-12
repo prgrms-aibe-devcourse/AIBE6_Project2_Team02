@@ -2,6 +2,7 @@ package com.backend.common.domain.techstack.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,9 +18,9 @@ public class TechStack {
 
     @Column(unique = true)
     private String name;
-    public static TechStack create(String name) {
-        TechStack techStack = new TechStack();
-        techStack.name = name;
-        return techStack;
+
+    @Builder
+    public TechStack(String name) {
+        this.name = name;
     }
 }

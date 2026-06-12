@@ -1,6 +1,8 @@
-package com.backend.common.domain.project.entity;
+package com.backend.common.domain.project.application.entity;
 
 import com.backend.common.domain.member.entity.Member;
+import com.backend.common.domain.project.enums.PositionType;
+import com.backend.common.domain.project.project.entity.Project;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
