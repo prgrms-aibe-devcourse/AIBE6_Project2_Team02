@@ -1,6 +1,8 @@
 'use client'
 
-import { X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { X, Code2 } from 'lucide-react'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -9,12 +11,18 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ onClose }: LoginModalProps) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const handleLogin = (provider: string) => {
     window.location.href = `${API_BASE}/oauth2/authorization/${provider}`
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+  const modal = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-8">
         <button
@@ -25,6 +33,10 @@ export function LoginModal({ onClose }: LoginModalProps) {
         </button>
 
         <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Code2 className="h-6 w-6 text-blue-600" />
+            <span className="font-bold text-xl text-slate-900">DevLink</span>
+          </div>
           <h2 className="text-2xl font-bold text-slate-900">로그인</h2>
           <p className="text-sm text-slate-500 mt-2">소셜 계정으로 간편하게 시작하세요</p>
         </div>
@@ -57,4 +69,7 @@ export function LoginModal({ onClose }: LoginModalProps) {
       </div>
     </div>
   )
+
+  if (!mounted) return null
+  return createPortal(modal, document.body)
 }
