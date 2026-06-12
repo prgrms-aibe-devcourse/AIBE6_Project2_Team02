@@ -55,7 +55,7 @@ public class DummyDataInitializer implements ApplicationRunner {
 
         Map<String, MemberSeed> memberSeeds = memberSeeds();
         Map<String, Member> members = saveMembers(memberSeeds);
-        Map<String, TechStack> techStacks = saveTechStacks(memberSeeds, projectSeeds());
+        Map<String, TechStack> techStacks = saveTechStacks();
 
         saveMemberTechStacks(memberSeeds, members, techStacks);
         savePortfolios(memberSeeds, members);
@@ -70,20 +70,21 @@ public class DummyDataInitializer implements ApplicationRunner {
         return members;
     }
 
-    private Map<String, TechStack> saveTechStacks(Map<String, MemberSeed> memberSeeds, List<ProjectSeed> projectSeeds) {
+    private static final List<String> BASE_TECH_STACKS = List.of(
+            "Java", "JavaScript", "TypeScript", "Python", "C#", "PHP", "Kotlin", "Swift", "Go",
+            "Spring Boot", "React", "Vue.js", "Angular", "Next.js", "Node.js", "Django",
+            "React Native", "Flutter",
+            "PostgreSQL", "MySQL", "MongoDB", "Redis",
+            "Docker", "Kubernetes", "AWS", "Firebase",
+            "Figma", "Tailwind CSS"
+    );
+
+    private Map<String, TechStack> saveTechStacks() {
         Map<String, TechStack> techStacks = new LinkedHashMap<>();
-        memberSeeds.values().forEach(seed -> putTechStacks(techStacks, seed.techStacks()));
-        projectSeeds.forEach(seed -> putTechStacks(techStacks, seed.techStacks()));
-        techStacks.replaceAll((name, ignored) -> techStackRepository.save(
-                TechStack.builder()
-                        .name(name)
-                        .build()
+        BASE_TECH_STACKS.forEach(name -> techStacks.put(name,
+                techStackRepository.save(TechStack.builder().name(name).build())
         ));
         return techStacks;
-    }
-
-    private void putTechStacks(Map<String, TechStack> techStacks, List<String> names) {
-        names.forEach(name -> techStacks.putIfAbsent(name, null));
     }
 
     private void saveMemberTechStacks(
@@ -92,14 +93,16 @@ public class DummyDataInitializer implements ApplicationRunner {
             Map<String, TechStack> techStacks
     ) {
         memberSeeds.forEach((id, seed) ->
-                seed.techStacks().forEach(techStackName ->
-                        memberTechStackRepository.save(
-                                MemberTechStack.builder()
-                                        .member(members.get(id))
-                                        .techStack(techStacks.get(techStackName))
-                                        .build()
+                seed.techStacks().stream()
+                        .filter(techStacks::containsKey)
+                        .forEach(techStackName ->
+                                memberTechStackRepository.save(
+                                        MemberTechStack.builder()
+                                                .member(members.get(id))
+                                                .techStack(techStacks.get(techStackName))
+                                                .build()
+                                )
                         )
-                )
         );
     }
 
@@ -111,7 +114,8 @@ public class DummyDataInitializer implements ApplicationRunner {
                 blankToNull(seed.github()),
                 null,
                 blankToNull(seed.portfolio()),
-                seed.role()
+                seed.role(),
+                true
         )));
     }
 

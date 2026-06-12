@@ -41,10 +41,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         OAuth2UserInfo userInfo = OAuth2UserInfo.from(provider, token.getPrincipal().getAttributes());
 
+        boolean[] isNew = {false};
         Member member = oauthAccountRepository
                 .findByProviderAndProviderMemberId(oauthProvider, userInfo.providerMemberId())
                 .map(OauthAccount::getMember)
-                .orElseGet(() -> createMember(oauthProvider, userInfo));
+                .orElseGet(() -> {
+                    isNew[0] = true;
+                    return createMember(oauthProvider, userInfo);
+                });
 
         String jwt = jwtTokenProvider.generateToken(member.getId(), member.getNickname());
 
@@ -54,7 +58,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         cookie.setMaxAge((int) (expirationMs / 1000));
         response.addCookie(cookie);
 
-        getRedirectStrategy().sendRedirect(request, response, frontendUrl);
+        String redirectUrl = isNew[0] ? frontendUrl + "/mypage/portfolio/new" : frontendUrl;
+        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
 
     private Member createMember(OauthProvider provider, OAuth2UserInfo userInfo) {
