@@ -1,12 +1,15 @@
-package com.backend.common.domain.portfolio.entity;
+package com.backend.common.domain.portfolio.portfolio.entity;
 
 import com.backend.common.domain.member.entity.Member;
+import com.backend.common.domain.techstack.entity.PortfolioTechStack;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "portfolios")
@@ -26,6 +29,9 @@ public class Portfolio {
 
     @Column(columnDefinition = "TEXT")
     private String introduction;
+
+    @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PortfolioTechStack> portfolioTechStacks = new ArrayList<>();
 
     private String githubUrl;
     private String blogUrl;
@@ -57,4 +63,30 @@ public class Portfolio {
         portfolio.updatedAt = portfolio.createdAt;
         return portfolio;
     }
+
+    /**
+     * 포트폴리오 수정 도메인 메서드 (DDD 패턴)
+     */
+    public void update(
+            String title, String introduction, String githubUrl,
+            String blogUrl, String deployUrl, String desiredPosition, boolean isPublished
+    ) {
+        this.title = title;
+        this.introduction = introduction;
+        this.githubUrl = githubUrl;
+        this.blogUrl = blogUrl;
+        this.deployUrl = deployUrl;
+        this.desiredPosition = desiredPosition;
+        this.isPublished = isPublished;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 기술 스택 컬렉션 갱신 메서드
+     */
+    public void updateTechStacks(List<PortfolioTechStack> newStacks) {
+        this.portfolioTechStacks.clear();
+        this.portfolioTechStacks.addAll(newStacks);
+    }
+
 }

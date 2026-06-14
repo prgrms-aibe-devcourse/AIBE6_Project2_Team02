@@ -5,8 +5,8 @@ import com.backend.common.domain.project.application.repository.ProjectApplicati
 import com.backend.common.domain.project.project.entity.Project;
 import com.backend.common.domain.project.project.repository.ProjectRepository;
 import com.backend.common.domain.project.project.repository.ProjectViewRepository;
-import com.backend.common.domain.project.proposals.entity.ProjectProposal;
-import com.backend.common.domain.project.proposals.repository.ProjectProposalRepository;
+import com.backend.common.domain.portfolio.proposals.entity.ProjectProposal;
+import com.backend.common.domain.portfolio.proposals.repository.ProjectProposalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

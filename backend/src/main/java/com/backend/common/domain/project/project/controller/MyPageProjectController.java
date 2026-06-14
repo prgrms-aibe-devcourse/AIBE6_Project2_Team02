@@ -1,7 +1,7 @@
 package com.backend.common.domain.project.project.controller;
 
 import com.backend.common.domain.project.project.dto.MyPageProjectResponse;
-import com.backend.common.domain.project.project.dto.MyPageProposalResponse;
+import com.backend.common.domain.portfolio.proposals.dto.MyPageProposalResponse;
 import com.backend.common.domain.project.project.dto.MyPageApplicationResponse;
 import com.backend.common.domain.project.project.service.MyPageProjectService;
 import com.backend.common.global.rsdata.RsData;
