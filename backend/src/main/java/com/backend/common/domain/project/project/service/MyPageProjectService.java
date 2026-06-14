@@ -19,7 +19,6 @@ import java.util.List;
 public class MyPageProjectService {
 
     private final ProjectRepository projectRepository;
-    private final ProjectProposalRepository projectProposalRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
     private final ProjectViewRepository projectViewRepository;
 
@@ -68,14 +67,8 @@ public class MyPageProjectService {
         projectViewRepository.deleteByMemberIdAndProjectId(memberId, projectId);
     }
 
-    // ================= 프로젝트 제안/지원 마이페이지 조회 2종 =================
+    // ================= 프로젝트 지원 마이페이지 조회  =================
 
-    /**
-     * 내 포폴에 온 제안 목록 조회
-     */
-    public List<ProjectProposal> getMyReceivedProposals(Long memberId) {
-        return projectProposalRepository.findMyReceivedProposals(memberId);
-    }
 
     /**
      * 내가 올린 프로젝트 중 지원이 온 목록 조회
