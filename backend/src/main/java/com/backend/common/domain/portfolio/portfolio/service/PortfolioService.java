@@ -4,6 +4,8 @@ import com.backend.common.domain.portfolio.portfolio.dto.PortfolioResponse;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioUpdateRequest;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
 import com.backend.common.domain.portfolio.portfolio.repository.PortfolioRepository;
+import com.backend.common.domain.portfolio.proposals.dto.MyPageProposalResponse;
+import com.backend.common.domain.portfolio.proposals.repository.ProjectProposalRepository;
 import com.backend.common.domain.techstack.entity.PortfolioTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
@@ -21,6 +23,7 @@ public class PortfolioService {
 
     private final PortfolioRepository portfolioRepository;
     private final TechStackRepository techStackRepository;
+    private final ProjectProposalRepository projectProposalRepository;
 
     /**
      * 내 포트폴리오 상세 조회
@@ -65,4 +68,12 @@ public class PortfolioService {
 
         return PortfolioResponse.from(portfolio);
     }
+
+    public List<MyPageProposalResponse> getMyReceivedProposals(Long memberId) {
+        return projectProposalRepository.findMyReceivedProposals(memberId)
+                .stream()
+                .map(MyPageProposalResponse::from)
+                .toList();
+    }
+
 }
