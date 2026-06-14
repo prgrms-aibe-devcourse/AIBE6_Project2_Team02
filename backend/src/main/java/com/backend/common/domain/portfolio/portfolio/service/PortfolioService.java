@@ -51,8 +51,12 @@ public class PortfolioService {
         // 2. 기술 스택 마스터 테이블 조회 및 매핑 엔티티 생성
         List<PortfolioTechStack> newTechStacks = request.techStacks().stream()
                 .map(stackName -> {
+                    // 기존에 등록된 스택이 있는지 DB에서 이름을 대고 찾.
                     TechStack techStack = techStackRepository.findByName(stackName)
+                            // 만약 "Java"라는 스택이 이미 DB에 있다면 '재활용'하고,
+                            // 처음 보는 생소한 이름일 때만 새로 DB에 저장(save).
                             .orElseGet(() -> techStackRepository.save(new TechStack(stackName)));
+                    // 그렇게 구한 오직 '하나의' 올바른 TechStack 객체를 중간 매핑 테이블에 쏙 끼워 넣.
                     return PortfolioTechStack.builder()
                             .portfolio(portfolio)
                             .techStack(techStack)
