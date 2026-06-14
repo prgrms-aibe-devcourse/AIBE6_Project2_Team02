@@ -1,6 +1,6 @@
-package com.backend.common.domain.project.proposals.repository;
+package com.backend.common.domain.portfolio.proposals.repository;
 
-import com.backend.common.domain.project.proposals.entity.ProjectProposal;
+import com.backend.common.domain.portfolio.proposals.entity.ProjectProposal;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
