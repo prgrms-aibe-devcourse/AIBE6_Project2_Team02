@@ -12,13 +12,14 @@ import {
   Calendar,
   CheckCircle2,
   Code2,
+  Pencil,
   Share2,
   Target,
   Users,
 } from 'lucide-react'
 
 import { Badge, Button, Card, Modal } from '../../../components/ui'
-import { fetchProject } from '../../../lib/api'
+import { fetchProject, fetchProjectPermissions } from '../../../lib/api'
 import type { Project } from '../../../types'
 
 const categoryMap: Record<string, string> = {
@@ -42,6 +43,8 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true)
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
   const [selectedRole, setSelectedRole] = useState<string>('')
+  const [canEdit, setCanEdit] = useState(false)
+  const [isMember, setIsMember] = useState(false)
 
   useEffect(() => {
     if (!id) {
@@ -53,6 +56,20 @@ export default function ProjectDetailPage() {
       .then(setProject)
       .catch(() => setProject(null))
       .finally(() => setLoading(false))
+  }, [id])
+
+  useEffect(() => {
+    if (!id) return
+
+    fetchProjectPermissions(id)
+      .then((permission) => {
+        setCanEdit(permission.canEdit)
+        setIsMember(permission.isMember)
+      })
+      .catch(() => {
+        setCanEdit(false)
+        setIsMember(false)
+      })
   }, [id])
 
   if (loading) {
@@ -119,11 +136,24 @@ export default function ProjectDetailPage() {
             </div>
 
             <div className="flex flex-row md:flex-col gap-3 shrink-0">
+              {canEdit && (
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full md:w-48 gap-2"
+                  onClick={() => router.push(`/projects/${id}/edit`)}
+                >
+                  <Pencil className="h-4 w-4" />
+                  프로젝트 수정
+                </Button>
+              )}
               <Button
                 size="lg"
                 variant="gradient"
-                className="w-full md:w-48"
-                disabled={project.recruitmentStatus === 'Closed'}
+                className={`w-full md:w-48 ${canEdit ? 'hidden' : ''}`}
+                disabled={
+                  isMember || project.recruitmentStatus === 'Closed'
+                }
                 onClick={() => setIsApplyModalOpen(true)}
               >
                 지원하기
@@ -203,6 +233,8 @@ export default function ProjectDetailPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          className={canEdit ? 'hidden' : undefined}
+                          disabled={isMember}
                           onClick={() => {
                             setSelectedRole(pos.role)
                             setIsApplyModalOpen(true)
@@ -216,6 +248,11 @@ export default function ProjectDetailPage() {
                     </div>
                   )
                 })}
+                {project.positions.length === 0 && (
+                  <p className="py-6 text-center text-sm text-slate-500">
+                    등록된 모집 포지션이 없습니다.
+                  </p>
+                )}
               </div>
             </Card>
           </div>

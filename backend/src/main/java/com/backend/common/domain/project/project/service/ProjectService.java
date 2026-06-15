@@ -7,7 +7,9 @@ import com.backend.common.domain.member.repository.MemberTechStackRepository;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
 import com.backend.common.domain.portfolio.portfolio.repository.PortfolioRepository;
 import com.backend.common.domain.project.dto.PositionResponse;
+import com.backend.common.domain.project.dto.PositionUpdateRequest;
 import com.backend.common.domain.project.dto.ProjectCreateRequest;
+import com.backend.common.domain.project.dto.ProjectUpdateRequest;
 import com.backend.common.domain.project.dto.ProjectResponse;
 import com.backend.common.domain.project.dto.UserResponse;
 import com.backend.common.domain.project.enums.PositionType;
@@ -24,6 +26,7 @@ import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -191,6 +194,113 @@ public class ProjectService {
         return toProjectResponse(savedProject, List.of(leaderMember), true, Set.of());
     }
 
+    public boolean canEditProject(Long projectId, Long memberId) {
+        if (memberId == null) {
+            return false;
+        }
+
+        return findActiveProjectMember(projectId, memberId)
+                .map(ProjectMember::getRole)
+                .filter(role -> role == ProjectRole.LEADER || role == ProjectRole.MANAGER)
+                .isPresent();
+    }
+
+    public boolean isProjectMember(Long projectId, Long memberId) {
+        return memberId != null && findActiveProjectMember(projectId, memberId).isPresent();
+    }
+
+    private Optional<ProjectMember> findActiveProjectMember(Long projectId, Long memberId) {
+        return projectMemberRepository.findByProjectIdAndMemberId(projectId, memberId)
+                .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE);
+    }
+
+    @Transactional
+    public ProjectResponse updateProject(
+            Long projectId,
+            ProjectUpdateRequest req,
+            Long memberId
+    ) {
+        if (!canEditProject(projectId, memberId)) {
+            throw new AccessDeniedException("프로젝트 수정 권한이 없습니다.");
+        }
+
+        Project project = projectRepository.findById(projectId)
+                .filter(item -> item.getDeletedAt() == null)
+                .orElseThrow(() -> new NoSuchElementException("Project not found"));
+        LocalDate deadline = LocalDate.parse(req.deadline());
+        validateDeadline(deadline);
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId).stream()
+                .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE)
+                .toList();
+        List<ProjectPosition> positions = validateAndBuildPositions(req.positions(), members);
+
+        project.update(
+                req.title().trim(),
+                req.description().trim(),
+                req.fullDescription().trim(),
+                req.category(),
+                String.join(", ", Optional.ofNullable(req.goals()).orElseGet(List::of)),
+                deadline,
+                req.open(),
+                positions
+        );
+
+        return toProjectResponse(project, members, false, featuredMemberIds());
+    }
+
+    private List<ProjectPosition> validateAndBuildPositions(
+            List<PositionUpdateRequest> requests,
+            List<ProjectMember> members
+    ) {
+        List<PositionUpdateRequest> positions = Optional.ofNullable(requests).orElseGet(List::of);
+        if (positions.isEmpty()) {
+            throw new IllegalArgumentException("모집 포지션을 한 개 이상 입력해주세요.");
+        }
+
+        Map<String, Long> filledByRole = members.stream()
+                .collect(Collectors.groupingBy(
+                        member -> normalizeRole(formatPosition(member.getPosition())),
+                        Collectors.counting()
+                ));
+        Set<String> requestedRoles = new HashSet<>();
+
+        List<ProjectPosition> updatedPositions = positions.stream()
+                .map(position -> {
+                    String role = position.role() == null ? "" : position.role().trim();
+                    if (role.isBlank()) {
+                        throw new IllegalArgumentException("모집 포지션명을 입력해주세요.");
+                    }
+
+                    String normalizedRole = normalizeRole(role);
+                    if (!requestedRoles.add(normalizedRole)) {
+                        throw new IllegalArgumentException("같은 모집 포지션을 중복해서 등록할 수 없습니다.");
+                    }
+
+                    int filled = filledByRole.getOrDefault(normalizedRole, 0L).intValue();
+                    if (position.total() < Math.max(filled, 1)) {
+                        throw new IllegalArgumentException(
+                                role + " 모집 인원은 현재 참여 인원 " + filled + "명보다 적게 설정할 수 없습니다."
+                        );
+                    }
+
+                    return ProjectPosition.builder()
+                            .role(role)
+                            .total(position.total())
+                            .build();
+                })
+                .toList();
+
+        filledByRole.forEach((role, filled) -> {
+            if (filled > 0 && !requestedRoles.contains(role)) {
+                throw new IllegalArgumentException(
+                        "현재 참여 중인 팀원이 있는 포지션은 삭제하거나 이름을 변경할 수 없습니다."
+                );
+            }
+        });
+
+        return updatedPositions;
+    }
+
     private Map<Long, List<ProjectMember>> loadMembersByProject(List<Project> projects) {
         Map<Long, List<ProjectMember>> membersByProject = new HashMap<>();
         for (Project project : projects) {
@@ -241,7 +351,7 @@ public class ProjectService {
                 project.getFullDescription() == null ? project.getDescription() : project.getFullDescription(),
                 splitGoals(project.getGoal()),
                 projectTechStackNames(project),
-                buildPositions(members, project.isRecruitmentOpen()),
+                buildPositions(project, members),
                 project.isRecruitmentOpen() ? RecruitmentStatus.OPEN : RecruitmentStatus.CLOSED,
                 project.getCategory() == null ? inferCategory(project) : project.getCategory(),
                 leader,
@@ -305,6 +415,44 @@ public class ProjectService {
                     return new PositionResponse(formatPosition(entry.getKey()), filled, total);
                 })
                 .toList();
+    }
+
+    private List<PositionResponse> buildPositions(Project project, List<ProjectMember> members) {
+        Map<String, Long> filledByRole = members.stream()
+                .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE)
+                .collect(Collectors.groupingBy(
+                        member -> normalizeRole(formatPosition(member.getPosition())),
+                        LinkedHashMap::new,
+                        Collectors.counting()
+                ));
+        Set<String> includedRoles = new HashSet<>();
+        List<PositionResponse> responses = new ArrayList<>();
+
+        for (ProjectPosition position : project.getPositions()) {
+            String normalizedRole = normalizeRole(position.getRole());
+            int filled = filledByRole.getOrDefault(normalizedRole, 0L).intValue();
+            responses.add(new PositionResponse(position.getRole(), filled, position.getTotal()));
+            includedRoles.add(normalizedRole);
+        }
+
+        members.stream()
+                .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE)
+                .map(ProjectMember::getPosition)
+                .distinct()
+                .forEach(position -> {
+                    String role = formatPosition(position);
+                    String normalizedRole = normalizeRole(role);
+                    if (includedRoles.add(normalizedRole)) {
+                        int filled = filledByRole.getOrDefault(normalizedRole, 0L).intValue();
+                        responses.add(new PositionResponse(role, filled, filled));
+                    }
+                });
+
+        return responses;
+    }
+
+    private String normalizeRole(String role) {
+        return role == null ? "" : role.replaceAll("\\s+", "").toLowerCase(Locale.ROOT);
     }
 
     private String formatPosition(PositionType position) {

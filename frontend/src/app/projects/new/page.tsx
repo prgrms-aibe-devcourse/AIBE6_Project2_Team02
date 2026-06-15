@@ -13,12 +13,12 @@ import { createProject, fetchPopularTechStacks } from '../../../lib/api'
 import { leaderPositionOptions } from '../../../constants/project'
 import type { ProjectCreateRequest } from '../../../types/dto/project'
 import type { PositionType } from '../../../types/enums/project'
-import type { ProjectCreateRequest } from '../../../types/dto/project'
 import { useAuth } from '../../providers'
 
 
 export default function ProjectCreatePage() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const today = new Date()
   const currentYear = today.getFullYear()
   const minimumDeadline = [
