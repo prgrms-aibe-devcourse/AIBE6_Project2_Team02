@@ -5,14 +5,23 @@ import com.backend.common.domain.portfolio.portfolio.dto.PortfolioUpdateRequest;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
 import com.backend.common.domain.portfolio.portfolio.repository.PortfolioRepository;
 import com.backend.common.domain.portfolio.proposals.dto.MyPageProposalResponse;
+import com.backend.common.domain.portfolio.proposals.entity.ProjectProposal;
 import com.backend.common.domain.portfolio.proposals.repository.ProjectProposalRepository;
+import com.backend.common.domain.project.enums.PositionType;
+import com.backend.common.domain.project.enums.SelectionStatus;
+import com.backend.common.domain.project.project.entity.ProjectMember;
+import com.backend.common.domain.project.project.entity.ProjectRole;
+import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.techstack.entity.PortfolioTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import com.backend.common.global.exception.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -24,6 +33,7 @@ public class PortfolioService {
     private final PortfolioRepository portfolioRepository;
     private final TechStackRepository techStackRepository;
     private final ProjectProposalRepository projectProposalRepository;
+    private final ProjectMemberRepository projectMemberRepository;
 
     /**
      * 내 포트폴리오 상세 조회
@@ -74,6 +84,34 @@ public class PortfolioService {
                 .stream()
                 .map(MyPageProposalResponse::from)
                 .toList();
+    }
+
+    /**
+     * 프로젝트 제안 수락 또는 거절 처리
+     */
+    @Transactional
+    @PreAuthorize("@mypageAuthorizer.isProposalRecipient(#proposalId, authentication.principal.memberId)")
+    public void handleProposalAction(Long memberId, Long proposalId, boolean isAccept) {
+
+        ProjectProposal proposal = projectProposalRepository.findById(proposalId)
+                .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 제안 요청입니다."));
+
+        if (isAccept) {
+            proposal.accept();
+
+            PositionType positionEnum = PositionType.valueOf(proposal.getPortfolio().getDesiredPosition());
+
+            ProjectMember projectMember = ProjectMember.builder()
+                    .project(proposal.getProject())
+                    .member(proposal.getPortfolio().getMember())
+                    // 만약 포지션 정보가 필요하다면 현재 기획에 맞춰 주입 (예: 포폴의 희망 직군)
+                    .position(positionEnum)
+                    .role(ProjectRole.MEMBER)
+                    .build();
+            projectMemberRepository.save(projectMember);
+        } else {
+            proposal.reject();
+        }
     }
 
 }

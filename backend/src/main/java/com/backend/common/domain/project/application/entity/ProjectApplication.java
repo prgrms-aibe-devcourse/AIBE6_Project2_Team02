@@ -42,4 +42,38 @@ public class ProjectApplication {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    /**
+     * 지원 수락 (ACCEPTED)
+     */
+    public void accept() {
+        if (this.status != SelectionStatus.PENDING) {
+            throw new IllegalStateException("대기 중인 지원서만 수락할 수 있습니다.");
+        }
+        this.status = SelectionStatus.ACCEPTED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 지원 거절 (REJECTED)
+     */
+    public void reject() {
+        if (this.status != SelectionStatus.PENDING) {
+            throw new IllegalStateException("대기 중인 지원서만 거절할 수 있습니다.");
+        }
+        this.status = SelectionStatus.REJECTED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 지원 취소 (CANCELLED) - 지원자 본인이 철회할 때 사용
+     */
+    public void cancel() {
+        if (this.status != SelectionStatus.PENDING) {
+            throw new IllegalStateException("대기 중인 지원서만 취소할 수 있습니다.");
+        }
+        this.status = SelectionStatus.CANCELLED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
 }
