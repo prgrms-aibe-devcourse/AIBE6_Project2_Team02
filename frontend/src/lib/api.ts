@@ -9,7 +9,9 @@ import type {
   RsData,
   User,
 } from '../types'
+import type { PortfolioCreateRequest } from '../types/dto/portfolio'
 import type { ProjectCreateRequest } from '../types/dto/project'
+import type { TechStackItem } from '../types/tech-stack'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -48,29 +50,11 @@ export function fetchProject(id: string) {
   return fetchRsDataJson<Project>(`/projects/${id}`)
 }
 
-export async function createProject(
-  payload: ProjectCreateRequest,
-): Promise<Project> {
-  const response = await fetch(`${API_BASE}/projects`, {
+export function createProject(payload: ProjectCreateRequest) {
+  return fetchRsDataJson<Project>('/projects', {
     method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(payload),
   })
-
-  if (!response.ok) {
-    const errorBody = (await response.json().catch(() => null)) as Partial<
-      RsData<unknown>
-    > | null
-
-    throw new Error(
-      errorBody?.message ?? `Project creation failed: ${response.status}`,
-    )
-  }
-
-  return (await response.json()) as Project
 }
 
 export function fetchMembers() {
@@ -83,22 +67,6 @@ export function fetchMember(id: string) {
 
 export function fetchPopularTechStacks() {
   return fetchRsDataJson<string[]>('/tech-stacks')
-}
-
-export interface TechStackItem {
-  id: number
-  name: string
-}
-
-export interface PortfolioCreateRequest {
-  title: string
-  introduction?: string
-  desiredPosition: string
-  githubUrl?: string
-  blogUrl?: string
-  deployUrl?: string
-  isPublished: boolean
-  techStackIds: number[]
 }
 
 export function fetchAllTechStacks() {

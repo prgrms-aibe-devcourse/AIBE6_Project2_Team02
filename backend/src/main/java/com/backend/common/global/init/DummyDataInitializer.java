@@ -49,13 +49,15 @@ public class DummyDataInitializer implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
+        boolean techStacksSeeded = techStackRepository.count() > 0;
+        Map<String, TechStack> techStacks = techStacksSeeded ? loadTechStacks() : saveTechStacks();
+
         if (memberRepository.count() > 0 || projectRepository.count() > 0) {
             return;
         }
 
         Map<String, MemberSeed> memberSeeds = memberSeeds();
         Map<String, Member> members = saveMembers(memberSeeds);
-        Map<String, TechStack> techStacks = saveTechStacks();
 
         saveMemberTechStacks(memberSeeds, members, techStacks);
         savePortfolios(memberSeeds, members);
@@ -84,6 +86,12 @@ public class DummyDataInitializer implements ApplicationRunner {
         BASE_TECH_STACKS.forEach(name -> techStacks.put(name,
                 techStackRepository.save(TechStack.builder().name(name).build())
         ));
+        return techStacks;
+    }
+
+    private Map<String, TechStack> loadTechStacks() {
+        Map<String, TechStack> techStacks = new LinkedHashMap<>();
+        techStackRepository.findAll().forEach(ts -> techStacks.put(ts.getName(), ts));
         return techStacks;
     }
 

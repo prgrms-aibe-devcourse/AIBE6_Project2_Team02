@@ -40,4 +40,9 @@ public class Member {
         return member;
     }
 
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+        this.updatedAt = LocalDateTime.now();
+    }
+
 }
