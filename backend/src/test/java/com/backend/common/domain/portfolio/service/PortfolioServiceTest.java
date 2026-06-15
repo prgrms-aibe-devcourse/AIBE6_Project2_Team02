@@ -55,7 +55,7 @@ class PortfolioServiceTest {
                 "내 포트폴리오", "소개글입니다",
                 "https://github.com/test", "https://blog.test.com",
                 "https://deploy.test.com", "백엔드 개발자",
-                List.of(1L, 2L), true
+                true, List.of(1L, 2L)
         );
 
         given(memberRepository.findById(1L)).willReturn(Optional.of(member));
@@ -77,7 +77,7 @@ class PortfolioServiceTest {
         PortfolioRequestDto dto = new PortfolioRequestDto(
                 "기술 스택 없는 포트폴리오", "소개글",
                 null, null, null,
-                "프론트엔드 개발자", List.of(), false
+                "프론트엔드 개발자", false, List.of()
         );
 
         given(memberRepository.findById(1L)).willReturn(Optional.of(member));
@@ -95,7 +95,7 @@ class PortfolioServiceTest {
     void createPortfolio_memberNotFound_throws() {
         PortfolioRequestDto dto = new PortfolioRequestDto(
                 "제목", "소개", null, null, null,
-                "백엔드", List.of(), false
+                "백엔드", false ,List.of() 
         );
 
         given(memberRepository.findById(999L)).willReturn(Optional.empty());
@@ -115,7 +115,7 @@ class PortfolioServiceTest {
                 "포트폴리오 제목", "소개글 내용",
                 "https://github.com/devlink", "https://devlink.blog",
                 "https://devlink.deploy", "풀스택 개발자",
-                List.of(), true
+                true, List.of()
         );
 
         given(memberRepository.findById(1L)).willReturn(Optional.of(member));
