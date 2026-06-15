@@ -6,11 +6,17 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-import { ArrowRight, Code, Rocket, Users } from 'lucide-react'
+import {ArrowRight, Clock, Code, Rocket, Users} from 'lucide-react'
 
 import { Badge, Button, Card } from '../components/ui'
 import { fetchPopularTechStacks, fetchProjects } from '../lib/api'
 import type { Project } from '../types'
+
+const statusMap: Record<string, string> = {
+  All: '전체',
+  Open: '모집중',
+  Closed: '마감',
+}
 
 const categoryMap: Record<string, string> = {
   Web: '웹',
@@ -48,17 +54,6 @@ export default function LandingPage() {
       transition: {
         staggerChildren: 0.1,
       },
-    },
-  }
-
-  const itemVariants = {
-    hidden: {
-      opacity: 0,
-      y: 20,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
     },
   }
 
@@ -156,83 +151,111 @@ export default function LandingPage() {
             }}
             className="grid grid-cols-1 md:grid-cols-3 gap-6"
           >
-            {featuredProjects.map((project) => (
-              <motion.div key={project.id} variants={itemVariants}>
-                <Link href={`/projects/${project.id}`}>
-                  <Card className="h-full flex flex-col hover:shadow-md transition-shadow hover:border-blue-200 group cursor-pointer">
-                    <div className="p-6 flex-1 flex flex-col">
-                      <div className="flex justify-between items-start mb-4">
+            {featuredProjects.map((project, index) => (
+                <motion.div
+                    key={project.id}
+                    initial={{
+                      opacity: 0,
+                      y: 20,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                    }}
+                    transition={{
+                      delay: index * 0.05,
+                    }}
+                >
+                  <Card
+                      className="h-full flex flex-col hover:shadow-md transition-all hover:border-blue-300 group cursor-pointer p-6"
+                      onClick={() => router.push(`/projects/${project.id}`)}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex gap-2">
                         <Badge
-                          variant={
-                            project.category === 'AI' ? 'purple' : 'default'
-                          }
+                            variant={
+                              project.recruitmentStatus === 'Open'
+                                  ? 'success'
+                                  : 'secondary'
+                            }
                         >
-                          {categoryMap[project.category] || project.category}
+                          {statusMap[project.recruitmentStatus]}
                         </Badge>
-                        <span className="text-xs text-slate-400 font-medium">
-                          {project.positions.reduce(
-                            (acc, p) => acc + (p.total - p.filled),
-                            0,
-                          )}
-                          자리 남음
-                        </span>
+
+                        <Badge variant="outline">
+                          {categoryMap[project.category]}
+                        </Badge>
                       </div>
-                      <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
-                        {project.title}
-                      </h3>
-                      <p className="text-slate-500 text-sm mb-6 line-clamp-2 flex-1">
-                        {project.description}
-                      </p>
-                      <div className="flex flex-wrap gap-2 mb-6">
-                        {project.techStack.slice(0, 3).map((tech) => (
-                          <span
-                            key={tech}
-                            className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md"
-                          >
-                            {tech}
-                          </span>
+
+                      <div className="flex items-center text-slate-400 text-xs gap-1">
+                        <Clock className="h-3 w-3" />
+                        {new Date(project.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+
+                    <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
+                      {project.title}
+                    </h3>
+
+                    <p className="text-slate-500 text-sm mb-6 line-clamp-2 flex-1">
+                      {project.description}
+                    </p>
+
+                    <div className="space-y-4 mt-auto">
+                      <div className="flex flex-wrap gap-2">
+                        {project.techStack.slice(0, 4).map((tech, techIndex) => (
+                            <span
+                                key={`${project.id}-${tech}-${techIndex}`}
+                                className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md"
+                            >
+            {tech}
+          </span>
                         ))}
-                        {project.techStack.length > 3 && (
-                          <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
-                            +{project.techStack.length - 3}
-                          </span>
+
+                        {project.techStack.length > 4 && (
+                            <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
+            +{project.techStack.length - 4}
+          </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 pt-4 border-t border-slate-100 mt-auto">
-                        <div
-                          className="hover:opacity-80 transition-opacity"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            router.push(`/u/${project.leader.id}`)
-                          }}
-                        >
-                          <img
-                            src={project.leader.avatar}
-                            alt={project.leader.name}
-                            className="w-8 h-8 rounded-full bg-slate-200"
-                          />
-                        </div>
-                        <div className="text-sm">
-                          <div
-                            className="font-medium text-slate-900 hover:text-blue-600 transition-colors block cursor-pointer"
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              router.push(`/u/${project.leader.id}`)
-                            }}
+
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <Link
+                              href={`/u/${project.leader.id}`}
+                              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
                           >
-                            {project.leader.name}
-                          </div>
-                          <p className="text-slate-500 text-xs">
-                            {project.leader.role}
-                          </p>
+                            <img
+                                src={project.leader.avatar}
+                                alt={project.leader.name}
+                                className="w-6 h-6 rounded-full"
+                            />
+
+                            <span className="text-sm font-medium text-slate-700 hover:text-blue-600">
+              {project.leader.name}
+            </span>
+                          </Link>
+                        </div>
+
+                        <div className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                          <Users className="h-3 w-3" />
+
+                          {project.positions.reduce(
+                              (acc, p) => acc + p.filled,
+                              0
+                          )}
+                          /
+                          {project.positions.reduce(
+                              (acc, p) => acc + p.total,
+                              0
+                          )}
+                          명
                         </div>
                       </div>
                     </div>
                   </Card>
-                </Link>
-              </motion.div>
+                </motion.div>
             ))}
           </motion.div>
           <div className="mt-8 text-center md:hidden">

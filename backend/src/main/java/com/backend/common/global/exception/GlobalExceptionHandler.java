@@ -108,6 +108,12 @@ public class GlobalExceptionHandler {
         return RsData.of("401", "인증에 실패했습니다. 로그인이 필요합니다.");
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public RsData<?> handleIllegalArgumentException(IllegalArgumentException e) {
+        return RsData.of("400", e.getMessage());
+    }
+
     /**
      * 인가 실패 (권한 없음)
      */

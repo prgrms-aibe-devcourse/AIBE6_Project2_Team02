@@ -1,7 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
@@ -184,7 +183,7 @@ export default function DeveloperProfilePage() {
               <h2 className="text-xl font-bold text-slate-900">
                 만든 프로젝트
               </h2>
-              <Badge variant="primary" className="bg-blue-100 text-blue-700">
+              <Badge variant="default">
                 {createdProjects.length}
               </Badge>
             </div>
@@ -200,7 +199,7 @@ export default function DeveloperProfilePage() {
                         <Badge
                           variant={
                             project.recruitmentStatus === 'Open'
-                              ? 'primary'
+                              ? 'default'
                               : 'secondary'
                           }
                         >
