@@ -1,4 +1,5 @@
 import type { Project } from '..'
+import type { PositionType } from '../enums/project'
 
 export interface ProjectCreateRequest {
   title: string
@@ -8,6 +9,7 @@ export interface ProjectCreateRequest {
   goals: string[]
   deadline: string
   open: boolean
+  leaderPosition: PositionType
   techStacks: string[]
   positions: Array<{
     role: string
