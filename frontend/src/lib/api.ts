@@ -15,6 +15,10 @@ import type {
   ProjectPermissionResponse,
   ProjectUpdateRequest,
 } from '../types/dto/project'
+import type {
+  ProjectProposalCreateRequest,
+  ProposalProject,
+} from '../types/dto/proposal'
 import type { TechStackItem } from '../types/tech-stack'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
@@ -110,6 +114,20 @@ export function updateMyPortfolio(payload: PortfolioUpdateRequest) {
 
 export function fetchMyProjectProposals() {
   return fetchRsDataJson<ProjectProposal[]>('/portfolios/me/proposals')
+}
+
+export function fetchProposalProjects() {
+  return fetchRsDataJson<ProposalProject[]>('/portfolios/proposal-projects')
+}
+
+export function createProjectProposal(
+  memberId: string,
+  payload: ProjectProposalCreateRequest,
+) {
+  return fetchRsDataJson<void>(`/portfolios/${memberId}/proposals`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }
 
 export function fetchUserReports() {

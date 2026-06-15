@@ -8,6 +8,8 @@ import java.util.List;
 
 public interface ProjectProposalRepository extends JpaRepository<ProjectProposal, Long> {
 
+    boolean existsByProjectIdAndPortfolioId(Long projectId, Long portfolioId);
+
     /**
      * 내 포폴에 온 제안 목록 조회
      * 조건: 제안 대상 포트폴리오의 주인이 '나(memberId)'이고, 대기(PENDING) 상태인 제안서들
