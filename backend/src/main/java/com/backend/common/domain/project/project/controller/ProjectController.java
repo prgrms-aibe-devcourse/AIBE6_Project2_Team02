@@ -28,9 +28,9 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    public ProjectResponse getProject(@PathVariable Long id) {
+    public RsData<ProjectResponse> getProject(@PathVariable Long id) {
         try {
-            return projectService.getProject(id);
+            return RsData.of("200", "프로젝트 조회 성공", projectService.getProject(id));
         } catch (NoSuchElementException ex) {
             throw new ProjectNotFoundException("404","Project not found");
         }

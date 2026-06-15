@@ -3,6 +3,7 @@ package com.backend.common.domain.member.controller;
 import com.backend.common.domain.member.exception.MemberNotFoundException;
 import com.backend.common.domain.project.dto.UserResponse;
 import com.backend.common.domain.project.project.service.ProjectService;
+import com.backend.common.global.rsdata.RsData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,14 +21,14 @@ public class MemberController {
     private final ProjectService projectService;
 
     @GetMapping
-    public List<UserResponse> getMembers() {
-        return projectService.getMembers();
+    public RsData<List<UserResponse>> getMembers() {
+        return RsData.of("200", "회원 목록 조회 성공", projectService.getMembers());
     }
 
     @GetMapping("/{id}")
-    public UserResponse getMember(@PathVariable Long id) {
+    public RsData<UserResponse> getMember(@PathVariable Long id) {
         try {
-            return projectService.getMember(id);
+            return RsData.of("200", "회원 조회 성공", projectService.getMember(id));
         } catch (NoSuchElementException ex) {
             throw new MemberNotFoundException("404","Member not found");
         }
