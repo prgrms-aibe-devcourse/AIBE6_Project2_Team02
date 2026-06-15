@@ -10,7 +10,11 @@ import type {
   User,
 } from '../types'
 import type { PortfolioCreateRequest } from '../types/dto/portfolio'
-import type { ProjectCreateRequest } from '../types/dto/project'
+import type {
+  ProjectCreateRequest,
+  ProjectPermissionResponse,
+  ProjectUpdateRequest,
+} from '../types/dto/project'
 import type { TechStackItem } from '../types/tech-stack'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
@@ -53,6 +57,19 @@ export function fetchProject(id: string) {
 export function createProject(payload: ProjectCreateRequest) {
   return fetchRsDataJson<Project>('/projects', {
     method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function fetchProjectPermissions(id: string) {
+  return fetchRsDataJson<ProjectPermissionResponse>(
+    `/projects/${id}/permissions`,
+  )
+}
+
+export function updateProject(id: string, payload: ProjectUpdateRequest) {
+  return fetchRsDataJson<Project>(`/projects/${id}`, {
+    method: 'PUT',
     body: JSON.stringify(payload),
   })
 }
