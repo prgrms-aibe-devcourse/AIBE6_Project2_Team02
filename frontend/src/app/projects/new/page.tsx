@@ -8,19 +8,31 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, CheckCircle2, Plus, X } from 'lucide-react'
 
 import { Badge, Button, Card, Input } from '../../../components/ui'
+import { LoginModal } from '../../../components/LoginModal'
 import { createProject, fetchPopularTechStacks } from '../../../lib/api'
+import { leaderPositionOptions } from '../../../constants/project'
 import type { ProjectCreateRequest } from '../../../types/dto/project'
+import type { PositionType } from '../../../types/enums/project'
+import type { ProjectCreateRequest } from '../../../types/dto/project'
+import { useAuth } from '../../providers'
+
 
 export default function ProjectCreatePage() {
   const router = useRouter()
-  const currentYear = new Date().getFullYear()
-  const minimumDeadline = `${currentYear}-01-01`
+  const today = new Date()
+  const currentYear = today.getFullYear()
+  const minimumDeadline = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, '0'),
+    String(today.getDate()).padStart(2, '0'),
+  ].join('-')
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [fullDescription, setFullDescription] = useState('')
   const [category, setCategory] = useState('Web')
   const [deadline, setDeadline] = useState('')
+  const [leaderPosition, setLeaderPosition] = useState<PositionType | ''>('')
   const [selectedTechs, setSelectedTechs] = useState<string[]>([])
   const [techInput, setTechInput] = useState('')
   const [positions, setPositions] = useState([
@@ -109,13 +121,16 @@ export default function ProjectCreatePage() {
       !description.trim() ||
       !fullDescription.trim() ||
       !deadline ||
+      !leaderPosition ||
       normalizedPositions.length === 0
     ) {
       toast.error('필수 항목을 모두 입력해주세요.')
       return
     }
 
-    if (Number(deadline.slice(0, 4)) < currentYear) {
+    if (deadline < minimumDeadline) {
+      toast.error('모집 마감일은 오늘보다 이전으로 설정할 수 없습니다.')
+      return
       toast.error(`${currentYear}년 이전 날짜는 선택할 수 없습니다.`)
       return
     }
@@ -128,6 +143,7 @@ export default function ProjectCreatePage() {
       goals: goals.map((goal) => goal.trim()).filter(Boolean),
       deadline,
       open: true,
+      leaderPosition,
       techStacks: selectedTechs,
       positions: normalizedPositions,
     }
@@ -149,6 +165,10 @@ export default function ProjectCreatePage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (!authLoading && !user) {
+    return <LoginModal onClose={() => router.replace('/')} />
   }
 
   return (
@@ -271,6 +291,29 @@ export default function ProjectCreatePage() {
           </h2>
 
           <div className="space-y-8">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                리더 본인 포지션 <span className="text-red-500">*</span>
+              </label>
+              <select
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                value={leaderPosition}
+                onChange={(e) =>
+                  setLeaderPosition(e.target.value as PositionType)
+                }
+                required
+              >
+                <option value="" disabled>
+                  본인의 프로젝트 포지션을 선택해주세요
+                </option>
+                {leaderPositionOptions.map((position) => (
+                  <option key={position.value} value={position.value}>
+                    {position.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 사용 기술 스택

@@ -5,7 +5,7 @@ import com.backend.common.domain.project.dto.ProjectResponse;
 import com.backend.common.domain.project.exception.ProjectNotFoundException;
 import com.backend.common.domain.project.project.service.ProjectService;
 import com.backend.common.global.rsdata.RsData;
-import com.backend.common.global.security.MemberPrincipal;
+import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
@@ -37,14 +37,15 @@ public class ProjectController {
     }
 
     @PostMapping
-    public ResponseEntity<ProjectResponse> createProject(
+    public ResponseEntity<RsData<ProjectResponse>> createProject(
             @RequestBody ProjectCreateRequest req,
-            @AuthenticationPrincipal MemberPrincipal principal
+            @AuthenticationPrincipal CustomMemberDetails principal
     ) {
         if (principal == null) {
             throw new InsufficientAuthenticationException("Login is required");
         }
 
-        return ResponseEntity.ok(projectService.createProject(req, principal.memberId()));
+        ProjectResponse project = projectService.createProject(req, principal.getMemberId());
+        return ResponseEntity.ok(RsData.of("200", "프로젝트 생성 성공", project));
     }
 }
