@@ -99,7 +99,8 @@ public class Project {
             ProjectCategory category,
             String goal,
             LocalDate deadline,
-            boolean recruitmentOpen
+            boolean recruitmentOpen,
+            List<ProjectPosition> positions
     ) {
         this.title = title;
         this.description = description;
@@ -108,6 +109,8 @@ public class Project {
         this.goal = goal;
         this.deadline = deadline;
         this.recruitmentOpen = recruitmentOpen;
+        this.positions.clear();
+        this.positions.addAll(positions);
         this.updatedAt = LocalDateTime.now();
     }
 

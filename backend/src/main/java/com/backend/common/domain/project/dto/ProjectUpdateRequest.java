@@ -11,6 +11,7 @@ public record ProjectUpdateRequest(
         ProjectCategory category,
         List<String> goals,
         String deadline,
-        boolean open
+        boolean open,
+        List<PositionUpdateRequest> positions
 ) {
 }

@@ -36,7 +36,9 @@ export default function ProjectEditPage() {
     goals: [''],
     deadline: '',
     open: true,
+    positions: [{ role: '', total: 1 }],
   })
+  const [positionMinimums, setPositionMinimums] = useState([0])
 
   useEffect(() => {
     Promise.all([fetchProject(id), fetchProjectPermissions(id)])
@@ -55,7 +57,19 @@ export default function ProjectEditPage() {
           goals: project.goals.length > 0 ? project.goals : [''],
           deadline: project.deadline,
           open: project.recruitmentStatus === 'Open',
+          positions:
+            project.positions.length > 0
+              ? project.positions.map(({ role, total }) => ({
+                  role,
+                  total,
+                }))
+              : [{ role: '', total: 1 }],
         })
+        setPositionMinimums(
+          project.positions.length > 0
+            ? project.positions.map((position) => position.filled)
+            : [0],
+        )
       })
       .catch(() => {
         toast.error('프로젝트 정보를 불러오지 못했습니다.')
@@ -81,6 +95,36 @@ export default function ProjectEditPage() {
     })
   }
 
+  const handlePositionChange = (
+    index: number,
+    field: 'role' | 'total',
+    value: string | number,
+  ) => {
+    const positions = [...form.positions]
+    positions[index] = { ...positions[index], [field]: value }
+    setForm({ ...form, positions })
+  }
+
+  const handleAddPosition = () => {
+    setForm({
+      ...form,
+      positions: [...form.positions, { role: '', total: 1 }],
+    })
+    setPositionMinimums([...positionMinimums, 0])
+  }
+
+  const handleRemovePosition = (index: number) => {
+    setForm({
+      ...form,
+      positions: form.positions.filter(
+        (_, positionIndex) => positionIndex !== index,
+      ),
+    })
+    setPositionMinimums(
+      positionMinimums.filter((_, positionIndex) => positionIndex !== index),
+    )
+  }
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (submitting) return
@@ -89,9 +133,23 @@ export default function ProjectEditPage() {
       !form.title.trim() ||
       !form.description.trim() ||
       !form.fullDescription.trim() ||
-      !form.deadline
+      !form.deadline ||
+      form.positions.length === 0 ||
+      form.positions.some((position) => !position.role.trim())
     ) {
       toast.error('필수 항목을 모두 입력해주세요.')
+      return
+    }
+
+    const invalidPositionIndex = form.positions.findIndex(
+      (position, index) =>
+        position.total < Math.max(positionMinimums[index] ?? 0, 1),
+    )
+    if (invalidPositionIndex >= 0) {
+      const minimum = positionMinimums[invalidPositionIndex] ?? 0
+      toast.error(
+        `${form.positions[invalidPositionIndex].role} 모집 인원은 현재 참여 인원 ${minimum}명보다 적게 설정할 수 없습니다.`,
+      )
       return
     }
 
@@ -108,6 +166,10 @@ export default function ProjectEditPage() {
         description: form.description.trim(),
         fullDescription: form.fullDescription.trim(),
         goals: form.goals.map((goal) => goal.trim()).filter(Boolean),
+        positions: form.positions.map((position) => ({
+          role: position.role.trim(),
+          total: position.total,
+        })),
       })
       toast.success('프로젝트가 수정되었습니다.')
       router.push(`/projects/${id}`)
@@ -215,6 +277,111 @@ export default function ProjectEditPage() {
                 required
               />
             </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 md:p-8">
+          <div className="mb-2 flex items-center justify-between gap-4">
+            <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-sm text-blue-600">
+                3
+              </span>
+              모집 포지션
+            </h2>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleAddPosition}
+              className="h-8 text-blue-600"
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              포지션 추가
+            </Button>
+          </div>
+          <p className="mb-6 text-sm text-slate-500">
+            모집할 역할과 해당 역할의 전체 정원을 설정해주세요. 이미 참여 중인
+            팀원 수보다 정원을 적게 줄일 수 없습니다.
+          </p>
+
+          <div className="space-y-4">
+            {form.positions.map((position, index) => {
+              const minimum = positionMinimums[index] ?? 0
+
+              return (
+                <div
+                  key={index}
+                  className="rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700">
+                      포지션 {index + 1}
+                    </span>
+                    {form.positions.length > 1 && minimum === 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePosition(index)}
+                        className="p-1 text-slate-400 transition-colors hover:text-red-500"
+                        aria-label={`${index + 1}번째 포지션 삭제`}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_140px]">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">
+                        역할명 <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        value={position.role}
+                        disabled={minimum > 0}
+                        onChange={(event) =>
+                          handlePositionChange(
+                            index,
+                            'role',
+                            event.target.value,
+                          )
+                        }
+                        placeholder="예: 백엔드 개발자"
+                        required
+                      />
+                      {minimum > 0 && (
+                        <p className="mt-1 text-xs text-slate-500">
+                          참여 중인 팀원이 있어 역할명을 변경할 수 없습니다.
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">
+                        전체 정원 <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        type="number"
+                        min={Math.max(minimum, 1)}
+                        value={position.total}
+                        onChange={(event) =>
+                          handlePositionChange(
+                            index,
+                            'total',
+                            Number(event.target.value),
+                          )
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <p className="mt-3 text-xs text-slate-500">
+                    현재 참여 인원: {minimum}명
+                    {minimum > 0 &&
+                      ` · 최소 ${minimum}명 이상으로 설정해야 합니다.`}
+                  </p>
+                </div>
+              )
+            })}
           </div>
         </Card>
 
@@ -331,7 +498,7 @@ export default function ProjectEditPage() {
           <div className="mb-2 flex items-center justify-between gap-4">
             <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-sm text-blue-600">
-                3
+                4
               </span>
               프로젝트 목표
             </h2>

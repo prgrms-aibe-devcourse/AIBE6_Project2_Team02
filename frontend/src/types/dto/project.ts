@@ -25,6 +25,10 @@ export interface ProjectUpdateRequest {
   goals: string[]
   deadline: string
   open: boolean
+  positions: Array<{
+    role: string
+    total: number
+  }>
 }
 
 export interface ProjectPermissionResponse {
