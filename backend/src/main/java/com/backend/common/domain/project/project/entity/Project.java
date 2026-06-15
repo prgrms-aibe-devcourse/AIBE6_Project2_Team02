@@ -92,6 +92,25 @@ public class Project {
         this.projectTechStacks.add(projectTechStack);
     }
 
+    public void update(
+            String title,
+            String description,
+            String fullDescription,
+            ProjectCategory category,
+            String goal,
+            LocalDate deadline,
+            boolean recruitmentOpen
+    ) {
+        this.title = title;
+        this.description = description;
+        this.fullDescription = fullDescription;
+        this.category = category;
+        this.goal = goal;
+        this.deadline = deadline;
+        this.recruitmentOpen = recruitmentOpen;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     // ================= 비즈니스 로직 (상태 변경 메서드) =================
 
     /**

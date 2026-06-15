@@ -16,3 +16,18 @@ export interface ProjectCreateRequest {
     total: number
   }>
 }
+
+export interface ProjectUpdateRequest {
+  title: string
+  description: string
+  fullDescription: string
+  category: Project['category']
+  goals: string[]
+  deadline: string
+  open: boolean
+}
+
+export interface ProjectPermissionResponse {
+  canEdit: boolean
+  isMember: boolean
+}

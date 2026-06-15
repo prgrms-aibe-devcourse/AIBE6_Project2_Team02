@@ -7,6 +7,7 @@ import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
 import com.backend.common.domain.portfolio.portfolio.repository.PortfolioRepository;
 import com.backend.common.domain.project.dto.PositionResponse;
 import com.backend.common.domain.project.dto.ProjectCreateRequest;
+import com.backend.common.domain.project.dto.ProjectUpdateRequest;
 import com.backend.common.domain.project.dto.ProjectResponse;
 import com.backend.common.domain.project.dto.UserResponse;
 import com.backend.common.domain.project.enums.PositionType;
@@ -21,6 +22,7 @@ import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -184,6 +186,56 @@ public class ProjectService {
         projectMemberRepository.save(leaderMember);
 
         return toProjectResponse(savedProject, List.of(leaderMember), true, Set.of());
+    }
+
+    public boolean canEditProject(Long projectId, Long memberId) {
+        if (memberId == null) {
+            return false;
+        }
+
+        return findActiveProjectMember(projectId, memberId)
+                .map(ProjectMember::getRole)
+                .filter(role -> role == ProjectRole.LEADER || role == ProjectRole.MANAGER)
+                .isPresent();
+    }
+
+    public boolean isProjectMember(Long projectId, Long memberId) {
+        return memberId != null && findActiveProjectMember(projectId, memberId).isPresent();
+    }
+
+    private Optional<ProjectMember> findActiveProjectMember(Long projectId, Long memberId) {
+        return projectMemberRepository.findByProjectIdAndMemberId(projectId, memberId)
+                .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE);
+    }
+
+    @Transactional
+    public ProjectResponse updateProject(
+            Long projectId,
+            ProjectUpdateRequest req,
+            Long memberId
+    ) {
+        if (!canEditProject(projectId, memberId)) {
+            throw new AccessDeniedException("프로젝트 수정 권한이 없습니다.");
+        }
+
+        Project project = projectRepository.findById(projectId)
+                .filter(item -> item.getDeletedAt() == null)
+                .orElseThrow(() -> new NoSuchElementException("Project not found"));
+        LocalDate deadline = LocalDate.parse(req.deadline());
+        validateDeadline(deadline);
+
+        project.update(
+                req.title().trim(),
+                req.description().trim(),
+                req.fullDescription().trim(),
+                req.category(),
+                String.join(", ", Optional.ofNullable(req.goals()).orElseGet(List::of)),
+                deadline,
+                req.open()
+        );
+
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId);
+        return toProjectResponse(project, members, false, featuredMemberIds());
     }
 
     private Map<Long, List<ProjectMember>> loadMembersByProject(List<Project> projects) {
