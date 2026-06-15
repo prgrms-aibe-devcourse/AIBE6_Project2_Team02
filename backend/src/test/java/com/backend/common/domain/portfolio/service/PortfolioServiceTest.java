@@ -2,9 +2,10 @@ package com.backend.common.domain.portfolio.service;
 
 import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.repository.MemberRepository;
-import com.backend.common.domain.portfolio.dto.PortfolioRequestDto;
-import com.backend.common.domain.portfolio.entity.Portfolio;
-import com.backend.common.domain.portfolio.repository.PortfolioRepository;
+import com.backend.common.domain.portfolio.portfolio.dto.PortfolioCreateRequest;
+import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
+import com.backend.common.domain.portfolio.portfolio.repository.PortfolioRepository;
+import com.backend.common.domain.portfolio.portfolio.service.PortfolioService;
 import com.backend.common.domain.techstack.entity.PortfolioTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.PortfolioTechStackRepository;
@@ -51,7 +52,7 @@ class PortfolioServiceTest {
         TechStack ts1 = mock(TechStack.class);
         TechStack ts2 = mock(TechStack.class);
 
-        PortfolioRequestDto dto = new PortfolioRequestDto(
+        PortfolioCreateRequest dto = new PortfolioCreateRequest(
                 "내 포트폴리오", "소개글입니다",
                 "https://github.com/test", "https://blog.test.com",
                 "https://deploy.test.com", "백엔드 개발자",
@@ -74,7 +75,7 @@ class PortfolioServiceTest {
     void createPortfolio_noTechStacks_success() {
         Member member = mock(Member.class);
 
-        PortfolioRequestDto dto = new PortfolioRequestDto(
+        PortfolioCreateRequest dto = new PortfolioCreateRequest(
                 "기술 스택 없는 포트폴리오", "소개글",
                 null, null, null,
                 "프론트엔드 개발자", false, List.of()
@@ -93,7 +94,7 @@ class PortfolioServiceTest {
     @Test
     @DisplayName("포트폴리오 등록 실패 - 존재하지 않는 회원")
     void createPortfolio_memberNotFound_throws() {
-        PortfolioRequestDto dto = new PortfolioRequestDto(
+        PortfolioCreateRequest dto = new PortfolioCreateRequest(
                 "제목", "소개", null, null, null,
                 "백엔드", false ,List.of() 
         );
@@ -111,7 +112,7 @@ class PortfolioServiceTest {
     void createPortfolio_portfolioFieldsMatchDto() {
         Member member = mock(Member.class);
 
-        PortfolioRequestDto dto = new PortfolioRequestDto(
+        PortfolioCreateRequest dto = new PortfolioCreateRequest(
                 "포트폴리오 제목", "소개글 내용",
                 "https://github.com/devlink", "https://devlink.blog",
                 "https://devlink.deploy", "풀스택 개발자",
