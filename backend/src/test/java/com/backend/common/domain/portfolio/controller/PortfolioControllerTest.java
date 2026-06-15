@@ -1,7 +1,8 @@
 package com.backend.common.domain.portfolio.controller;
 
-import com.backend.common.domain.portfolio.dto.PortfolioRequestDto;
-import com.backend.common.domain.portfolio.service.PortfolioService;
+import com.backend.common.domain.portfolio.portfolio.controller.PortfolioController;
+import com.backend.common.domain.portfolio.portfolio.dto.PortfolioCreateRequest;
+import com.backend.common.domain.portfolio.portfolio.service.PortfolioService;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -78,7 +79,7 @@ class PortfolioControllerTest {
     @Test
     @DisplayName("포트폴리오 등록 성공 - 200 응답")
     void createPortfolio_success() throws Exception {
-        willDoNothing().given(portfolioService).createPortfolio(eq(1L), any(PortfolioRequestDto.class));
+        willDoNothing().given(portfolioService).createPortfolio(eq(1L), any(PortfolioCreateRequest.class));
 
         mockMvc.perform(post("/api/portfolios")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -92,7 +93,7 @@ class PortfolioControllerTest {
     @DisplayName("포트폴리오 등록 실패 - 서비스 예외 전파 확인")
     void createPortfolio_serviceThrows_propagatesException() {
         willThrow(new NoSuchElementException("Member not found"))
-                .given(portfolioService).createPortfolio(eq(1L), any(PortfolioRequestDto.class));
+                .given(portfolioService).createPortfolio(eq(1L), any(PortfolioCreateRequest.class));
 
         assertThatThrownBy(() ->
                 mockMvc.perform(post("/api/portfolios")
