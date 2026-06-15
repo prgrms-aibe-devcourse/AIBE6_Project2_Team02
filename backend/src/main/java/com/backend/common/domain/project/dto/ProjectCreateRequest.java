@@ -1,6 +1,7 @@
 package com.backend.common.domain.project.dto;
 
 import com.backend.common.domain.project.enums.ProjectCategory;
+
 import java.util.List;
 
 public record ProjectCreateRequest(
@@ -11,6 +12,8 @@ public record ProjectCreateRequest(
         List<String> goals,
         String deadline,
         boolean open,
+        Long leaderId,
+        List<Long> memberIds,
         List<String> techStacks,
         List<PositionCreateRequest> positions
 ) {

@@ -1,4 +1,3 @@
-// @ts-ignore
 import type {
   Portfolio,
   PortfolioUpdateRequest,
@@ -8,23 +7,9 @@ import type {
   RsData,
   User,
 } from '../types'
+import type { ProjectCreateRequest } from '../types/dto/project'
 
 const API_BASE = 'http://localhost:8080'
-
-export interface ProjectCreateRequest {
-  title: string
-  description: string
-  fullDescription: string
-  category: Project['category']
-  goals: string[]
-  deadline: string
-  open: boolean
-  techStacks: string[]
-  positions: Array<{
-    role: string
-    total: number
-  }>
-}
 
 async function fetchRsDataJson<T>(
   path: string,
