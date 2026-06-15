@@ -115,16 +115,18 @@ public class DummyDataInitializer implements ApplicationRunner {
     }
 
     private void savePortfolios(Map<String, MemberSeed> memberSeeds, Map<String, Member> members) {
-        memberSeeds.forEach((id, seed) -> portfolioRepository.save(Portfolio.create(
-                members.get(id),
-                seed.name() + " Portfolio",
-                seed.bio(),
-                blankToNull(seed.github()),
-                null,
-                blankToNull(seed.portfolio()),
-                seed.role(),
-                true
-        )));
+        memberSeeds.forEach((id, seed) -> portfolioRepository.save(
+                Portfolio.builder()
+                        .member(members.get(id))
+                        .title(seed.name() + " Portfolio")
+                        .introduction(seed.bio())
+                        .githubUrl(blankToNull(seed.github()))
+                        .blogUrl(null)
+                        .deployUrl(blankToNull(seed.portfolio()))
+                        .desiredPosition(seed.role())
+                        .isPublished(true)
+                        .build()
+        ));
     }
 
     private void saveProjects(Map<String, Member> members) {

@@ -55,16 +55,16 @@ public class PortfolioService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 회원입니다."));
 
-        Portfolio portfolio = Portfolio.create(
-                member,
-                request.title(),
-                request.introduction(),
-                request.githubUrl(),
-                request.blogUrl(),
-                request.deployUrl(),
-                request.desiredPosition(),
-                request.isPublished()
-        );
+        Portfolio portfolio = Portfolio.builder()
+                .member(member)
+                .title(request.title())
+                .introduction(request.introduction())
+                .githubUrl(request.githubUrl())
+                .blogUrl(request.blogUrl())
+                .deployUrl(request.deployUrl())
+                .desiredPosition(request.desiredPosition())
+                .isPublished(request.isPublished())
+                .build();
         portfolioRepository.save(portfolio);
 
         List<TechStack> techStacks = techStackRepository.findAllById(request.techStackIds());
