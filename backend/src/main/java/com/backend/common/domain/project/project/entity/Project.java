@@ -1,6 +1,7 @@
 package com.backend.common.domain.project.project.entity;
 
 import com.backend.common.domain.member.entity.Member;
+import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -44,10 +45,9 @@ public class Project {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
-    @ElementCollection
-    @CollectionTable(name = "project_tech_stacks", joinColumns = @JoinColumn(name = "project_id"))
-    @Column(name = "tech_stack_name")
-    private List<String> techStacks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectTechStack> projectTechStacks = new ArrayList<>();
 
     @Builder
     public Project(Member leader, String title, String description, String goal, LocalDate deadline) {
