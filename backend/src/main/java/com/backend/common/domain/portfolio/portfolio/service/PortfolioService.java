@@ -18,6 +18,7 @@ import com.backend.common.domain.project.project.repository.ProjectMemberReposit
 import com.backend.common.domain.techstack.entity.PortfolioTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
+import com.backend.common.global.exception.exception.PortfolioInputException;
 import com.backend.common.global.exception.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -44,6 +45,11 @@ public class PortfolioService {
      */
     @Transactional
     public void createPortfolio(Long memberId, PortfolioCreateRequest request) {
+        if(request.title() == null || request.title().isBlank())
+            throw new PortfolioInputException("400","포트폴리오 제목은 필수 입니다.");
+        if(request.desiredPosition() == null || request.desiredPosition().isBlank())
+            throw new PortfolioInputException("400","희망 포지션은 필수 입니다.");
+
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 회원입니다."));
 

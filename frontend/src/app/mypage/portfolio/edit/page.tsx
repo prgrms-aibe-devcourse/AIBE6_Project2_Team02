@@ -7,6 +7,7 @@ import { ArrowLeft, Check, Code2, Globe, Github, BookOpen } from 'lucide-react'
 import { Badge, Button, Card, Input } from '../../../../components/ui'
 import { fetchAllTechStacks, fetchMyPortfolio, updateMyPortfolio, type TechStackItem } from '../../../../lib/api'
 import { useAuth } from '../../../providers'
+import { leaderPositionOptions } from '../../../../constants/project'
 
 export default function PortfolioEditPage() {
   const router = useRouter()
@@ -16,7 +17,7 @@ export default function PortfolioEditPage() {
   const [selectedNames, setSelectedNames] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<{ title?: string; desiredPosition?: string; general?: string }>({})
 
   const [form, setForm] = useState({
     title: '',
@@ -58,9 +59,7 @@ export default function PortfolioEditPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.title.trim()) { setError('제목을 입력해주세요.'); return }
-    if (!form.desiredPosition.trim()) { setError('희망 포지션을 입력해주세요.'); return }
-    setError(null)
+    setErrors({})
     setSubmitting(true)
     try {
       await updateMyPortfolio({
@@ -74,8 +73,11 @@ export default function PortfolioEditPage() {
         isPublished: form.isPublished,
       })
       router.push('/mypage')
-    } catch {
-      setError('수정 중 오류가 발생했습니다. 다시 시도해주세요.')
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '수정 중 오류가 발생했습니다.'
+      if (msg.includes('제목')) setErrors({ title: msg })
+      else if (msg.includes('포지션')) setErrors({ desiredPosition: msg })
+      else setErrors({ general: msg })
     } finally {
       setSubmitting(false)
     }
@@ -167,14 +169,25 @@ export default function PortfolioEditPage() {
                     제목 <span className="text-red-500">*</span>
                   </label>
                   <Input placeholder="포트폴리오 제목을 입력해주세요"
-                    value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                    value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    className={errors.title ? 'border-red-400' : ''} />
+                  {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-1.5 block">
                     희망 포지션 <span className="text-red-500">*</span>
                   </label>
-                  <Input placeholder="예) 백엔드 개발자, 프론트엔드 개발자"
-                    value={form.desiredPosition} onChange={(e) => setForm({ ...form, desiredPosition: e.target.value })} />
+                  <select
+                    value={form.desiredPosition}
+                    onChange={(e) => setForm({ ...form, desiredPosition: e.target.value })}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  >
+                    <option value="">포지션을 선택해주세요</option>
+                    {leaderPositionOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  {errors.desiredPosition && <p className="text-xs text-red-500 mt-1">{errors.desiredPosition}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-1.5 block">소개</label>
@@ -210,7 +223,7 @@ export default function PortfolioEditPage() {
               </div>
             </Card>
 
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {errors.general && <p className="text-sm text-red-500">{errors.general}</p>}
 
             <div className="flex justify-end gap-3 pt-2">
               <Link href="/mypage">

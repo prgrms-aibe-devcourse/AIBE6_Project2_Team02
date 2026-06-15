@@ -23,6 +23,10 @@ import { Badge, Button, Card } from '../../components/ui'
 import { fetchMyPortfolio } from '../../lib/api'
 import { useAuth } from '../providers'
 import type { Portfolio } from '../../types'
+import { leaderPositionOptions } from '../../constants/project'
+
+const positionLabel = (value: string | null) =>
+  leaderPositionOptions.find((o) => o.value === value)?.label ?? value ?? ''
 
 type Tab = 'portfolio' | 'project' | 'proposal'
 type PortfolioSubTab = 'portfolio' | 'peerReview'
@@ -92,7 +96,7 @@ export default function MyPage() {
           </h1>
           {portfolio && (
             <>
-              <p className="text-slate-500 mb-3">{portfolio.desiredPosition}</p>
+              <p className="text-slate-500 mb-3">{positionLabel(portfolio.desiredPosition)}</p>
               {portfolio.techStacks.length > 0 && (
                 <div className="flex flex-wrap justify-center md:justify-start gap-2">
                   {portfolio.techStacks.map((stack) => (
@@ -209,7 +213,7 @@ export default function MyPage() {
                         <div>
                           <h2 className="text-xl font-bold text-slate-900">{portfolio.title}</h2>
                           {portfolio.desiredPosition && (
-                            <p className="text-sm text-blue-600 mt-1">{portfolio.desiredPosition}</p>
+                            <p className="text-sm text-blue-600 mt-1">{positionLabel(portfolio.desiredPosition)}</p>
                           )}
                         </div>
                         <Link href="/mypage/portfolio/edit">
