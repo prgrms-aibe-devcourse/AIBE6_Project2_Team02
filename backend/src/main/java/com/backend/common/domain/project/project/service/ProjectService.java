@@ -1,6 +1,7 @@
 package com.backend.common.domain.project.project.service;
 
 import com.backend.common.domain.member.entity.Member;
+import com.backend.common.domain.member.exception.MemberNotFoundException;
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.member.repository.MemberTechStackRepository;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
@@ -13,9 +14,11 @@ import com.backend.common.domain.project.enums.PositionType;
 import com.backend.common.domain.project.enums.ProjectCategory;
 import com.backend.common.domain.project.enums.ProjectStatus;
 import com.backend.common.domain.project.enums.RecruitmentStatus;
+import com.backend.common.domain.project.exception.ProjectNotFoundException;
 import com.backend.common.domain.project.project.entity.*;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.project.project.repository.ProjectRepository;
+import com.backend.common.domain.project.project.repository.ProjectViewRepository;
 import com.backend.common.domain.techstack.entity.MemberTechStack;
 import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
@@ -25,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,6 +56,7 @@ public class ProjectService {
     private final MemberTechStackRepository memberTechStackRepository;
     private final PortfolioRepository portfolioRepository;
     private final TechStackRepository techStackRepository;
+    private final ProjectViewRepository projectViewRepository;
 
     public List<ProjectResponse> getProjects() {
         List<Project> projects = projectRepository.findByDeletedAtIsNullOrderByCreatedAtDesc();
@@ -337,4 +342,29 @@ public class ProjectService {
                 .map(projectTechStack -> projectTechStack.getTechStack().getName())
                 .toList();
     }
+
+
+    @Transactional
+    public void makeProjectView(Long projectId, Long memberId) {
+        // 1. 존재하는 프로젝트와 회원인지 가볍게 영속성 검증
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("404", "Project not found"));
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberNotFoundException("404", "Member not found"));
+
+        // 💡 [옵션] 동일 유저가 단시간에 새로고침할 때 중복 누적되는 것을 막고 싶다면 존재 여부 체크 가능
+        boolean alreadyExists = projectViewRepository.existsByProjectAndMember(project, member);
+        if (alreadyExists) {
+            return; // 이미 조회 이력이 있다면 기록하지 않고 종료
+        }
+
+        // 2. 최근 본 프로젝트(ProjectView) 엔티티 빌딩 및 저장
+        ProjectView projectView = ProjectView.builder()
+                .project(project)
+                .member(member)
+                .build();
+
+        projectViewRepository.save(projectView);
+    }
+
 }
