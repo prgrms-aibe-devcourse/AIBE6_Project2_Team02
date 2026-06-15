@@ -6,6 +6,7 @@ import com.backend.common.domain.project.enums.SelectionStatus;
 import com.backend.common.domain.project.project.entity.Project;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
@@ -42,6 +43,19 @@ public class ProjectApplication {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    @Builder // 빌더 패턴을 사용하여 객체 생성 시 비즈니스 룰을 강제
+    public ProjectApplication(Project project, Member applicant, PositionType position, String message) {
+        this.project = project;
+        this.applicant = applicant;
+        this.position = position;
+        this.message = message;
+
+        // 처음 생성될 땐 외부 입력과 상관없이 무조건 PENDING과 현재 시간으로 고정
+        this.status = SelectionStatus.PENDING;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
+    }
 
     /**
      * 지원 수락 (ACCEPTED)
