@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-import { ArrowRight, Ban, Clock, Code, Rocket, Users } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Ban, Clock, Code, Rocket, Users } from 'lucide-react'
 
 import { Badge, Button, Card } from '../components/ui'
 import { fetchPopularTechStacks, fetchProjects } from '../lib/api'
@@ -38,6 +38,7 @@ export default function LandingPage() {
   const [errorMsg, setErrorMsg] = useState(errorMessageMap[searchParams.get('error') ?? ''] ?? null)
   const [projects, setProjects] = useState<Project[]>([])
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
+  const [projectPage, setProjectPage] = useState(0)
 
   useEffect(() => {
     if (!errorMsg) return
@@ -58,7 +59,12 @@ export default function LandingPage() {
       })
   }, [])
 
-  const featuredProjects = projects.filter((p) => p.featured).slice(0, 3)
+  const projectsPerPage = 6
+  const projectPageCount = Math.ceil(projects.length / projectsPerPage)
+  const latestProjects = projects.slice(
+    projectPage * projectsPerPage,
+    (projectPage + 1) * projectsPerPage,
+  )
 
   const containerVariants = {
     hidden: {
@@ -143,16 +149,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Featured Projects */}
+      {/* Latest Projects */}
       <section className="py-20 bg-slate-50">
         <div className="container mx-auto px-4">
           <div className="flex items-end justify-between mb-12">
             <div>
               <h2 className="text-3xl font-bold text-slate-900 mb-2">
-                추천 프로젝트
+                최신 프로젝트
               </h2>
               <p className="text-slate-500">
-                당신의 스킬을 기다리고 있는 엄선된 팀들을 만나보세요.
+                새롭게 등록된 프로젝트를 확인해보세요.
               </p>
             </div>
             <Link
@@ -170,115 +176,138 @@ export default function LandingPage() {
               once: true,
               margin: '-100px',
             }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            {featuredProjects.map((project, index) => (
-                <motion.div
-                    key={project.id}
-                    initial={{
-                      opacity: 0,
-                      y: 20,
-                    }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                    }}
-                    transition={{
-                      delay: index * 0.05,
-                    }}
+            {latestProjects.map((project, index) => (
+              <motion.div
+                key={project.id}
+                initial={{
+                  opacity: 0,
+                  y: 20,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                transition={{
+                  delay: index * 0.05,
+                }}
+              >
+                <Card
+                  className="h-full flex flex-col hover:shadow-md transition-all hover:border-blue-300 group cursor-pointer p-6"
+                  onClick={() => router.push(`/projects/${project.id}`)}
                 >
-                  <Card
-                      className="h-full flex flex-col hover:shadow-md transition-all hover:border-blue-300 group cursor-pointer p-6"
-                      onClick={() => router.push(`/projects/${project.id}`)}
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex gap-2">
-                        <Badge
-                            variant={
-                              project.recruitmentStatus === 'Open'
-                                  ? 'success'
-                                  : 'secondary'
-                            }
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex gap-2">
+                      <Badge
+                        variant={
+                          project.recruitmentStatus === 'Open'
+                            ? 'success'
+                            : 'secondary'
+                        }
+                      >
+                        {statusMap[project.recruitmentStatus]}
+                      </Badge>
+
+                      <Badge variant="outline">
+                        {categoryMap[project.category]}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center text-slate-400 text-xs gap-1">
+                      <Clock className="h-3 w-3" />
+                      {new Date(project.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
+                    {project.title}
+                  </h3>
+
+                  <p className="text-slate-500 text-sm mb-6 line-clamp-2 flex-1">
+                    {project.description}
+                  </p>
+
+                  <div className="space-y-4 mt-auto">
+                    <div className="flex flex-wrap gap-2">
+                      {project.techStack.slice(0, 4).map((tech, techIndex) => (
+                        <span
+                          key={`${project.id}-${tech}-${techIndex}`}
+                          className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md"
                         >
-                          {statusMap[project.recruitmentStatus]}
-                        </Badge>
+                          {tech}
+                        </span>
+                      ))}
 
-                        <Badge variant="outline">
-                          {categoryMap[project.category]}
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center text-slate-400 text-xs gap-1">
-                        <Clock className="h-3 w-3" />
-                        {new Date(project.createdAt).toLocaleDateString()}
-                      </div>
+                      {project.techStack.length > 4 && (
+                        <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
+                          +{project.techStack.length - 4}
+                        </span>
+                      )}
                     </div>
 
-                    <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
-                      {project.title}
-                    </h3>
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/u/${project.leader.id}`}
+                          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <img
+                            src={project.leader.avatar}
+                            alt={project.leader.name}
+                            className="w-6 h-6 rounded-full"
+                          />
 
-                    <p className="text-slate-500 text-sm mb-6 line-clamp-2 flex-1">
-                      {project.description}
-                    </p>
+                          <span className="text-sm font-medium text-slate-700 hover:text-blue-600">
+                            {project.leader.name}
+                          </span>
+                        </Link>
+                      </div>
 
-                    <div className="space-y-4 mt-auto">
-                      <div className="flex flex-wrap gap-2">
-                        {project.techStack.slice(0, 4).map((tech, techIndex) => (
-                            <span
-                                key={`${project.id}-${tech}-${techIndex}`}
-                                className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md"
-                            >
-            {tech}
-          </span>
-                        ))}
-
-                        {project.techStack.length > 4 && (
-                            <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
-            +{project.techStack.length - 4}
-          </span>
+                      <div className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                        <Users className="h-3 w-3" />
+                        {project.positions.reduce(
+                          (acc, p) => acc + p.filled,
+                          0,
                         )}
-                      </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                        <div className="flex items-center gap-2">
-                          <Link
-                              href={`/u/${project.leader.id}`}
-                              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                              onClick={(e) => e.stopPropagation()}
-                          >
-                            <img
-                                src={project.leader.avatar}
-                                alt={project.leader.name}
-                                className="w-6 h-6 rounded-full"
-                            />
-
-                            <span className="text-sm font-medium text-slate-700 hover:text-blue-600">
-              {project.leader.name}
-            </span>
-                          </Link>
-                        </div>
-
-                        <div className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
-                          <Users className="h-3 w-3" />
-
-                          {project.positions.reduce(
-                              (acc, p) => acc + p.filled,
-                              0
-                          )}
-                          /
-                          {project.positions.reduce(
-                              (acc, p) => acc + p.total,
-                              0
-                          )}
-                          명
-                        </div>
+                        /
+                        {project.positions.reduce((acc, p) => acc + p.total, 0)}
+                        명
                       </div>
                     </div>
-                  </Card>
-                </motion.div>
+                  </div>
+                </Card>
+              </motion.div>
             ))}
           </motion.div>
+          {projectPageCount > 1 && (
+            <div className="mt-10 flex items-center justify-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={projectPage === 0}
+                onClick={() => setProjectPage((page) => page - 1)}
+              >
+                <ArrowLeft className="mr-1 h-4 w-4" />
+                이전
+              </Button>
+              <span className="min-w-16 text-center text-sm text-slate-500">
+                {projectPage + 1} / {projectPageCount}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={projectPage + 1 >= projectPageCount}
+                onClick={() => setProjectPage((page) => page + 1)}
+              >
+                다음
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          )}
           <div className="mt-8 text-center md:hidden">
             <Link href="/projects">
               <Button variant="outline" className="w-full">

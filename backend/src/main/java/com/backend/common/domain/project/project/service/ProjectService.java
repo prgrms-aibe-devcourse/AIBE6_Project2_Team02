@@ -97,9 +97,12 @@ public class ProjectService {
 
     public List<UserResponse> getMembers() {
         Set<Long> featuredIds = featuredMemberIds();
-        return memberRepository.findAll().stream()
-                .sorted(Comparator.comparing(Member::getId))
-                .map(member -> toUserResponse(member, featuredIds.contains(member.getId())))
+        return portfolioRepository.findLatestPublished().stream()
+                .map(Portfolio::getMember)
+                .map(member -> toUserResponse(
+                        member,
+                        featuredIds.contains(member.getId())
+                ))
                 .toList();
     }
 

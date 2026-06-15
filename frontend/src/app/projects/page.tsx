@@ -39,6 +39,7 @@ export default function ProjectListingPage() {
   const [selectedTech, setSelectedTech] = useState<string>(initialTech || 'All')
   const [selectedStatus, setSelectedStatus] = useState<string>('Open')
   const [sortBy, setSortBy] = useState<'newest' | 'popularity'>('newest')
+  const [page, setPage] = useState(0)
 
   const categories = ['All', 'Web', 'Mobile', 'AI', 'Game', 'Other']
   const statuses = ['All', 'Open', 'Closed']
@@ -88,6 +89,22 @@ export default function ProjectListingPage() {
     selectedStatus,
     sortBy,
   ])
+  const projectsPerPage = 6
+  const pageCount = Math.ceil(filteredProjects.length / projectsPerPage)
+  const paginatedProjects = filteredProjects.slice(
+    page * projectsPerPage,
+    (page + 1) * projectsPerPage,
+  )
+
+  useEffect(() => {
+    setPage(0)
+  }, [searchTerm, selectedCategory, selectedTech, selectedStatus, sortBy])
+
+  useEffect(() => {
+    if (pageCount > 0 && page >= pageCount) {
+      setPage(pageCount - 1)
+    }
+  }, [page, pageCount])
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -262,7 +279,7 @@ export default function ProjectListingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.length > 0 ? (
-            filteredProjects.map((project, index) => (
+            paginatedProjects.map((project, index) => (
               <motion.div
                 key={project.id}
                 initial={{
@@ -394,26 +411,28 @@ export default function ProjectListingPage() {
           )}
         </div>
 
-        {filteredProjects.length > 0 && (
+        {pageCount > 1 && (
           <div className="mt-10 flex justify-center">
-            <div className="flex gap-1">
-              <Button variant="outline" size="sm" disabled>
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={page === 0}
+                onClick={() => setPage((currentPage) => currentPage - 1)}
+              >
                 이전
               </Button>
+              <span className="min-w-16 text-center text-sm text-slate-500">
+                {page + 1} / {pageCount}
+              </span>
               <Button
-                variant="default"
+                type="button"
+                variant="outline"
                 size="sm"
-                className="bg-slate-900 text-white"
+                disabled={page + 1 >= pageCount}
+                onClick={() => setPage((currentPage) => currentPage + 1)}
               >
-                1
-              </Button>
-              <Button variant="outline" size="sm">
-                2
-              </Button>
-              <Button variant="outline" size="sm">
-                3
-              </Button>
-              <Button variant="outline" size="sm">
                 다음
               </Button>
             </div>

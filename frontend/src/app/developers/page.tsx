@@ -5,7 +5,14 @@ import { useEffect, useMemo, useState } from 'react'
 
 import Link from 'next/link'
 
-import { Clock, MapPin, Search, Sparkles } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  MapPin,
+  Search,
+  Sparkles,
+} from 'lucide-react'
 
 import { Badge, Button, Card, Input } from '../../components/ui'
 import { fetchMembers, fetchPopularTechStacks } from '../../lib/api'
@@ -42,6 +49,7 @@ export default function TalentListingPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>('All')
+  const [page, setPage] = useState(0)
   const roles = [
     'All',
     'Frontend',
@@ -83,6 +91,22 @@ export default function TalentListingPage() {
       return matchesSearch && matchesRole && matchesTech
     })
   }, [allUsers, searchTerm, selectedRole, selectedTech])
+  const portfoliosPerPage = 9
+  const pageCount = Math.ceil(filteredTalents.length / portfoliosPerPage)
+  const paginatedTalents = filteredTalents.slice(
+    page * portfoliosPerPage,
+    (page + 1) * portfoliosPerPage,
+  )
+
+  useEffect(() => {
+    setPage(0)
+  }, [searchTerm, selectedRole, selectedTech])
+
+  useEffect(() => {
+    if (pageCount > 0 && page >= pageCount) {
+      setPage(pageCount - 1)
+    }
+  }, [page, pageCount])
 
   const containerVariants = {
     hidden: {
@@ -233,7 +257,7 @@ export default function TalentListingPage() {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
           {filteredTalents.length > 0 ? (
-            filteredTalents.map((user) => (
+            paginatedTalents.map((user) => (
               <motion.div key={user.id} variants={itemVariants}>
                 <Link href={`/u/${user.id}`}>
                   <Card className="h-full flex flex-col hover:shadow-md transition-all hover:border-blue-300 group cursor-pointer p-6">
@@ -317,6 +341,33 @@ export default function TalentListingPage() {
             </div>
           )}
         </motion.div>
+        {pageCount > 1 && (
+          <div className="mt-10 flex items-center justify-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={page === 0}
+              onClick={() => setPage((currentPage) => currentPage - 1)}
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              이전
+            </Button>
+            <span className="min-w-16 text-center text-sm text-slate-500">
+              {page + 1} / {pageCount}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={page + 1 >= pageCount}
+              onClick={() => setPage((currentPage) => currentPage + 1)}
+            >
+              다음
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )
