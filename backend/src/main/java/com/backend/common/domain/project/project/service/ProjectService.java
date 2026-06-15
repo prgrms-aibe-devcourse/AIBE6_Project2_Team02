@@ -136,6 +136,10 @@ public class ProjectService {
             throw new IllegalArgumentException("현재 연도 이전의 마감일은 설정할 수 없습니다.");
         }
 
+        if (req.leaderPosition() == null) {
+            throw new IllegalArgumentException("리더 포지션을 선택해주세요.");
+        }
+
         Project project = Project.builder()
                 .leader(leader)
                 .title(req.title())
@@ -171,7 +175,15 @@ public class ProjectService {
 
         // 필요 시 ProjectMember 추가 로직도 여기에 작성
 
-        return toProjectResponse(savedProject, List.of(), true, Set.of());
+        ProjectMember leaderMember = ProjectMember.builder()
+                .project(savedProject)
+                .member(leader)
+                .position(req.leaderPosition())
+                .role(ProjectRole.LEADER)
+                .build();
+        projectMemberRepository.save(leaderMember);
+
+        return toProjectResponse(savedProject, List.of(leaderMember), true, Set.of());
     }
 
     private Map<Long, List<ProjectMember>> loadMembersByProject(List<Project> projects) {
