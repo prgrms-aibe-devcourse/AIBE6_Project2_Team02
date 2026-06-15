@@ -1,7 +1,9 @@
 package com.backend.common.domain.project.project.controller;
 
 import com.backend.common.domain.project.dto.ProjectCreateRequest;
+import com.backend.common.domain.project.dto.ProjectPermissionResponse;
 import com.backend.common.domain.project.dto.ProjectResponse;
+import com.backend.common.domain.project.dto.ProjectUpdateRequest;
 import com.backend.common.domain.project.exception.ProjectNotFoundException;
 import com.backend.common.domain.project.project.service.ProjectService;
 import com.backend.common.global.rsdata.RsData;
@@ -28,9 +30,16 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    public RsData<ProjectResponse> getProject(@PathVariable Long id) {
+    public RsData<ProjectResponse> getProject(@PathVariable Long id,
+                                              @AuthenticationPrincipal CustomMemberDetails userDetails) {
         try {
-            return RsData.of("200", "프로젝트 조회 성공", projectService.getProject(id));
+            ProjectResponse response = projectService.getProject(id);
+
+            if (userDetails != null && userDetails.getMemberId() != null) {
+                projectService.makeProjectView(id, userDetails.getMemberId());
+            }
+
+            return RsData.of("200", "프로젝트 조회 성공", response);
         } catch (NoSuchElementException ex) {
             throw new ProjectNotFoundException("404","Project not found");
         }
@@ -47,5 +56,37 @@ public class ProjectController {
 
         ProjectResponse project = projectService.createProject(req, principal.getMemberId());
         return ResponseEntity.ok(RsData.of("200", "프로젝트 생성 성공", project));
+    }
+    @GetMapping("/{id}/permissions")
+    public RsData<ProjectPermissionResponse> getProjectPermissions(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomMemberDetails principal
+    ) {
+        boolean canEdit = principal != null
+                && projectService.canEditProject(id, principal.getMemberId());
+        boolean isMember = principal != null
+                && projectService.isProjectMember(id, principal.getMemberId());
+        return RsData.of(
+                "200",
+                "프로젝트 권한 조회 성공",
+                new ProjectPermissionResponse(canEdit, isMember)
+        );
+    }
+
+    @PutMapping("/{id}")
+    public RsData<ProjectResponse> updateProject(
+            @PathVariable Long id,
+            @RequestBody ProjectUpdateRequest req,
+            @AuthenticationPrincipal CustomMemberDetails principal
+    ) {
+        if (principal == null) {
+            throw new InsufficientAuthenticationException("Login is required");
+        }
+
+        return RsData.of(
+                "200",
+                "프로젝트 수정 성공",
+                projectService.updateProject(id, req, principal.getMemberId())
+        );
     }
 }
