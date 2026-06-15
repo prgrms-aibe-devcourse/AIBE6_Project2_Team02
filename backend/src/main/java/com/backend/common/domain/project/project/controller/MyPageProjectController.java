@@ -9,11 +9,7 @@ import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -127,4 +123,34 @@ public class MyPageProjectController {
                 .toList();
         return RsData.of("200", "내 프로젝트에 들어온 지원 목록 조회가 완료되었습니다.", responses);
     }
+
+    /**
+     * 내 프로젝트에 온 지원 수락/거절 액션 처리
+     * (예: DELETE 대신 PATCH /mypage/projects/applications/1?accept=true)
+     */
+    @PatchMapping("/applications/{applicationId}")
+    @PreAuthorize("isAuthenticated()")
+    public RsData<Void> handleApplicationAction(
+            @PathVariable("applicationId") Long applicationId,
+            @RequestParam("accept") boolean accept,
+            @AuthenticationPrincipal CustomMemberDetails userDetails
+    ) {
+        myPageProjectService.handleApplicationAction(userDetails.getMemberId(), applicationId, accept);
+        String message = accept ? "지원을 수락하여 팀원으로 등록했습니다." : "지원을 거절했습니다.";
+        return RsData.of("200", message, null);
+    }
+
+    /**
+     * 내가 신청한 프로젝트 지원 취소
+     */
+    @PatchMapping("/applications/{applicationId}/cancel")
+    @PreAuthorize("isAuthenticated()")
+    public RsData<Void> cancelProjectApplication(
+            @PathVariable("applicationId") Long applicationId,
+            @AuthenticationPrincipal CustomMemberDetails userDetails
+    ) {
+        myPageProjectService.cancelProjectApplication(userDetails.getMemberId(), applicationId);
+        return RsData.of("200", "프로젝트 지원 신청이 성공적으로 취소되었습니다.", null);
+    }
+
 }
