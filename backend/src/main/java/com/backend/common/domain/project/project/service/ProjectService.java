@@ -17,6 +17,7 @@ import com.backend.common.domain.project.project.entity.*;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.project.project.repository.ProjectRepository;
 import com.backend.common.domain.techstack.entity.MemberTechStack;
+import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import lombok.RequiredArgsConstructor;
@@ -143,11 +144,24 @@ public class ProjectService {
                 .category(req.category())
                 .goal(String.join(", ", Optional.ofNullable(req.goals()).orElseGet(List::of)))
                 .deadline(deadline)
-                .techStacks(Optional.ofNullable(req.techStacks()).orElseGet(List::of))
                 .positions(Optional.ofNullable(req.positions()).orElseGet(List::of).stream()
                         .map(p -> ProjectPosition.builder().role(p.role()).total(p.total()).build())
                         .toList())
                 .build();
+
+        Optional.ofNullable(req.techStacks()).orElseGet(List::of).stream()
+                .map(String::trim)
+                .filter(name -> !name.isBlank())
+                .distinct()
+                .map(name -> techStackRepository.findByName(name)
+                        .orElseGet(() -> techStackRepository.save(
+                                TechStack.builder().name(name).build()
+                        )))
+                .map(techStack -> ProjectTechStack.builder()
+                        .project(project)
+                        .techStack(techStack)
+                        .build())
+                .forEach(project::addProjectTechStack);
 
         if (!req.open()) {
             project.toggleRecruitment(false);

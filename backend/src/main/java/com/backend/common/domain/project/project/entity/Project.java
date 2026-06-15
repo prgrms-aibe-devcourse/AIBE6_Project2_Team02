@@ -9,6 +9,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -53,15 +54,24 @@ public class Project {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectTechStack> projectTechStacks = new ArrayList<>();
+
     @ElementCollection
     @CollectionTable(name = "project_positions", joinColumns = @JoinColumn(name = "project_id"))
     private List<ProjectPosition> positions = new ArrayList<>();
 
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProjectTechStack> projectTechStacks = new ArrayList<>();
-
     @Builder
-    public Project(Member leader, String title, String description, String fullDescription, ProjectCategory category, String goal, LocalDate deadline, List<String> techStacks, List<ProjectPosition> positions) {
+    public Project(
+            Member leader,
+            String title,
+            String description,
+            String fullDescription,
+            ProjectCategory category,
+            String goal,
+            LocalDate deadline,
+            List<ProjectPosition> positions
+    ) {
         this.leader = leader;
         this.title = title;
         this.description = description;
@@ -71,10 +81,15 @@ public class Project {
         this.deadline = deadline;
         this.positions = positions != null ? positions : new ArrayList<>();
 
-        this.status = ProjectStatus.RECRUITING;
-        this.recruitmentOpen = true;
+        // 중요: 기본값이나 초기화 로직은 빌더 파라미터로 받지 않고 내부에서 강제 세팅
+        this.status = ProjectStatus.RECRUITING; // 처음 만들 땐 무조건 모집중
+        this.recruitmentOpen = true;            // 처음 만들 땐 무조건 활성화
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void addProjectTechStack(ProjectTechStack projectTechStack) {
+        this.projectTechStacks.add(projectTechStack);
     }
 
     // ================= 비즈니스 로직 (상태 변경 메서드) =================

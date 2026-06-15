@@ -8,11 +8,8 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, CheckCircle2, Plus, X } from 'lucide-react'
 
 import { Badge, Button, Card, Input } from '../../../components/ui'
-import {
-  type ProjectCreateRequest,
-  createProject,
-  fetchPopularTechStacks,
-} from '../../../lib/api'
+import { createProject, fetchPopularTechStacks } from '../../../lib/api'
+import type { ProjectCreateRequest } from '../../../types/dto/project'
 
 export default function ProjectCreatePage() {
   const router = useRouter()
