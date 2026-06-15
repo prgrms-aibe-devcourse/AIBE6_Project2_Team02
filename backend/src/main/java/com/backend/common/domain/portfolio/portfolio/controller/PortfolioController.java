@@ -1,5 +1,6 @@
 package com.backend.common.domain.portfolio.portfolio.controller;
 
+import com.backend.common.domain.portfolio.portfolio.dto.PortfolioCreateRequest;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioResponse;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioUpdateRequest;
 import com.backend.common.domain.portfolio.portfolio.service.PortfolioService;
@@ -72,6 +73,16 @@ public class PortfolioController {
         portfolioService.handleProposalAction(userDetails.getMemberId(), proposalId, accept);
         String message = accept ? "프로젝트 제안을 수락하여 팀원에 합류했습니다." : "프로젝트 제안을 거절했습니다.";
         return RsData.of("200", message, null);
+    }
+
+    @PostMapping
+    @PreAuthorize("isAuthenticated()")
+    public RsData<Void> createPortfolio(
+            @AuthenticationPrincipal CustomMemberDetails userDetails,
+            @Valid @RequestBody PortfolioCreateRequest request
+    ) {
+        portfolioService.createPortfolio(userDetails.getMemberId(), request);
+        return RsData.of("200", "개인 포트폴리오가 등록 되었습니다");
     }
 
 }

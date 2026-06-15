@@ -1,6 +1,6 @@
 package com.backend.common.domain.member.controller;
 
-import com.backend.api.dto.AuthResponse;
+import com.backend.common.domain.member.dto.AuthResponse;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 public class AuthController {
 
     @GetMapping("/me")
