@@ -1,4 +1,5 @@
 import type {
+  CreateReviewRequest,
   Portfolio,
   PortfolioUpdateRequest,
   Project,
@@ -9,7 +10,7 @@ import type {
 } from '../types'
 import type { ProjectCreateRequest } from '../types/dto/project'
 
-const API_BASE = 'http://localhost:8080'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
 async function fetchRsDataJson<T>(
   path: string,
@@ -129,10 +130,17 @@ export function fetchMyProjectProposals() {
 
 export function fetchUserReports() {
   return fetchRsDataJson<ReportResponse[]>(
-      '/admin/reports?targetType=PORTFOLIO',
+    '/admin/reports?targetType=PORTFOLIO',
   )
 }
 
 export function fetchProjectReports() {
   return fetchRsDataJson<ReportResponse[]>('/admin/reports?targetType=PROJECT')
+}
+
+export function createReview(request: CreateReviewRequest) {
+  return fetchRsDataJson<number>('/reviews', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  })
 }

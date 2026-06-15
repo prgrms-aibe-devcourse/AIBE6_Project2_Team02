@@ -9,7 +9,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Send } from 'lucide-react'
 
 import { Button, Card } from '../../../../../components/ui'
-import { fetchMember, fetchProject } from '../../../../../lib/api'
+import { createReview, fetchMember, fetchProject } from '../../../../../lib/api'
 import type { Project, User } from '../../../../../types'
 
 export default function ReviewWritePage() {
@@ -45,22 +45,32 @@ export default function ReviewWritePage() {
       })
   }, [projectId, userId])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validate
     if (!praise.trim() && !improvement.trim() && !gratitude.trim()) {
       toast.error('리뷰 내용을 입력해주세요.')
       return
     }
 
     setIsSubmitting(true)
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false)
+
+    try {
+      const content = `${praise}\`${improvement}\`${gratitude}`
+      await createReview({
+        projectId: Number(projectId),
+        revieweeId: Number(userId),
+        content,
+      })
+
       toast.success('리뷰가 등록되었어요. 감사합니다!')
       router.push('/mypage')
-    }, 1000)
+    } catch (err: any) {
+      console.error('Error submitting review:', err)
+      toast.error(err.message || '리뷰 등록 중 오류가 발생했습니다.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const containerVariants = {

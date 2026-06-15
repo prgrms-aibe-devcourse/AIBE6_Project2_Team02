@@ -52,7 +52,7 @@ public class Review {
     @JoinColumn(name = "reviewee_id", nullable = false)
     private Member reviewee;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(nullable = false, length = 1000)
     private String content;
 
     @Column(name = "created_at", nullable = false)

@@ -65,6 +65,12 @@ export interface ProjectProposal {
   createdAt: string
 }
 
+export interface CreateReviewRequest {
+  projectId: number
+  revieweeId: number
+  content: string
+}
+
 export type ReportTargetType = 'PORTFOLIO' | 'PROJECT'
 export type ReportStatus = 'PENDING' | 'REVIEWED'
 
