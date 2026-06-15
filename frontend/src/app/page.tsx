@@ -4,9 +4,9 @@ import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-import {ArrowRight, Clock, Code, Rocket, Users} from 'lucide-react'
+import { ArrowRight, Ban, Clock, Code, Rocket, Users } from 'lucide-react'
 
 import { Badge, Button, Card } from '../components/ui'
 import { fetchPopularTechStacks, fetchProjects } from '../lib/api'
@@ -26,10 +26,25 @@ const categoryMap: Record<string, string> = {
   Other: '기타',
 }
 
+const errorMessageMap: Record<string, string> = {
+  WITHDRAWN: '탈퇴한 회원입니다.',
+  SUSPENDED: '이용이 정지된 계정입니다.',
+  BANNED: '영구 정지된 계정입니다.',
+}
+
 export default function LandingPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const [errorMsg, setErrorMsg] = useState(errorMessageMap[searchParams.get('error') ?? ''] ?? null)
   const [projects, setProjects] = useState<Project[]>([])
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
+
+  useEffect(() => {
+    if (!errorMsg) return
+    router.replace('/')
+    const timer = setTimeout(() => setErrorMsg(null), 4000)
+    return () => clearTimeout(timer)
+  }, [errorMsg])
 
   useEffect(() => {
     Promise.all([fetchProjects(), fetchPopularTechStacks()])
@@ -59,6 +74,12 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col w-full">
+      {errorMsg && (
+        <div className="bg-red-50 border-b border-red-200 text-red-700 text-sm py-3 px-4 flex items-center justify-center gap-2">
+          <Ban className="w-4 h-4 flex-shrink-0" />
+          {errorMsg}
+        </div>
+      )}
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-white pt-24 pb-32">
         {/* Abstract Background Shapes */}
