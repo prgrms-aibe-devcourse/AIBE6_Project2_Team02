@@ -50,6 +50,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                     return createMember(oauthProvider, userInfo);
                 });
 
+        if (!isNew[0] && userInfo.profileImageUrl() != null) {
+            member.updateProfileImageUrl(userInfo.profileImageUrl());
+            memberRepository.save(member);
+        }
+
         String jwt = jwtTokenProvider.generateToken(member.getId(), member.getNickname());
 
         Cookie cookie = new Cookie("access_token", jwt);

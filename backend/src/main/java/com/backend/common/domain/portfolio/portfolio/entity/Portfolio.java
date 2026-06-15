@@ -82,9 +82,15 @@ public class Portfolio {
         this.updatedAt = LocalDateTime.now();
     }
 
-    /**
-     * 기술 스택 컬렉션 갱신 메서드
-     */
+    public void clearTechStacks() {
+        this.portfolioTechStacks.clear();
+    }
+
+    public void addTechStacks(List<PortfolioTechStack> newStacks) {
+        this.portfolioTechStacks.addAll(newStacks);
+    }
+
+    // createPortfolio에서 사용
     public void updateTechStacks(List<PortfolioTechStack> newStacks) {
         this.portfolioTechStacks.clear();
         this.portfolioTechStacks.addAll(newStacks);

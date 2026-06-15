@@ -8,11 +8,14 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, CheckCircle2, Plus, X } from 'lucide-react'
 
 import { Badge, Button, Card, Input } from '../../../components/ui'
+import { LoginModal } from '../../../components/LoginModal'
 import { createProject, fetchPopularTechStacks } from '../../../lib/api'
 import type { ProjectCreateRequest } from '../../../types/dto/project'
+import { useAuth } from '../../providers'
 
 export default function ProjectCreatePage() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const currentYear = new Date().getFullYear()
   const minimumDeadline = `${currentYear}-01-01`
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
@@ -149,6 +152,10 @@ export default function ProjectCreatePage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (!authLoading && !user) {
+    return <LoginModal onClose={() => router.replace('/')} />
   }
 
   return (
