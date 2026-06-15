@@ -32,6 +32,11 @@ public class Project {
     private String description;
 
     @Column(columnDefinition = "TEXT")
+    private String fullDescription;
+
+    private String category;
+
+    @Column(columnDefinition = "TEXT")
     private String goal;
 
     private LocalDate deadline;
@@ -45,21 +50,26 @@ public class Project {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
+    @ElementCollection
+    @CollectionTable(name = "project_positions", joinColumns = @JoinColumn(name = "project_id"))
+    private List<ProjectPosition> positions = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectTechStack> projectTechStacks = new ArrayList<>();
 
     @Builder
-    public Project(Member leader, String title, String description, String goal, LocalDate deadline) {
+    public Project(Member leader, String title, String description, String fullDescription, String category, String goal, LocalDate deadline, List<String> techStacks, List<ProjectPosition> positions) {
         this.leader = leader;
         this.title = title;
         this.description = description;
+        this.fullDescription = fullDescription;
+        this.category = category;
         this.goal = goal;
         this.deadline = deadline;
+        this.positions = positions != null ? positions : new ArrayList<>();
 
-        // 중요: 기본값이나 초기화 로직은 빌더 파라미터로 받지 않고 내부에서 강제 세팅
-        this.status = ProjectStatus.RECRUITING; // 처음 만들 땐 무조건 모집중
-        this.recruitmentOpen = true;            // 처음 만들 땐 무조건 활성화
+        this.status = ProjectStatus.RECRUITING;
+        this.recruitmentOpen = true;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }

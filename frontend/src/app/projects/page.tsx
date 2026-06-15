@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 import { Clock, Search, Sparkles, Users } from 'lucide-react'
 
@@ -29,6 +29,7 @@ const statusMap: Record<string, string> = {
 
 export default function ProjectListingPage() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const initialTech = searchParams.get('tech')
 
   const [projects, setProjects] = useState<Project[]>([])
@@ -79,7 +80,14 @@ export default function ProjectListingPage() {
           return b.popularity - a.popularity
         }
       })
-  }, [projects, searchTerm, selectedCategory, selectedTech, selectedStatus, sortBy])
+  }, [
+    projects,
+    searchTerm,
+    selectedCategory,
+    selectedTech,
+    selectedStatus,
+    sortBy,
+  ])
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -269,88 +277,94 @@ export default function ProjectListingPage() {
                   delay: index * 0.05,
                 }}
               >
-                <Link href={`/projects/${project.id}`}>
-                  <Card className="h-full flex flex-col hover:shadow-md transition-all hover:border-blue-300 group cursor-pointer p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex gap-2">
-                        <Badge
-                          variant={
-                            project.recruitmentStatus === 'Open'
-                              ? 'success'
-                              : 'secondary'
-                          }
+                <Card
+                  className="h-full flex flex-col hover:shadow-md transition-all hover:border-blue-300 group cursor-pointer p-6"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => router.push(`/projects/${project.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      router.push(`/projects/${project.id}`)
+                    }
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex gap-2">
+                      <Badge
+                        variant={
+                          project.recruitmentStatus === 'Open'
+                            ? 'success'
+                            : 'secondary'
+                        }
+                      >
+                        {statusMap[project.recruitmentStatus]}
+                      </Badge>
+                      <Badge variant="outline">
+                        {categoryMap[project.category]}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center text-slate-400 text-xs gap-1">
+                      <Clock className="h-3 w-3" />
+                      {new Date(project.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
+                    {project.title}
+                  </h3>
+                  <p className="text-slate-500 text-sm mb-6 line-clamp-2 flex-1">
+                    {project.description}
+                  </p>
+
+                  <div className="space-y-4 mt-auto">
+                    <div className="flex flex-wrap gap-2">
+                      {project.techStack.slice(0, 4).map((tech) => (
+                        <span
+                          key={tech}
+                          className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md"
                         >
-                          {statusMap[project.recruitmentStatus]}
-                        </Badge>
-                        <Badge variant="outline">
-                          {categoryMap[project.category]}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center text-slate-400 text-xs gap-1">
-                        <Clock className="h-3 w-3" />
-                        {new Date(project.createdAt).toLocaleDateString()}
-                      </div>
+                          {tech}
+                        </span>
+                      ))}
+                      {project.techStack.length > 4 && (
+                        <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
+                          +{project.techStack.length - 4}
+                        </span>
+                      )}
                     </div>
 
-                    <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
-                      {project.title}
-                    </h3>
-                    <p className="text-slate-500 text-sm mb-6 line-clamp-2 flex-1">
-                      {project.description}
-                    </p>
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/u/${project.leader.id}`}
+                          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <img
+                            src={project.leader.avatar}
+                            alt={project.leader.name}
+                            className="w-6 h-6 rounded-full"
+                          />
 
-                    <div className="space-y-4 mt-auto">
-                      <div className="flex flex-wrap gap-2">
-                        {project.techStack.slice(0, 4).map((tech) => (
-                          <span
-                            key={tech}
-                            className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md"
-                          >
-                            {tech}
+                          <span className="text-sm font-medium text-slate-700 hover:text-blue-600">
+                            {project.leader.name}
                           </span>
-                        ))}
-                        {project.techStack.length > 4 && (
-                          <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
-                            +{project.techStack.length - 4}
-                          </span>
-                        )}
+                        </Link>
                       </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/u/${project.leader.id}`}
-                            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <img
-                              src={project.leader.avatar}
-                              alt={project.leader.name}
-                              className="w-6 h-6 rounded-full"
-                            />
-
-                            <span className="text-sm font-medium text-slate-700 hover:text-blue-600">
-                              {project.leader.name}
-                            </span>
-                          </Link>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
-                          <Users className="h-3 w-3" />
-                          {project.positions.reduce(
-                            (acc, p) => acc + p.filled,
-                            0,
-                          )}{' '}
-                          /{' '}
-                          {project.positions.reduce(
-                            (acc, p) => acc + p.total,
-                            0,
-                          )}
-                          명
-                        </div>
+                      <div className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                        <Users className="h-3 w-3" />
+                        {project.positions.reduce(
+                          (acc, p) => acc + p.filled,
+                          0,
+                        )}{' '}
+                        /{' '}
+                        {project.positions.reduce((acc, p) => acc + p.total, 0)}
+                        명
                       </div>
                     </div>
-                  </Card>
-                </Link>
+                  </div>
+                </Card>
               </motion.div>
             ))
           ) : (

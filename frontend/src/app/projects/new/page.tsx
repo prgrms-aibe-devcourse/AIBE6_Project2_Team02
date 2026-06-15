@@ -6,12 +6,18 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
 import { ArrowLeft, CheckCircle2, Plus, X } from 'lucide-react'
-import { fetchPopularTechStacks } from '../../../lib/api'
 
 import { Badge, Button, Card, Input } from '../../../components/ui'
+import {
+  type ProjectCreateRequest,
+  createProject,
+  fetchPopularTechStacks,
+} from '../../../lib/api'
 
 export default function ProjectCreatePage() {
   const router = useRouter()
+  const currentYear = new Date().getFullYear()
+  const minimumDeadline = `${currentYear}-01-01`
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -27,11 +33,12 @@ export default function ProjectCreatePage() {
     },
   ])
   const [goals, setGoals] = useState([''])
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     fetchPopularTechStacks()
-        .then(setPopularTechStacks)
-        .catch(() => setPopularTechStacks([]))
+      .then(setPopularTechStacks)
+      .catch(() => setPopularTechStacks([]))
   }, [])
 
   const handleAddTech = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -89,17 +96,62 @@ export default function ProjectCreatePage() {
     setGoals(newGoals)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title || !description || !fullDescription || !deadline) {
+    if (isSubmitting) return
+
+    const normalizedPositions = positions
+      .map((position) => ({
+        role: position.role.trim(),
+        total: position.total,
+      }))
+      .filter((position) => position.role)
+
+    if (
+      !title.trim() ||
+      !description.trim() ||
+      !fullDescription.trim() ||
+      !deadline ||
+      normalizedPositions.length === 0
+    ) {
       toast.error('필수 항목을 모두 입력해주세요.')
       return
     }
-    // Simulate API call
-    toast.success('프로젝트가 성공적으로 등록되었습니다!', {
-      icon: <CheckCircle2 className="text-green-500" />,
-    })
-    router.push('/projects')
+
+    if (Number(deadline.slice(0, 4)) < currentYear) {
+      toast.error(`${currentYear}년 이전 날짜는 선택할 수 없습니다.`)
+      return
+    }
+
+    const payload: ProjectCreateRequest = {
+      title: title.trim(),
+      description: description.trim(),
+      fullDescription: fullDescription.trim(),
+      category: category as ProjectCreateRequest['category'],
+      goals: goals.map((goal) => goal.trim()).filter(Boolean),
+      deadline,
+      open: true,
+      techStacks: selectedTechs,
+      positions: normalizedPositions,
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const createdProject = await createProject(payload)
+      toast.success('프로젝트가 성공적으로 등록되었습니다.', {
+        icon: <CheckCircle2 className="text-green-500" />,
+      })
+      router.push(`/projects/${createdProject.id}`)
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : '프로젝트 등록 중 오류가 발생했습니다.',
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -203,6 +255,7 @@ export default function ProjectCreatePage() {
               </label>
               <Input
                 type="date"
+                min={minimumDeadline}
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
                 required
@@ -380,8 +433,13 @@ export default function ProjectCreatePage() {
           <Button type="button" variant="ghost" onClick={() => router.back()}>
             취소
           </Button>
-          <Button type="submit" variant="gradient" className="px-8">
-            프로젝트 등록하기
+          <Button
+            type="submit"
+            variant="gradient"
+            className="px-8"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? '등록 중...' : '프로젝트 등록하기'}
           </Button>
         </div>
       </form>

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/auth/test") // 💡 SecurityConfig의 permitAll() 범위인 /api/auth/** 에 맞춤
+@RequestMapping("/auth/test") // SecurityConfig의 permitAll() 범위인 /auth/** 에 맞춤
 @Profile({"local", "dev"})       // 💡 local, dev 환경에서만 빈 등록되도록 안전 가드
 @RequiredArgsConstructor
 public class TestAuthController {
@@ -28,7 +28,7 @@ public class TestAuthController {
 
     /**
      * 포스트맨 테스트용 강제 JWT 쿠키 발급 API
-     * 예: GET http://localhost:8080/api/auth/test/login/1
+     * 예: GET http://localhost:8080/auth/test/login/1
      */
     @GetMapping("/login/{memberId}")
     public RsData<String> loginAsForTest(

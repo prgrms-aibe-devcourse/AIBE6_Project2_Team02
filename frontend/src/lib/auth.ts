@@ -7,7 +7,7 @@ export interface AuthUser {
 
 export async function fetchMe(): Promise<AuthUser | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/auth/me`, {
+    const res = await fetch(`${API_BASE}/auth/me`, {
       credentials: 'include',
       cache: 'no-store',
     })
@@ -19,7 +19,7 @@ export async function fetchMe(): Promise<AuthUser | null> {
 }
 
 export async function logout(): Promise<void> {
-  await fetch(`${API_BASE}/api/auth/logout`, {
+  await fetch(`${API_BASE}/auth/logout`, {
     method: 'POST',
     credentials: 'include',
   })

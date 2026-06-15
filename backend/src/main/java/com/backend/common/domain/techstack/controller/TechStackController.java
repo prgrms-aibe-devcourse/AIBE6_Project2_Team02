@@ -1,6 +1,6 @@
 package com.backend.common.domain.techstack.controller;
 
-import com.backend.api.service.PublicApiService;
+import com.backend.common.domain.project.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,14 +9,14 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/tech-stacks")
+@RequestMapping("/tech-stacks")
 @RequiredArgsConstructor
 public class TechStackController {
 
-    private final PublicApiService publicApiService;
+    private final ProjectService projectService;
 
     @GetMapping
     public List<String> getPopularTechStacks() {
-        return publicApiService.getPopularTechStacks();
+        return projectService.getPopularTechStacks();
     }
 }

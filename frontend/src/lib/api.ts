@@ -1,17 +1,20 @@
 import type { Project, ReportResponse, RsData, User } from '../types'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
+const API_BASE = 'http://localhost:8080'
 
-async function fetchJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    cache: 'no-store',
-  })
-
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`)
-  }
-
-  return (await response.json()) as Promise<T>
+export interface ProjectCreateRequest {
+  title: string
+  description: string
+  fullDescription: string
+  category: Project['category']
+  goals: string[]
+  deadline: string
+  open: boolean
+  techStacks: string[]
+  positions: Array<{
+    role: string
+    total: number
+  }>
 }
 
 async function fetchRsDataJson<T>(path: string): Promise<T> {
@@ -28,28 +31,53 @@ async function fetchRsDataJson<T>(path: string): Promise<T> {
 }
 
 export function fetchProjects() {
-  return fetchJson<Project[]>('/api/projects')
+  return fetchRsDataJson<Project[]>('/api/projects')
 }
 
 export function fetchProject(id: string) {
-  return fetchJson<Project>(`/api/projects/${id}`)
+  return fetchRsDataJson<Project>(`/api/projects/${id}`)
+}
+
+export async function createProject(
+  payload: ProjectCreateRequest,
+): Promise<Project> {
+  const response = await fetch(`${API_BASE}/projects`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    const errorBody = (await response.json().catch(() => null)) as
+      | Partial<RsData<unknown>>
+      | null
+
+    throw new Error(
+      errorBody?.msg ?? `Project creation failed: ${response.status}`,
+    )
+  }
+
+  return (await response.json()) as Project
 }
 
 export function fetchMembers() {
-  return fetchJson<User[]>('/api/members')
+  return fetchRsDataJson<User[]>('/api/members')
 }
 
 export function fetchMember(id: string) {
-  return fetchJson<User>(`/api/members/${id}`)
+  return fetchRsDataJson<User>(`/api/members/${id}`)
 }
 
 export function fetchPopularTechStacks() {
-  return fetchJson<string[]>('/api/tech-stacks')
+  return fetchRsDataJson<string[]>('/api/tech-stacks')
 }
 
 export function fetchUserReports() {
   return fetchRsDataJson<ReportResponse[]>(
-    '/admin/reports?targetType=PORTFOLIO',
+      '/admin/reports?targetType=PORTFOLIO',
   )
 }
 
