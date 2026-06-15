@@ -3,6 +3,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 export interface AuthUser {
   memberId: number
   nickname: string
+  profileImageUrl: string | null
 }
 
 export async function fetchMe(): Promise<AuthUser | null> {

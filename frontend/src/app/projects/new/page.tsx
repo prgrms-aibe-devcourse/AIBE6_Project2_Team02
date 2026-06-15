@@ -8,10 +8,14 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, CheckCircle2, Plus, X } from 'lucide-react'
 
 import { Badge, Button, Card, Input } from '../../../components/ui'
-import { leaderPositionOptions } from '../../../constants/project'
+import { LoginModal } from '../../../components/LoginModal'
 import { createProject, fetchPopularTechStacks } from '../../../lib/api'
+import { leaderPositionOptions } from '../../../constants/project'
 import type { ProjectCreateRequest } from '../../../types/dto/project'
 import type { PositionType } from '../../../types/enums/project'
+import type { ProjectCreateRequest } from '../../../types/dto/project'
+import { useAuth } from '../../providers'
+
 
 export default function ProjectCreatePage() {
   const router = useRouter()
@@ -161,6 +165,10 @@ export default function ProjectCreatePage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (!authLoading && !user) {
+    return <LoginModal onClose={() => router.replace('/')} />
   }
 
   return (
