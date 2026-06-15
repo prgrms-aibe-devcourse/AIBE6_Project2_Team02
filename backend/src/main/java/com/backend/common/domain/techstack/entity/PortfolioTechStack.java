@@ -1,6 +1,6 @@
 package com.backend.common.domain.techstack.entity;
 
-import com.backend.common.domain.portfolio.entity.Portfolio;
+import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;

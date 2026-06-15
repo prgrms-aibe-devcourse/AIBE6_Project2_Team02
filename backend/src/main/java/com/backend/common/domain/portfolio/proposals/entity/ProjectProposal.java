@@ -1,7 +1,7 @@
-package com.backend.common.domain.project.proposals.entity;
+package com.backend.common.domain.portfolio.proposals.entity;
 
 import com.backend.common.domain.member.entity.Member;
-import com.backend.common.domain.portfolio.entity.Portfolio;
+import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
 import com.backend.common.domain.project.enums.SelectionStatus;
 import com.backend.common.domain.project.project.entity.Project;
 import jakarta.persistence.*;

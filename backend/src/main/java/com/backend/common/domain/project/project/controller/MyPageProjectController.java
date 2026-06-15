@@ -1,7 +1,7 @@
 package com.backend.common.domain.project.project.controller;
 
 import com.backend.common.domain.project.project.dto.MyPageProjectResponse;
-import com.backend.common.domain.project.project.dto.MyPageProposalResponse;
+import com.backend.common.domain.portfolio.proposals.dto.MyPageProposalResponse;
 import com.backend.common.domain.project.project.dto.MyPageApplicationResponse;
 import com.backend.common.domain.project.project.service.MyPageProjectService;
 import com.backend.common.global.rsdata.RsData;
@@ -112,20 +112,6 @@ public class MyPageProjectController {
         return RsData.of("200", "최근 본 프로젝트 목록에서 삭제되었습니다.", null);
     }
 
-    /**
-     * 내 포폴에 온 제안 목록 조회
-     */
-    @GetMapping("/proposals")
-    @PreAuthorize("isAuthenticated()")
-    public RsData<List<MyPageProposalResponse>> getMyReceivedProposals(
-            @AuthenticationPrincipal CustomMemberDetails userDetails
-    ) {
-        List<MyPageProposalResponse> responses = myPageProjectService.getMyReceivedProposals(userDetails.getMemberId())
-                .stream()
-                .map(MyPageProposalResponse::from)
-                .toList();
-        return RsData.of("200", "받은 프로젝트 제안 목록 조회가 완료되었습니다.", responses);
-    }
 
     /**
      * 내가 올린 프로젝트에 들어온 지원 목록 조회

@@ -1,6 +1,6 @@
-package com.backend.common.domain.portfolio.repository;
+package com.backend.common.domain.portfolio.portfolio.repository;
 
-import com.backend.common.domain.portfolio.entity.Portfolio;
+import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

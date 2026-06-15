@@ -1,6 +1,6 @@
-package com.backend.common.domain.project.project.dto;
+package com.backend.common.domain.portfolio.proposals.dto;
 
-import com.backend.common.domain.project.proposals.entity.ProjectProposal;
+import com.backend.common.domain.portfolio.proposals.entity.ProjectProposal;
 import java.time.LocalDateTime;
 
 public record MyPageProposalResponse(
