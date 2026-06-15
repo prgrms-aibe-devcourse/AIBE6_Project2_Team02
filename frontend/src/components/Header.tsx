@@ -12,13 +12,14 @@ import { LoginModal } from './LoginModal';
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
   
   const navLinks = [
     { name: '프로젝트 찾기', path: '/projects' },
     { name: '포트폴리오 찾기', path: '/developers' },
-    { name: '마이페이지', path: '/mypage' },
+    ...(user ? [{ name: '마이페이지', path: '/mypage' }] : []),
   ];
 
   return (
@@ -73,11 +74,19 @@ export function Header() {
                 href="/mypage"
                 className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors border border-slate-200 overflow-hidden"
               >
-                <img
-                  src="https://i.pravatar.cc/150?u=current"
-                  alt="Avatar"
-                  className="h-full w-full object-cover"
-                />
+                {user.profileImageUrl && !avatarError ? (
+                  <img
+                    src={user.profileImageUrl}
+                    alt="Avatar"
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                    onError={() => setAvatarError(true)}
+                  />
+                ) : (
+                  <span className="text-xs font-medium">
+                    {user.nickname?.[0]?.toUpperCase()}
+                  </span>
+                )}
               </Link>
               <Button variant="ghost" size="sm" onClick={logout}>
                 로그아웃

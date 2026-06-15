@@ -10,6 +10,7 @@ import { Calendar, Code2, Github, Globe, Mail, MapPin } from 'lucide-react'
 import { Badge, Button, Card } from '../../../components/ui'
 import { fetchMember, fetchProjects } from '../../../lib/api'
 import type { Project, User } from '../../../types'
+import { useAuth } from '../../providers'
 
 const statusMap: Record<string, string> = {
   Open: '모집중',
@@ -27,6 +28,8 @@ const categoryMap: Record<string, string> = {
 export default function DeveloperProfilePage() {
   const params = useParams()
   const id = params.id as string
+  const { user: authUser } = useAuth()
+  const isMyProfile = authUser !== null && String(authUser.memberId) === id
   const [user, setUser] = useState<User | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
@@ -99,12 +102,22 @@ export default function DeveloperProfilePage() {
             <p className="text-blue-600 font-medium mb-4">{user.role}</p>
 
             <div className="flex justify-center gap-3 mb-6">
-              <Button variant="gradient" className="w-full">
-                프로젝트 제안하기
-              </Button>
-              <Button variant="outline" size="icon">
-                <Mail className="w-4 h-4" />
-              </Button>
+              {isMyProfile ? (
+                <Link href="/mypage/portfolio/edit" className="w-full">
+                  <Button variant="gradient" className="w-full">
+                    포트폴리오 수정
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Button variant="gradient" className="w-full">
+                    프로젝트 제안하기
+                  </Button>
+                  <Button variant="outline" size="icon">
+                    <Mail className="w-4 h-4" />
+                  </Button>
+                </>
+              )}
             </div>
 
             <div className="space-y-3 text-sm text-slate-600 text-left border-t border-slate-100 pt-6">
