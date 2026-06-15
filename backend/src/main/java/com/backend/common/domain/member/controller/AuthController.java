@@ -1,4 +1,4 @@
-package com.backend.api.controller;
+package com.backend.common.domain.member.controller;
 
 import com.backend.api.dto.AuthResponse;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
