@@ -100,6 +100,33 @@ export function fetchPopularTechStacks() {
   return fetchRsDataJson<string[]>('/tech-stacks')
 }
 
+export interface TechStackItem {
+  id: number
+  name: string
+}
+
+export interface PortfolioCreateRequest {
+  title: string
+  introduction?: string
+  desiredPosition: string
+  githubUrl?: string
+  blogUrl?: string
+  deployUrl?: string
+  isPublished: boolean
+  techStackIds: number[]
+}
+
+export function fetchAllTechStacks() {
+  return fetchRsDataJson<TechStackItem[]>('/tech-stacks/all')
+}
+
+export function createPortfolio(data: PortfolioCreateRequest) {
+  return fetchRsDataJson<void>('/portfolios', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
 export function fetchMyPortfolio() {
   return fetchRsDataJson<Portfolio>('/portfolios/me')
 }

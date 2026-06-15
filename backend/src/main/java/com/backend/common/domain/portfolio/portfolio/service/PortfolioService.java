@@ -1,5 +1,8 @@
 package com.backend.common.domain.portfolio.portfolio.service;
 
+import com.backend.common.domain.member.entity.Member;
+import com.backend.common.domain.member.repository.MemberRepository;
+import com.backend.common.domain.portfolio.portfolio.dto.PortfolioCreateRequest;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioResponse;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioUpdateRequest;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
@@ -31,9 +34,37 @@ import java.util.List;
 public class PortfolioService {
 
     private final PortfolioRepository portfolioRepository;
+    private final MemberRepository memberRepository;
     private final TechStackRepository techStackRepository;
     private final ProjectProposalRepository projectProposalRepository;
     private final ProjectMemberRepository projectMemberRepository;
+
+    /**
+     * 포트폴리오 등록
+     */
+    @Transactional
+    public void createPortfolio(Long memberId, PortfolioCreateRequest request) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 회원입니다."));
+
+        Portfolio portfolio = Portfolio.create(
+                member,
+                request.title(),
+                request.introduction(),
+                request.githubUrl(),
+                request.blogUrl(),
+                request.deployUrl(),
+                request.desiredPosition(),
+                request.isPublished()
+        );
+        portfolioRepository.save(portfolio);
+
+        List<TechStack> techStacks = techStackRepository.findAllById(request.techStackIds());
+        List<PortfolioTechStack> portfolioTechStacks = techStacks.stream()
+                .map(ts -> PortfolioTechStack.builder().portfolio(portfolio).techStack(ts).build())
+                .toList();
+        portfolio.updateTechStacks(portfolioTechStacks);
+    }
 
     /**
      * 내 포트폴리오 상세 조회

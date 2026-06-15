@@ -161,7 +161,9 @@ export default function MyPage() {
                     <p className="text-slate-500 mb-6">
                       나만의 멋진 포트폴리오를 등록하고 팀 제안을 받아보세요.
                     </p>
-                    <Button>포트폴리오 등록하기</Button>
+                    <Link href="/mypage/portfolio/new">
+                      <Button>포트폴리오 등록하기</Button>
+                    </Link>
                   </Card>
                 )}
 
