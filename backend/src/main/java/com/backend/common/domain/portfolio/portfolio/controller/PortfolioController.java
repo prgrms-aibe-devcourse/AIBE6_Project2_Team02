@@ -58,4 +58,20 @@ public class PortfolioController {
         return RsData.of("200", "받은 프로젝트 제안 목록 조회가 완료되었습니다.", responses);
     }
 
+    /**
+     * 받은 프로젝트 제안 수락/거절 액션 처리
+     * 패스 배리어블로 proposalId를 받고, 쿼리 스트링으로 accept 여부를 받음 (예: /me/proposals/1?accept=true)
+     */
+    @PatchMapping("/me/proposals/{proposalId}")
+    @PreAuthorize("isAuthenticated()")
+    public RsData<Void> handleProposalAction(
+            @PathVariable("proposalId") Long proposalId,
+            @RequestParam("accept") boolean accept,
+            @AuthenticationPrincipal CustomMemberDetails userDetails
+    ) {
+        portfolioService.handleProposalAction(userDetails.getMemberId(), proposalId, accept);
+        String message = accept ? "프로젝트 제안을 수락하여 팀원에 합류했습니다." : "프로젝트 제안을 거절했습니다.";
+        return RsData.of("200", message, null);
+    }
+
 }

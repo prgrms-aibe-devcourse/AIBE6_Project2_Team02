@@ -2,14 +2,20 @@ package com.backend.common.domain.project.project.service;
 
 import com.backend.common.domain.project.application.entity.ProjectApplication;
 import com.backend.common.domain.project.application.repository.ProjectApplicationRepository;
+import com.backend.common.domain.project.enums.SelectionStatus;
 import com.backend.common.domain.project.project.entity.Project;
+import com.backend.common.domain.project.project.entity.ProjectMember;
+import com.backend.common.domain.project.project.entity.ProjectRole;
+import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.project.project.repository.ProjectRepository;
 import com.backend.common.domain.project.project.repository.ProjectViewRepository;
-import com.backend.common.domain.portfolio.proposals.entity.ProjectProposal;
-import com.backend.common.domain.portfolio.proposals.repository.ProjectProposalRepository;
+import com.backend.common.global.exception.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -21,6 +27,7 @@ public class MyPageProjectService {
     private final ProjectRepository projectRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
     private final ProjectViewRepository projectViewRepository;
+    private final ProjectMemberRepository projectMemberRepository;
 
     // ================= 마이페이지 프로젝트 조회 5종 =================
 
@@ -76,4 +83,43 @@ public class MyPageProjectService {
     public List<ProjectApplication> getMyProjectApplications(Long memberId) {
         return projectApplicationRepository.findMyProjectApplications(memberId);
     }
+
+    /**
+     * 프로젝트 지원 수락 또는 거절 처리
+     */
+    @Transactional
+    @PreAuthorize("@mypageAuthorizer.isProjectLeader(#applicationId, authentication.principal.memberId)")
+    public void handleApplicationAction(Long memberId, Long applicationId, boolean isAccept) {
+
+        ProjectApplication application = projectApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 지원서입니다."));
+
+        if (isAccept) {
+            application.accept();
+
+            ProjectMember projectMember = ProjectMember.builder()
+                    .project(application.getProject())
+                    .member(application.getApplicant())
+                    .position(application.getPosition())
+                    .role(ProjectRole.MEMBER)
+                    .build();
+            projectMemberRepository.save(projectMember);
+        } else {
+            application.reject();
+        }
+    }
+
+    /**
+     * 내가 신청한 프로젝트 지원 취소 처리
+     */
+    @Transactional
+    @PreAuthorize("@mypageAuthorizer.isApplicant(#applicationId, authentication.principal.memberId)")
+    public void cancelProjectApplication(Long memberId, Long applicationId) {
+
+        ProjectApplication application = projectApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 지원 내역입니다."));
+
+        application.cancel();
+    }
+
 }
