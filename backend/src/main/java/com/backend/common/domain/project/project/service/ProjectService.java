@@ -10,6 +10,9 @@ import com.backend.common.domain.project.dto.ProjectCreateRequest;
 import com.backend.common.domain.project.dto.ProjectResponse;
 import com.backend.common.domain.project.dto.UserResponse;
 import com.backend.common.domain.project.enums.PositionType;
+import com.backend.common.domain.project.enums.ProjectCategory;
+import com.backend.common.domain.project.enums.ProjectStatus;
+import com.backend.common.domain.project.enums.RecruitmentStatus;
 import com.backend.common.domain.project.project.entity.*;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.project.project.repository.ProjectRepository;
@@ -206,9 +209,9 @@ public class ProjectService {
                 project.getDescription(),
                 project.getFullDescription() == null ? project.getDescription() : project.getFullDescription(),
                 splitGoals(project.getGoal()),
-                project.getTechStacks() == null ? List.of() : List.copyOf(project.getTechStacks()),
+                projectTechStackNames(project),
                 buildPositions(members, project.isRecruitmentOpen()),
-                project.isRecruitmentOpen() ? "Open" : "Closed",
+                project.isRecruitmentOpen() ? RecruitmentStatus.OPEN : RecruitmentStatus.CLOSED,
                 project.getCategory() == null ? inferCategory(project) : project.getCategory(),
                 leader,
                 teamMembers,
@@ -275,23 +278,29 @@ public class ProjectService {
         };
     }
 
-    private String inferCategory(Project project) {
+    private ProjectCategory inferCategory(Project project) {
         String text = (project.getTitle() + " " + project.getDescription()).toLowerCase();
-        List<String> techStacks = project.getTechStacks() == null ? List.of() : project.getTechStacks();
+        List<String> techStacks = projectTechStackNames(project);
 
         if (text.contains("ai") || text.contains("llm") || techStacks.stream().anyMatch(t -> t.toLowerCase().contains("openai"))) {
-            return "AI";
+            return ProjectCategory.AI;
         }
         if (text.contains("game") || text.contains("godot") || techStacks.stream().anyMatch(t -> t.equalsIgnoreCase("Godot"))) {
-            return "Game";
+            return ProjectCategory.GAME;
         }
         if (text.contains("mobile") || text.contains("앱") || techStacks.stream().anyMatch(t ->
                 t.equalsIgnoreCase("React Native") || t.equalsIgnoreCase("Flutter") || t.equalsIgnoreCase("Swift"))) {
-            return "Mobile";
+            return ProjectCategory.MOBILE;
         }
         if (text.contains("web3") || text.contains("blockchain")) {
-            return "Other";
+            return ProjectCategory.OTHER;
         }
-        return "Web";
+        return ProjectCategory.WEB;
+    }
+
+    private List<String> projectTechStackNames(Project project) {
+        return project.getProjectTechStacks().stream()
+                .map(projectTechStack -> projectTechStack.getTechStack().getName())
+                .toList();
     }
 }

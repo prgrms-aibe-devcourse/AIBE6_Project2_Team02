@@ -1,5 +1,7 @@
 package com.backend.common.domain.project.dto;
 
+import com.backend.common.domain.project.enums.ProjectCategory;
+import com.backend.common.domain.project.enums.RecruitmentStatus;
 import java.util.List;
 
 public record ProjectResponse(
@@ -10,8 +12,8 @@ public record ProjectResponse(
         List<String> goals,
         List<String> techStack,
         List<PositionResponse> positions,
-        String recruitmentStatus,
-        String category,
+        RecruitmentStatus recruitmentStatus,
+        ProjectCategory category,
         UserResponse leader,
         List<UserResponse> teamMembers,
         String deadline,

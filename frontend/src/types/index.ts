@@ -36,9 +36,33 @@ export type Project = {
 }
 
 export interface RsData<T> {
-  resultCode: string
-  msg: string
+  code: string
+  message: string
   data: T
+}
+
+export interface Portfolio {
+  id: number
+  title: string
+  introduction: string
+  githubUrl: string | null
+  blogUrl: string | null
+  deployUrl: string | null
+  desiredPosition: string | null
+  isPublished: boolean
+  techStacks: string[]
+}
+
+export type PortfolioUpdateRequest = Omit<Portfolio, 'id'>
+
+export interface ProjectProposal {
+  proposalId: number
+  projectId: number
+  projectTitle: string
+  proposerName: string
+  message: string
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED'
+  createdAt: string
 }
 
 export type ReportTargetType = 'PORTFOLIO' | 'PROJECT'

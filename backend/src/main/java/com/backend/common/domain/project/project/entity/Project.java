@@ -1,6 +1,8 @@
 package com.backend.common.domain.project.project.entity;
 
 import com.backend.common.domain.member.entity.Member;
+import com.backend.common.domain.project.enums.ProjectCategory;
+import com.backend.common.domain.project.enums.ProjectStatus;
 import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -34,7 +36,8 @@ public class Project {
     @Column(columnDefinition = "TEXT")
     private String fullDescription;
 
-    private String category;
+    @Enumerated(EnumType.STRING)
+    private ProjectCategory category;
 
     @Column(columnDefinition = "TEXT")
     private String goal;
@@ -58,7 +61,7 @@ public class Project {
     private List<ProjectTechStack> projectTechStacks = new ArrayList<>();
 
     @Builder
-    public Project(Member leader, String title, String description, String fullDescription, String category, String goal, LocalDate deadline, List<String> techStacks, List<ProjectPosition> positions) {
+    public Project(Member leader, String title, String description, String fullDescription, ProjectCategory category, String goal, LocalDate deadline, List<String> techStacks, List<ProjectPosition> positions) {
         this.leader = leader;
         this.title = title;
         this.description = description;

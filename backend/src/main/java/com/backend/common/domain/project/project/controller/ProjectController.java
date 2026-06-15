@@ -4,6 +4,7 @@ import com.backend.common.domain.project.dto.ProjectCreateRequest;
 import com.backend.common.domain.project.dto.ProjectResponse;
 import com.backend.common.domain.project.exception.ProjectNotFoundException;
 import com.backend.common.domain.project.project.service.ProjectService;
+import com.backend.common.global.rsdata.RsData;
 import com.backend.common.global.security.MemberPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +23,8 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @GetMapping
-    public List<ProjectResponse> getProjects() {
-        return projectService.getProjects();
+    public RsData<List<ProjectResponse>> getProjects() {
+        return RsData.of("200", "프로젝트 목록 조회 성공", projectService.getProjects());
     }
 
     @GetMapping("/{id}")

@@ -1,6 +1,7 @@
 package com.backend.common.domain.techstack.controller;
 
 import com.backend.common.domain.project.project.service.ProjectService;
+import com.backend.common.global.rsdata.RsData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +17,7 @@ public class TechStackController {
     private final ProjectService projectService;
 
     @GetMapping
-    public List<String> getPopularTechStacks() {
-        return projectService.getPopularTechStacks();
+    public RsData<List<String>> getPopularTechStacks() {
+        return RsData.of("200", "기술 스택 목록 조회 성공", projectService.getPopularTechStacks());
     }
 }
