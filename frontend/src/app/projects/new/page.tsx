@@ -15,8 +15,13 @@ import type { PositionType } from '../../../types/enums/project'
 
 export default function ProjectCreatePage() {
   const router = useRouter()
-  const currentYear = new Date().getFullYear()
-  const minimumDeadline = `${currentYear}-01-01`
+  const today = new Date()
+  const currentYear = today.getFullYear()
+  const minimumDeadline = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, '0'),
+    String(today.getDate()).padStart(2, '0'),
+  ].join('-')
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -119,7 +124,9 @@ export default function ProjectCreatePage() {
       return
     }
 
-    if (Number(deadline.slice(0, 4)) < currentYear) {
+    if (deadline < minimumDeadline) {
+      toast.error('모집 마감일은 오늘보다 이전으로 설정할 수 없습니다.')
+      return
       toast.error(`${currentYear}년 이전 날짜는 선택할 수 없습니다.`)
       return
     }

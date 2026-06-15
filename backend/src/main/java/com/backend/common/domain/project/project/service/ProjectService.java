@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.Year;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -131,8 +130,9 @@ public class ProjectService {
         Member leader = memberRepository.findById(memberId)
                 .orElseThrow(() -> new NoSuchElementException("Member not found"));
         LocalDate deadline = LocalDate.parse(req.deadline());
+        validateDeadline(deadline);
 
-        if (deadline.getYear() < Year.now().getValue()) {
+        if (deadline.isBefore(LocalDate.now())) {
             throw new IllegalArgumentException("현재 연도 이전의 마감일은 설정할 수 없습니다.");
         }
 
@@ -274,6 +274,14 @@ public class ProjectService {
             return List.of();
         }
         return List.of(goal.split(",\\s*"));
+    }
+
+    private void validateDeadline(LocalDate deadline) {
+        if (deadline.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException(
+                    "모집 마감일은 오늘보다 이전으로 설정할 수 없습니다."
+            );
+        }
     }
 
     private List<PositionResponse> buildPositions(List<ProjectMember> members, boolean recruitmentOpen) {
