@@ -1,5 +1,6 @@
 package com.backend.common.global.exception;
 
+import com.backend.common.global.exception.exception.PortfolioInputException;
 import com.backend.common.global.exception.exception.ResourceNotFoundException;
 import com.backend.common.global.rsdata.RsData;
 import jakarta.persistence.EntityNotFoundException;
@@ -157,6 +158,15 @@ public class GlobalExceptionHandler {
         );
 
         return RsData.of("405", message);
+    }
+
+    /*
+    *   포트폴리오 작성시 필수 사항 미작성시
+    * */
+    @ExceptionHandler(PortfolioInputException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public RsData<?> handlerPortfolioInputException(PortfolioInputException e) {
+        return RsData.of(e.getCode(), e.getMessage());
     }
 
 
