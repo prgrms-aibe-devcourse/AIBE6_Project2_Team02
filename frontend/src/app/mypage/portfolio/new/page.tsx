@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Check, Code2, Globe, Github, BookOpen } from 'lucide-react'
-import { Badge, Button, Card, Input } from '../../../../components/ui'
-import { fetchAllTechStacks, createPortfolio, type TechStackItem } from '../../../../lib/api'
+import { Button, Card, Input } from '../../../../components/ui'
+import { createPortfolio, fetchAllTechStacks } from '../../../../lib/api'
+import type { TechStackItem } from '../../../../types/tech-stack'
 import { useAuth } from '../../../providers'
 
 export default function PortfolioNewPage() {
