@@ -68,7 +68,7 @@ export interface ProjectProposal {
 export interface CreateReviewRequest {
   projectId: number
   revieweeId: number
-  content: string
+  content: Record<string, string>
 }
 
 export type ReportTargetType = 'PORTFOLIO' | 'PROJECT'
@@ -84,4 +84,11 @@ export interface ReportResponse {
   status: ReportStatus
   createdAt: string
   reviewedAt: string | null
+}
+
+export interface ReviewResponse {
+  reviewId: number
+  projectId: number
+  content: Record<string, string>
+  createdAt: string
 }

@@ -12,7 +12,6 @@ import {
   LogOut,
   MessageSquare,
   Settings,
-
 } from 'lucide-react'
 
 import { Badge, Button, Card } from '../../components/ui'
@@ -171,11 +170,16 @@ export default function MyPage() {
                   <Card className="p-12 text-center border-dashed">
                     <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-slate-900 mb-2">
-                      아직 받은 피어리뷰가 없습니다
+                      피어리뷰 확인하기
                     </h3>
-                    <p className="text-slate-500">
-                      프로젝트를 완료하고 동료들로부터 리뷰를 받아보세요.
+                    <p className="text-slate-500 mb-6">
+                      프로젝트 동료들이 남겨준 소중한 피드백들을 확인해보세요.
                     </p>
+                    <Link href="/mypage/reviews">
+                      <Button variant="outline" className="gap-2">
+                        내 리뷰 목록 보기 <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </Link>
                   </Card>
                 )}
               </motion.div>

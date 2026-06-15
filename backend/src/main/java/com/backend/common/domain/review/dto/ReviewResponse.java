@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Getter
 @Builder
@@ -14,25 +15,25 @@ public class ReviewResponse {
 
     private Long projectId;
 
-    private Long reviewerId;
-    private String reviewerNickname;
+    //private Long reviewerId;
+    //private String reviewerNickname;
 
-    private Long revieweeId;
-    private String revieweeNickname;
+    //private Long revieweeId;
+    //private String revieweeNickname;
 
-    private String content;
+    private Map<String, String> content;
 
     private LocalDateTime createdAt;
 
-    public static ReviewResponse from(Review review) {
+    public static ReviewResponse of(Review review, Map<String, String> parsedContent) {
         return ReviewResponse.builder()
                 .reviewId(review.getId())
                 .projectId(review.getProject().getId())
-                .reviewerId(review.getReviewer().getId())
-                .reviewerNickname(review.getReviewer().getNickname())
-                .revieweeId(review.getReviewee().getId())
-                .revieweeNickname(review.getReviewee().getNickname())
-                .content(review.getContent())
+                //.reviewerId(review.getReviewer().getId())
+                //.reviewerNickname(review.getReviewer().getNickname())
+                //.revieweeId(review.getReviewee().getId())
+                //.revieweeNickname(review.getReviewee().getNickname())
+                .content(parsedContent)
                 .createdAt(review.getCreatedAt())
                 .build();
     }

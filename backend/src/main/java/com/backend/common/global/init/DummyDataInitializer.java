@@ -169,17 +169,22 @@ public class DummyDataInitializer implements ApplicationRunner {
             List<ProjectMember> projectMembers = projectMemberRepository.findByProjectId(project.getId());
             if (projectMembers.size() < 2) continue;
 
+            String content = """
+                        {
+                          "a1":"소통이 원활했습니다.",
+                          "a2":"맡은 역할을 책임감 있게 수행했습니다.",
+                          "a3":"다음 프로젝트도 함께하고 싶습니다."
+                        }
+                        """;
+
             for (ProjectMember reviewerMember : projectMembers) {
                 for (ProjectMember revieweeMember : projectMembers) {
                     if (reviewerMember.getId().equals(revieweeMember.getId())) continue;
-
                     reviewRepository.save(Review.builder()
                             .project(project)
                             .reviewer(reviewerMember.getMember())
                             .reviewee(revieweeMember.getMember())
-                            .content(reviewerMember.getMember().getNickname() + "님이 " +
-                                    revieweeMember.getMember().getNickname() + "님에게 남긴 리뷰입니다. " +
-                                    project.getTitle() + " 프로젝트에서 함께해서 즐거웠습니다!")
+                            .content(content)
                             .build());
                 }
             }

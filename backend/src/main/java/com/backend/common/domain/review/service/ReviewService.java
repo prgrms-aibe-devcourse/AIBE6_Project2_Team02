@@ -2,8 +2,8 @@ package com.backend.common.domain.review.service;
 
 import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.repository.MemberRepository;
+import com.backend.common.domain.project.enums.ProjectStatus;
 import com.backend.common.domain.project.project.entity.Project;
-import com.backend.common.domain.project.project.entity.ProjectStatus;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.project.project.repository.ProjectRepository;
 import com.backend.common.domain.review.dto.CreateReviewRequest;
@@ -13,8 +13,12 @@ import com.backend.common.domain.review.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +30,7 @@ public class ReviewService {
     private final MemberRepository memberRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public Long createReview(Long reviewerId, CreateReviewRequest request) {
@@ -58,11 +63,19 @@ public class ReviewService {
         Member reviewee = memberRepository.findById(request.getRevieweeId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 리뷰 대상자입니다."));
 
+        // 4. Map을 JSON 문자열로 변환
+        String contentJson;
+        try {
+            contentJson = objectMapper.writeValueAsString(request.getContent());
+        } catch (Exception e) {
+            throw new RuntimeException("리뷰 내용을 처리하는 중 오류가 발생했습니다.", e);
+            }
+
         Review review = Review.builder()
                 .project(project)
                 .reviewer(reviewer)
                 .reviewee(reviewee)
-                .content(request.getContent())
+                .content(contentJson)
                 .build();
 
         return reviewRepository.save(review).getId();
@@ -70,7 +83,20 @@ public class ReviewService {
 
     public List<ReviewResponse> findByRevieweeId(Long revieweeId) {
         return reviewRepository.findByRevieweeId(revieweeId).stream()
-                .map(ReviewResponse::from)
+                .map(review -> {
+                    Map<String, String> parsedContent = parseContent(review.getContent());
+                    return ReviewResponse.of(review, parsedContent);
+                    })
                 .collect(Collectors.toList());
+    }
+
+    private Map<String, String> parseContent(String contentJson) {
+        try {
+            return objectMapper.readValue(
+                    contentJson,
+                    new TypeReference<Map<String, String>>() {});
+        } catch (Exception e) {
+            return Collections.singletonMap("a1", contentJson);
+        }
     }
 }

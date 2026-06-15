@@ -56,11 +56,14 @@ export default function ReviewWritePage() {
     setIsSubmitting(true)
 
     try {
-      const content = `${praise}\`${improvement}\`${gratitude}`
       await createReview({
         projectId: Number(projectId),
         revieweeId: Number(userId),
-        content,
+        content: {
+          a1: praise,
+          a2: improvement,
+          a3: gratitude,
+        },
       })
 
       toast.success('리뷰가 등록되었어요. 감사합니다!')

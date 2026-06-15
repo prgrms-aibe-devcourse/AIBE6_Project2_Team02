@@ -5,6 +5,7 @@ import type {
   Project,
   ProjectProposal,
   ReportResponse,
+  ReviewResponse,
   RsData,
   User,
 } from '../types'
@@ -29,9 +30,7 @@ async function fetchRsDataJson<T>(
   const rsData = (await response.json().catch(() => null)) as RsData<T> | null
 
   if (!response.ok) {
-    throw new Error(
-      rsData?.message ?? `API request failed: ${response.status}`,
-    )
+    throw new Error(rsData?.message ?? `API request failed: ${response.status}`)
   }
 
   if (!rsData) {
@@ -62,9 +61,9 @@ export async function createProject(
   })
 
   if (!response.ok) {
-    const errorBody = (await response.json().catch(() => null)) as
-      | Partial<RsData<unknown>>
-      | null
+    const errorBody = (await response.json().catch(() => null)) as Partial<
+      RsData<unknown>
+    > | null
 
     throw new Error(
       errorBody?.message ?? `Project creation failed: ${response.status}`,
@@ -143,4 +142,8 @@ export function createReview(request: CreateReviewRequest) {
     method: 'POST',
     body: JSON.stringify(request),
   })
+}
+
+export function fetchReviews(userId: string) {
+  return fetchRsDataJson<ReviewResponse[]>(`/reviews/users/${userId}`)
 }
