@@ -1,21 +1,23 @@
 import type {
+  CreateReviewRequest,
   Portfolio,
   PortfolioUpdateRequest,
   Project,
   ProjectProposal,
   ReportResponse,
+  ReviewResponse,
   RsData,
   User,
 } from '../types'
+import type { PortfolioCreateRequest } from '../types/dto/portfolio'
 import type {
   ProjectCreateRequest,
   ProjectPermissionResponse,
   ProjectUpdateRequest,
 } from '../types/dto/project'
-import type { PortfolioCreateRequest } from '../types/dto/portfolio'
 import type { TechStackItem } from '../types/tech-stack'
 
-const API_BASE = 'http://localhost:8080'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
 async function fetchRsDataJson<T>(
   path: string,
@@ -34,9 +36,7 @@ async function fetchRsDataJson<T>(
   const rsData = (await response.json().catch(() => null)) as RsData<T> | null
 
   if (!response.ok) {
-    throw new Error(
-      rsData?.message ?? `API request failed: ${response.status}`,
-    )
+    throw new Error(rsData?.message ?? `API request failed: ${response.status}`)
   }
 
   if (!rsData) {
@@ -114,10 +114,21 @@ export function fetchMyProjectProposals() {
 
 export function fetchUserReports() {
   return fetchRsDataJson<ReportResponse[]>(
-      '/admin/reports?targetType=PORTFOLIO',
+    '/admin/reports?targetType=PORTFOLIO',
   )
 }
 
 export function fetchProjectReports() {
   return fetchRsDataJson<ReportResponse[]>('/admin/reports?targetType=PROJECT')
+}
+
+export function createReview(request: CreateReviewRequest) {
+  return fetchRsDataJson<number>('/reviews', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  })
+}
+
+export function fetchReviews(userId: string) {
+  return fetchRsDataJson<ReviewResponse[]>(`/reviews/users/${userId}`)
 }
