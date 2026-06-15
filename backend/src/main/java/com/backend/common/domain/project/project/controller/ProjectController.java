@@ -30,9 +30,16 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    public RsData<ProjectResponse> getProject(@PathVariable Long id) {
+    public RsData<ProjectResponse> getProject(@PathVariable Long id,
+                                              @AuthenticationPrincipal CustomMemberDetails userDetails) {
         try {
-            return RsData.of("200", "프로젝트 조회 성공", projectService.getProject(id));
+            ProjectResponse response = projectService.getProject(id);
+
+            if (userDetails != null && userDetails.getMemberId() != null) {
+                projectService.makeProjectView(id, userDetails.getMemberId());
+            }
+
+            return RsData.of("200", "프로젝트 조회 성공", response);
         } catch (NoSuchElementException ex) {
             throw new ProjectNotFoundException("404","Project not found");
         }

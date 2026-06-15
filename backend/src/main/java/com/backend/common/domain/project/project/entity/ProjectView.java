@@ -3,6 +3,7 @@ package com.backend.common.domain.project.project.entity;
 import com.backend.common.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
@@ -28,4 +29,12 @@ public class ProjectView {
     private Project project;
 
     private LocalDateTime viewedAt;
+
+    @Builder
+    public ProjectView(Member member, Project project) {
+        this.member = member;
+        this.project = project;
+        this.viewedAt = LocalDateTime.now();
+    }
+
 }
