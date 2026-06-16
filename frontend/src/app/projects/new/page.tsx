@@ -381,14 +381,23 @@ export default function ProjectCreatePage() {
                 {positions.map((pos, index) => (
                   <div key={index} className="flex items-center gap-3">
                     <div className="flex-1">
-                      <Input
-                        placeholder="포지션명 (예: 프론트엔드 개발자)"
+                      <select
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
                         value={pos.role}
                         onChange={(e) =>
                           handlePositionChange(index, 'role', e.target.value)
                         }
                         required
-                      />
+                      >
+                        <option value="" disabled>
+                          모집할 포지션을 선택해주세요
+                        </option>
+                        {leaderPositionOptions.map((option) => (
+                          <option key={option.value} value={option.label}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="w-24">
                       <Input

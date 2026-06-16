@@ -13,6 +13,7 @@ import {
   fetchProjectPermissions,
   updateProject,
 } from '../../../../lib/api'
+import { leaderPositionOptions } from '../../../../constants/project'
 import type { ProjectUpdateRequest } from '../../../../types/dto/project'
 
 export default function ProjectEditPage() {
@@ -334,7 +335,8 @@ export default function ProjectEditPage() {
                       <label className="mb-2 block text-sm font-medium text-slate-700">
                         역할명 <span className="text-red-500">*</span>
                       </label>
-                      <Input
+                      <select
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
                         value={position.role}
                         disabled={minimum > 0}
                         onChange={(event) =>
@@ -344,9 +346,17 @@ export default function ProjectEditPage() {
                             event.target.value,
                           )
                         }
-                        placeholder="예: 백엔드 개발자"
                         required
-                      />
+                      >
+                        <option value="" disabled>
+                          모집할 포지션을 선택해주세요
+                        </option>
+                        {leaderPositionOptions.map((option) => (
+                          <option key={option.value} value={option.label}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
                       {minimum > 0 && (
                         <p className="mt-1 text-xs text-slate-500">
                           참여 중인 팀원이 있어 역할명을 변경할 수 없습니다.
