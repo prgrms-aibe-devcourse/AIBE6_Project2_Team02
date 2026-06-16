@@ -2,6 +2,10 @@
 FROM gradle:8-jdk17 AS build
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
+
+# gradlew 파일에 리눅스 실행 권한(+x)을 강제로 부여합니다.
+RUN chmod +x ./gradlew
+
 # 테스트 코드로 인해 빌드가 터지는 것을 방지하기 위해 -x test 추가
 RUN ./gradlew build -x test --no-daemon
 
