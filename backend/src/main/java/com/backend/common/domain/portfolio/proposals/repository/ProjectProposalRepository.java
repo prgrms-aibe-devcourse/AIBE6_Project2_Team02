@@ -21,4 +21,15 @@ public interface ProjectProposalRepository extends JpaRepository<ProjectProposal
             "AND pp.status = 'PENDING' " +
             "ORDER BY pp.createdAt DESC")
     List<ProjectProposal> findMyReceivedProposals(@Param("memberId") Long memberId);
+
+    @Query("SELECT pp FROM ProjectProposal pp " +
+            "JOIN FETCH pp.project p " +
+            "WHERE pp.portfolio.member.id = :targetMemberId " +
+            "AND pp.proposer.id = :proposerId " +
+            "AND pp.status = 'PENDING' " +
+            "ORDER BY pp.createdAt DESC")
+    List<ProjectProposal> findPendingSentProposals(
+            @Param("targetMemberId") Long targetMemberId,
+            @Param("proposerId") Long proposerId
+    );
 }

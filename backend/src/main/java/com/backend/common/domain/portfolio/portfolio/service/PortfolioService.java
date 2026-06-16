@@ -10,10 +10,12 @@ import com.backend.common.domain.portfolio.portfolio.repository.PortfolioReposit
 import com.backend.common.domain.portfolio.proposals.dto.MyPageProposalResponse;
 import com.backend.common.domain.portfolio.proposals.dto.ProjectProposalCreateRequest;
 import com.backend.common.domain.portfolio.proposals.dto.ProposalProjectResponse;
+import com.backend.common.domain.portfolio.proposals.dto.SentProjectProposalResponse;
 import com.backend.common.domain.portfolio.proposals.entity.ProjectProposal;
 import com.backend.common.domain.portfolio.proposals.repository.ProjectProposalRepository;
 import com.backend.common.domain.project.enums.PositionType;
 import com.backend.common.domain.project.enums.ProjectStatus;
+import com.backend.common.domain.project.enums.SelectionStatus;
 import com.backend.common.domain.project.project.entity.ProjectMember;
 import com.backend.common.domain.project.project.entity.ProjectMemberStatus;
 import com.backend.common.domain.project.project.entity.ProjectRole;
@@ -133,6 +135,16 @@ public class PortfolioService {
                 .toList();
     }
 
+    public List<SentProjectProposalResponse> getPendingSentProposals(
+            Long targetMemberId,
+            Long proposerId
+    ) {
+        return projectProposalRepository.findPendingSentProposals(targetMemberId, proposerId)
+                .stream()
+                .map(SentProjectProposalResponse::from)
+                .toList();
+    }
+
     @Transactional
     public void createProjectProposal(
             Long targetMemberId,
@@ -196,6 +208,21 @@ public class PortfolioService {
                 .proposer(proposer)
                 .message(message)
                 .build());
+    }
+
+    @Transactional
+    public void cancelProjectProposal(Long proposalId, Long proposerId) {
+        ProjectProposal proposal = projectProposalRepository.findById(proposalId)
+                .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 제안 요청입니다."));
+
+        if (!proposal.getProposer().getId().equals(proposerId)) {
+            throw new AccessDeniedException("제안한 사람만 취소할 수 있습니다.");
+        }
+        if (proposal.getStatus() != SelectionStatus.PENDING) {
+            throw new IllegalStateException("대기 중인 제안만 취소할 수 있습니다.");
+        }
+
+        projectProposalRepository.delete(proposal);
     }
 
     /**
