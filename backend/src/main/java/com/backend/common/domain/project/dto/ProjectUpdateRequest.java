@@ -10,6 +10,7 @@ public record ProjectUpdateRequest(
         String fullDescription,
         ProjectCategory category,
         List<String> goals,
+        List<String> techStacks,
         String deadline,
         boolean open,
         List<PositionUpdateRequest> positions
