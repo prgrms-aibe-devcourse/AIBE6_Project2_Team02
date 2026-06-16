@@ -6,24 +6,26 @@ const nextConfig = {
   reactStrictMode: true,
 
   async rewrites() {
-    return [
-      {
-        source: '/auth/:path*',
-        destination: `${BACKEND_URL}/auth/:path*`,
-      },
-      {
-        source: '/mypage/:path*',
-        destination: `${BACKEND_URL}/mypage/:path*`,
-      },
-      {
-        source: '/portfolios/:path*',
-        destination: `${BACKEND_URL}/portfolios/:path*`,
-      },
-      {
-        source: '/projects/:path*',
-        destination: `${BACKEND_URL}/projects/:path*`,
-      },
-    ];
+    return {
+      fallback: [
+        {
+          source: '/auth/:path*',
+          destination: `${BACKEND_URL}/auth/:path*`,
+        },
+        {
+          source: '/mypage/:path*',
+          destination: `${BACKEND_URL}/mypage/:path*`,
+        },
+        {
+          source: '/portfolios/:path*',
+          destination: `${BACKEND_URL}/portfolios/:path*`,
+        },
+        {
+          source: '/projects/:path*',
+          destination: `${BACKEND_URL}/projects/:path*`,
+        },
+      ],
+    }
   },
 };
 
