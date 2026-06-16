@@ -25,7 +25,7 @@ export type Project = {
   goals: string[]
   techStack: string[]
   positions: Position[]
-  recruitmentStatus: 'Open' | 'Closed'
+  recruitmentStatus: 'Open' | 'Closed' | 'Completed' | 'Stopped'
   category: 'Web' | 'Mobile' | 'AI' | 'Game' | 'Other'
   leader: User
   teamMembers: User[]
