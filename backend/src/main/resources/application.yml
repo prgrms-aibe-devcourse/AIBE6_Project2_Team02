@@ -66,3 +66,6 @@ app:
   jwt:
     expiration-ms: 604800000
     secret: ${APP_JWT_SECRET}
+  cookie:
+    secure: true
+    same-site: None
