@@ -57,9 +57,11 @@ class PortfolioControllerTest {
             {
               "title": "내 포트폴리오",
               "introduction": "소개글입니다",
-              "githubUrl": "https://github.com/test",
-              "blogUrl": "https://blog.test.com",
-              "deployUrl": "https://deploy.test.com",
+              "portfolioLinks": [
+                {"linkType": "GITHUB", "url": "https://github.com/test"},
+                {"linkType": "BLOG", "url": "https://blog.test.com"},
+                {"linkType": "DEPLOY", "url": "https://deploy.test.com"}
+              ],
               "desiredPosition": "백엔드 개발자",
               "techStackIds": [1, 2],
               "isPublished": true

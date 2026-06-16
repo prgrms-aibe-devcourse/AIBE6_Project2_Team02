@@ -1,6 +1,6 @@
 package com.backend.common.domain.portfolio.portfolio.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.backend.common.domain.portfolio.portfolio.entity.PortfolioLink;
 
 import java.util.List;
 
@@ -10,9 +10,7 @@ import java.util.List;
 public record PortfolioUpdateRequest(
         String title,
         String introduction,
-        String githubUrl,
-        String blogUrl,
-        String deployUrl,
+        List<PortfolioLink> portfolioLinks,
         String desiredPosition,
         boolean isPublished,
         List<String> techStacks // 💡 수정할 기술 스택 이름 리스트

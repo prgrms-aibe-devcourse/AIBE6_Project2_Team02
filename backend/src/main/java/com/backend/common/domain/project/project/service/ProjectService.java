@@ -5,6 +5,7 @@ import com.backend.common.domain.member.exception.MemberNotFoundException;
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.member.repository.MemberTechStackRepository;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
+import com.backend.common.domain.portfolio.portfolio.entity.PortfolioLink;
 import com.backend.common.domain.portfolio.portfolio.repository.PortfolioRepository;
 import com.backend.common.domain.project.dto.PositionResponse;
 import com.backend.common.domain.project.dto.PositionUpdateRequest;
@@ -380,8 +381,12 @@ public class ProjectService {
                 portfolio != null ? portfolio.getDesiredPosition() : "",
                 portfolio != null ? portfolio.getIntroduction() : "",
                 techStack,
-                portfolio != null ? portfolio.getGithubUrl() : null,
-                portfolio != null ? portfolio.getDeployUrl() : null,
+                portfolio != null ? portfolio.getLinks().stream()
+                        .filter(l -> "GITHUB".equals(l.getLinkType()))
+                        .map(l -> l.getUrl()).findFirst().orElse(null) : null,
+                portfolio != null ? portfolio.getLinks().stream()
+                        .filter(l -> "DEPLOY".equals(l.getLinkType()))
+                        .map(l -> l.getUrl()).findFirst().orElse(null) : null,
                 null,
                 featured
         );

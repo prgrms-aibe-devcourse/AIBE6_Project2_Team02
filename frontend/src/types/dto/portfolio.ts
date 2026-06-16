@@ -1,10 +1,13 @@
+export interface PortfolioLinkRequest {
+  linkType: string
+  url: string
+}
+
 export interface PortfolioCreateRequest {
   title: string
   introduction?: string
   desiredPosition: string
-  githubUrl?: string
-  blogUrl?: string
-  deployUrl?: string
+  portfolioLinks: PortfolioLinkRequest[]
   isPublished: boolean
   techStackIds: number[]
 }

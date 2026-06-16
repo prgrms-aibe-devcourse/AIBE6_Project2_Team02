@@ -1,8 +1,9 @@
-package com.backend.common.domain.portfolio.portfolio.controller;
+package com.backend.common.domain.portfolio.controller;
 
 import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
+import com.backend.common.domain.portfolio.portfolio.entity.PortfolioLink;
 import com.backend.common.domain.portfolio.portfolio.repository.PortfolioRepository;
 import com.backend.common.domain.portfolio.proposals.entity.ProjectProposal;
 import com.backend.common.domain.portfolio.proposals.repository.ProjectProposalRepository;
@@ -72,9 +73,17 @@ public class MyPagePortfolioTest {
         // 시큐리티 컨텍스트에 담길 인증용 토큰 발행
         this.testAuth = new UsernamePasswordAuthenticationToken(mockUserDetails, null, List.of());
 
-        Portfolio portfolio = Portfolio.create(
-                member, "기본 제목", "소개", "git", "blog", "deploy", "BACKEND", true
-        );
+        Portfolio portfolio = Portfolio.builder()
+                .member(member)
+                .title("기본 제목")
+                .introduction("소개")
+                .portfolioLinks(List.of(
+                        new PortfolioLink("GITHUB", "https://github.com/test"),
+                        new PortfolioLink("DEPLOY", "https://deploy.test.com")
+                ))
+                .desiredPosition("BACKEND")
+                .isPublished(true)
+                .build();
         portfolioRepository.save(portfolio);
 
         Project project = Project.builder()
@@ -112,9 +121,11 @@ public class MyPagePortfolioTest {
                 {
                     "title": "신입 백엔드 포트폴리오",
                     "introduction": "안녕하세요 Java 개발자입니다.",
-                    "githubUrl": "https://github.com/user1",
-                    "blogUrl": "https://user1.tistory.com",
-                    "deployUrl": "https://user1.com",
+                    "links": [
+                        {"linkType": "GITHUB", "url": "https://github.com/user1"},
+                        {"linkType": "BLOG", "url": "https://user1.tistory.com"},
+                        {"linkType": "DEPLOY", "url": "https://user1.com"}
+                    ],
                     "desiredPosition": "BACKEND",
                     "isPublished": true,
                     "techStackIds": []
@@ -148,9 +159,11 @@ public class MyPagePortfolioTest {
                 {
                     "title": "수정된 포트폴리오 제목",
                     "introduction": "수정된 자기소개 내용입니다.",
-                    "githubUrl": "https://github.com/changed",
-                    "blogUrl": "https://changed.blog",
-                    "deployUrl": "https://changed.deploy",
+                    "portfolioLinks": [
+                        {"linkType": "GITHUB", "url": "https://github.com/changed"},
+                        {"linkType": "BLOG", "url": "https://changed.blog"},
+                        {"linkType": "DEPLOY", "url": "https://changed.deploy"}
+                    ],
                     "desiredPosition": "BACKEND",
                     "isPublished": true,
                     "techStacks": ["Java", "Spring Boot"]
