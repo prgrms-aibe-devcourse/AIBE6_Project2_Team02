@@ -6,15 +6,24 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 
-import { Calendar, Code2, Github, Globe, MapPin } from 'lucide-react'
+import {
+  Calendar,
+  Code2,
+  Github,
+  Globe,
+  MapPin,
+  ShieldAlert,
+} from 'lucide-react'
 
 import { LoginModal } from '../../../components/LoginModal'
+import { ReportModal } from '../../../components/ReportModal'
 import { Badge, Button, Card, Modal } from '../../../components/ui'
 import {
   createProjectProposal,
   fetchMember,
   fetchProjects,
   fetchProposalProjects,
+  checkAlreadyReported,
 } from '../../../lib/api'
 import type { Project, User } from '../../../types'
 import type { ProposalProject } from '../../../types/dto/proposal'
@@ -44,6 +53,7 @@ export default function DeveloperProfilePage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false)
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [proposalProjects, setProposalProjects] = useState<ProposalProject[]>(
     [],
@@ -100,6 +110,26 @@ export default function DeveloperProfilePage() {
       )
     } finally {
       setProposalLoading(false)
+    }
+  }
+
+  const handleOpenReport = async () => {
+    if (authLoading) return
+    if (!authUser) {
+      setIsLoginModalOpen(true)
+      return
+    }
+    
+    try {
+      const isAlreadyReported = await checkAlreadyReported('PORTFOLIO', Number(id))
+      if (isAlreadyReported) {
+        toast.error('이미 신고하신 대상입니다.')
+        return
+      }
+      setIsReportModalOpen(true)
+    } catch (error) {
+      console.error('Failed to check report status:', error)
+      toast.error('신고 상태를 확인하는 중 오류가 발생했습니다.')
     }
   }
 
@@ -225,9 +255,20 @@ export default function DeveloperProfilePage() {
                   </a>
                 </div>
               )}
-              <div className="flex items-center gap-3">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                <span>2026년 6월 가입</span>
+              <div className="flex items-center justify-between group/report">
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-4 h-4 text-slate-400" />
+                  <span>2026년 6월 가입</span>
+                </div>
+                {!isMyProfile && (
+                  <button
+                    onClick={handleOpenReport}
+                    className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                    title="신고하기"
+                  >
+                    <ShieldAlert className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           </Card>
@@ -435,6 +476,16 @@ export default function DeveloperProfilePage() {
 
       {isLoginModalOpen && (
         <LoginModal onClose={() => setIsLoginModalOpen(false)} />
+      )}
+
+      {user && (
+        <ReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          targetType="PORTFOLIO"
+          targetId={Number(id)}
+          targetName={user.name}
+        />
       )}
     </div>
   )

@@ -83,6 +83,20 @@ export interface CreateReviewRequest {
 
 export type ReportTargetType = 'PORTFOLIO' | 'PROJECT'
 export type ReportStatus = 'PENDING' | 'RESOLVED' | 'REJECTED'
+export type ReportReasonType =
+  | 'SPAM'
+  | 'ABUSE'
+  | 'ADVERTISEMENT'
+  | 'INAPPROPRIATE_CONTENT'
+  | 'FRAUD'
+  | 'ETC'
+
+export interface CreateReportRequest {
+  targetType: ReportTargetType
+  targetId: number
+  reasonType: ReportReasonType
+  reasonDetail: string
+}
 
 export interface ReportResponse {
   reportId: number
