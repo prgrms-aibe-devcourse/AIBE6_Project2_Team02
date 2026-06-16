@@ -19,14 +19,19 @@ import { LoginModal } from '../../../components/LoginModal'
 import { ReportModal } from '../../../components/ReportModal'
 import { Badge, Button, Card, Modal } from '../../../components/ui'
 import {
+  cancelProjectProposal,
   createProjectProposal,
+  fetchPendingSentProjectProposals,
   fetchMember,
   fetchProjects,
   fetchProposalProjects,
   checkAlreadyReported,
 } from '../../../lib/api'
 import type { Project, User } from '../../../types'
-import type { ProposalProject } from '../../../types/dto/proposal'
+import type {
+  ProposalProject,
+  SentProjectProposal,
+} from '../../../types/dto/proposal'
 import { useAuth } from '../../providers'
 
 const statusMap: Record<string, string> = {
@@ -53,6 +58,8 @@ export default function DeveloperProfilePage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false)
+  const [isCancelProposalModalOpen, setIsCancelProposalModalOpen] =
+    useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [proposalProjects, setProposalProjects] = useState<ProposalProject[]>(
@@ -60,8 +67,15 @@ export default function DeveloperProfilePage() {
   )
   const [selectedProjectId, setSelectedProjectId] = useState('')
   const [proposalMessage, setProposalMessage] = useState('')
+  const [pendingSentProposals, setPendingSentProposals] = useState<
+    SentProjectProposal[]
+  >([])
   const [proposalLoading, setProposalLoading] = useState(false)
   const [proposalSubmitting, setProposalSubmitting] = useState(false)
+  const [proposalCancelLoading, setProposalCancelLoading] = useState(false)
+  const [cancellingProposalId, setCancellingProposalId] = useState<
+    number | null
+  >(null)
 
   useEffect(() => {
     if (!id) {
@@ -80,6 +94,17 @@ export default function DeveloperProfilePage() {
       })
       .finally(() => setLoading(false))
   }, [id])
+
+  useEffect(() => {
+    if (!id || !authUser || isMyProfile) {
+      setPendingSentProposals([])
+      return
+    }
+
+    fetchPendingSentProjectProposals(id)
+      .then(setPendingSentProposals)
+      .catch(() => setPendingSentProposals([]))
+  }, [id, authUser, isMyProfile])
 
   const createdProjects = projects.filter((p) => p.leader.id === id)
   const participatedProjects = projects.filter((p) =>
@@ -146,6 +171,8 @@ export default function DeveloperProfilePage() {
         message: proposalMessage.trim(),
       })
       toast.success('프로젝트 제안을 보냈습니다.')
+      const sentProposals = await fetchPendingSentProjectProposals(id)
+      setPendingSentProposals(sentProposals)
       setIsProposalModalOpen(false)
       setProposalMessage('')
     } catch (error) {
@@ -156,6 +183,52 @@ export default function DeveloperProfilePage() {
       )
     } finally {
       setProposalSubmitting(false)
+    }
+  }
+
+  const handleOpenCancelProposal = async () => {
+    if (authLoading) return
+    if (!authUser) {
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    setProposalCancelLoading(true)
+    setIsCancelProposalModalOpen(true)
+    try {
+      const sentProposals = await fetchPendingSentProjectProposals(id)
+      setPendingSentProposals(sentProposals)
+    } catch (error) {
+      setPendingSentProposals([])
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : '보낸 제안을 불러오지 못했습니다.',
+      )
+    } finally {
+      setProposalCancelLoading(false)
+    }
+  }
+
+  const handleCancelProposal = async (proposalId: number) => {
+    if (cancellingProposalId) return
+    if (!confirm('프로젝트 제안을 취소하시겠습니까?')) return
+
+    setCancellingProposalId(proposalId)
+    try {
+      await cancelProjectProposal(proposalId)
+      setPendingSentProposals((prev) =>
+        prev.filter((proposal) => proposal.proposalId !== proposalId),
+      )
+      toast.success('프로젝트 제안을 취소했습니다.')
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : '프로젝트 제안을 취소하지 못했습니다.',
+      )
+    } finally {
+      setCancellingProposalId(null)
     }
   }
 
@@ -203,7 +276,7 @@ export default function DeveloperProfilePage() {
             <h1 className="text-2xl font-bold text-slate-900">{user.name}</h1>
             <p className="text-blue-600 font-medium mb-4">{user.role}</p>
 
-            <div className="flex justify-center gap-3 mb-6">
+            <div className="mb-6 space-y-2">
               {isMyProfile ? (
                 <Link href="/mypage/portfolio/edit" className="w-full">
                   <Button variant="gradient" className="w-full">
@@ -218,6 +291,16 @@ export default function DeveloperProfilePage() {
                   disabled={authLoading}
                 >
                   프로젝트 제안하기
+                </Button>
+              )}
+              {!isMyProfile && pendingSentProposals.length > 0 && (
+                <Button
+                  variant="outline"
+                  className="w-full border-red-200 text-red-500 hover:bg-red-50"
+                  onClick={handleOpenCancelProposal}
+                  disabled={authLoading}
+                >
+                  제안 취소하기
                 </Button>
               )}
             </div>
@@ -471,6 +554,61 @@ export default function DeveloperProfilePage() {
               </Button>
             </div>
           </form>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={isCancelProposalModalOpen}
+        onClose={() => setIsCancelProposalModalOpen(false)}
+        title={`${user.name}님에게 보낸 제안 취소`}
+      >
+        {proposalCancelLoading ? (
+          <div className="py-10 text-center text-sm text-slate-500">
+            보낸 제안을 불러오는 중...
+          </div>
+        ) : pendingSentProposals.length === 0 ? (
+          <div className="space-y-4 py-4 text-center">
+            <p className="text-sm text-slate-600">
+              취소할 수 있는 대기 중 제안이 없습니다.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsCancelProposalModalOpen(false)}
+            >
+              확인
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {pendingSentProposals.map((proposal) => (
+              <div
+                key={proposal.proposalId}
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/50 p-4"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-slate-900">
+                    {proposal.projectTitle}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    대기 중인 프로젝트 제안
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 border-red-200 text-red-500 hover:bg-red-50"
+                  disabled={cancellingProposalId === proposal.proposalId}
+                  onClick={() => handleCancelProposal(proposal.proposalId)}
+                >
+                  {cancellingProposalId === proposal.proposalId
+                    ? '취소 중...'
+                    : '취소'}
+                </Button>
+              </div>
+            ))}
+          </div>
         )}
       </Modal>
 
