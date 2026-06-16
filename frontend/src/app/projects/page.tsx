@@ -25,7 +25,10 @@ const statusMap: Record<string, string> = {
   All: '전체',
   Open: '모집중',
   Closed: '마감',
+  Completed: '완료',
+  Stopped: '중단',
 }
+
 
 export default function ProjectListingPage() {
   const searchParams = useSearchParams()

@@ -347,6 +347,8 @@ public class ProjectService {
                 ))
                 .toList();
 
+        List<PositionResponse> positions = buildPositions(project, members);
+
         return new ProjectResponse(
                 String.valueOf(project.getId()),
                 project.getTitle(),
@@ -354,8 +356,8 @@ public class ProjectService {
                 project.getFullDescription() == null ? project.getDescription() : project.getFullDescription(),
                 splitGoals(project.getGoal()),
                 projectTechStackNames(project),
-                buildPositions(project, members),
-                project.isRecruitmentOpen() ? RecruitmentStatus.OPEN : RecruitmentStatus.CLOSED,
+                positions,
+                calculateRecruitmentStatus(project, positions),
                 project.getCategory() == null ? inferCategory(project) : project.getCategory(),
                 leader,
                 teamMembers,
@@ -364,6 +366,25 @@ public class ProjectService {
                 Math.max(members.size() * 10, 1),
                 featured
         );
+    }
+
+    private RecruitmentStatus calculateRecruitmentStatus(Project project, List<PositionResponse> positions) {
+        if (project.getStatus() == ProjectStatus.COMPLETED) {
+            return RecruitmentStatus.COMPLETED;
+        }
+
+        if (project.getStatus() == ProjectStatus.DISBANDED || project.getStatus() == ProjectStatus.CANCELLED) {
+            return RecruitmentStatus.STOPPED;
+        }
+
+        if (!project.isRecruitmentOpen()) {
+            return RecruitmentStatus.CLOSED;
+        }
+
+        boolean hasAvailablePosition = positions.stream()
+                .anyMatch(position -> position.filled() < position.total());
+
+        return hasAvailablePosition ? RecruitmentStatus.OPEN : RecruitmentStatus.CLOSED;
     }
 
     private UserResponse toUserResponse(Member member, boolean featured) {

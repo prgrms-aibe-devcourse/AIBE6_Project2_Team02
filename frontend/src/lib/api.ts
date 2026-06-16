@@ -146,6 +146,8 @@ export async function withdrawMember(): Promise<void> {
     credentials: 'include',
   })
   if (!res.ok) throw new Error('회원 탈퇴에 실패했습니다.')
+}
+
 export function createReview(request: CreateReviewRequest) {
   return fetchRsDataJson<number>('/reviews', {
     method: 'POST',
