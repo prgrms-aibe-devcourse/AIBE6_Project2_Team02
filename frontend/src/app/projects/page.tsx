@@ -59,7 +59,9 @@ export default function ProjectListingPage() {
       })
   }, [])
 
-  const featuredProjects = projects.filter((p) => p.featured)
+  const featuredProjects = projects.filter(
+    (p) => p.featured && p.recruitmentStatus === 'Open',
+  )
 
   const filteredProjects = useMemo(() => {
     return projects
