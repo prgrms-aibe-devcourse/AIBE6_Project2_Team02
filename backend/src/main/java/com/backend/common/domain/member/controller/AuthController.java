@@ -3,6 +3,7 @@ package com.backend.common.domain.member.controller;
 import com.backend.common.domain.member.dto.AuthResponse;
 import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.repository.MemberRepository;
+import com.backend.common.global.security.JwtTokenProvider;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final MemberRepository memberRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("/me")
     public ResponseEntity<AuthResponse> me(@AuthenticationPrincipal CustomMemberDetails principal) {
@@ -38,4 +40,26 @@ public class AuthController {
         response.addCookie(cookie);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     *  고정 테스트 계정("아무개") 세션 로그인용 API
+     */
+    @PostMapping("/test-login")
+    public ResponseEntity<Void> testLogin(HttpServletResponse response) {
+        Member testMember = memberRepository.findByNickname("아무개")
+                .orElseGet(() -> memberRepository.save(
+                        Member.create("아무개", "https://avatars.githubusercontent.com/u/12345678?v=4")
+                ));
+
+        String jwt = jwtTokenProvider.generateToken(testMember.getId(), testMember.getNickname());
+
+        Cookie cookie = new Cookie("access_token", jwt);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(60 * 60 * 24);
+        response.addCookie(cookie);
+
+        return ResponseEntity.ok().build();
+    }
+
 }

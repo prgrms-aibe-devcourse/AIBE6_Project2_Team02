@@ -1,7 +1,24 @@
+'use client';
+
 import Link from 'next/link';
-import { Code2 } from 'lucide-react';
+import { Code2, ShieldAlert } from 'lucide-react';
 
 export function Footer() {
+
+  const handleTestLogin = async () => {
+    try {
+      const res = await fetch('/auth/test-login', { method: 'POST' });
+      if (res.ok) {
+        alert('테스트 계정(아무개)으로 로그인이 완료되었습니다.');
+        window.location.href = '/mypage';
+      } else {
+        alert('백엔드 더미 데이터 세팅 상태를 확인해 주세요.');
+      }
+    } catch (err) {
+      alert('테스트 로그인 서버 통신 실패');
+    }
+  };
+
   return (
     <footer className="bg-white border-t border-slate-200 py-12 mt-auto">
       <div className="container mx-auto px-4">
@@ -54,12 +71,24 @@ export function Footer() {
             </ul>
           </div>
         </div>
+
         <div className="border-t border-slate-100 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between text-sm text-slate-400">
           <p>© 2026 DevLink. All rights reserved.</p>
-          <div className="flex gap-4 mt-4 md:mt-0">
-            <span>Twitter</span>
-            <span>GitHub</span>
-            <span>Discord</span>
+
+          <div className="flex items-center gap-6 mt-4 md:mt-0">
+            <button
+              onClick={handleTestLogin}
+              className="flex items-center gap-1.5 text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-md hover:bg-amber-100 transition-colors"
+              title="로컬 테스트 유저로 즉시 로그인합니다."
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              개발자 세션 로그인
+            </button>
+            <div className="flex gap-4">
+              <span>Twitter</span>
+              <span>GitHub</span>
+              <span>Discord</span>
+            </div>
           </div>
         </div>
       </div>
