@@ -7,7 +7,10 @@ export function Footer() {
 
   const handleTestLogin = async () => {
     try {
-      const res = await fetch('/auth/test-login', { method: 'POST' });
+      const res = await fetch('/auth/test-login', {
+        method: 'POST',
+        credentials: 'include',
+      });
       if (res.ok) {
         alert('테스트 계정(아무개)으로 로그인이 완료되었습니다.');
         window.location.href = '/mypage';

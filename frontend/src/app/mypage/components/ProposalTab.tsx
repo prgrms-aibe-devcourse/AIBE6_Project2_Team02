@@ -48,7 +48,9 @@ export default function ProposalTab({ user }: ProposalTabProps) {
     setContentLoading(true)
 
     if (activeProposalFilter === 'applications') {
-      fetch('/mypage/projects/applications')
+      fetch('/mypage/projects/applications', {
+        credentials: 'include',
+      })
         .then((res) => res.json())
         .then((res) => {
           if (res.code === '200') setApplications(res.data)
@@ -56,7 +58,9 @@ export default function ProposalTab({ user }: ProposalTabProps) {
         .catch(() => setApplications([]))
         .finally(() => setContentLoading(false))
     } else {
-      fetch('/portfolios/me/proposals')
+      fetch('/portfolios/me/proposals', {
+        credentials: 'include',
+      })
         .then((res) => res.json())
         .then((res) => {
           if (res.code === '200') setProposals(res.data)
@@ -75,7 +79,10 @@ export default function ProposalTab({ user }: ProposalTabProps) {
     try {
       const res = await fetch(
         `/mypage/projects/applications/${applicationId}?accept=${accept}`,
-        { method: 'PATCH' },
+        {
+          method: 'PATCH',
+          credentials: 'include',
+        },
       )
       const result = await res.json()
       if (result.code === '200') {
@@ -104,7 +111,10 @@ export default function ProposalTab({ user }: ProposalTabProps) {
     try {
       const res = await fetch(
         `/portfolios/me/proposals/${proposalId}?accept=${accept}`,
-        { method: 'PATCH' },
+        {
+          method: 'PATCH',
+          credentials: 'include',
+        },
       )
       const result = await res.json()
       if (result.code === '200') {

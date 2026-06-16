@@ -50,7 +50,9 @@ export default function ProjectTab({ user }: ProjectTabProps) {
     }
 
     setContentLoading(true)
-    fetch(endpointMap[activeProjectSubTab])
+    fetch(endpointMap[activeProjectSubTab], {
+      credentials: 'include',
+    })
       .then((res) => res.json())
       .then((res) => {
         if (res.code === '200') setProjects(res.data)
@@ -68,6 +70,7 @@ export default function ProjectTab({ user }: ProjectTabProps) {
     try {
       const res = await fetch(`/mypage/projects/recent-views/${projectId}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
       const result = await res.json()
       if (result.code === '200') {
@@ -87,7 +90,10 @@ export default function ProjectTab({ user }: ProjectTabProps) {
     try {
       const res = await fetch(
         `/mypage/projects/applications/${applicationId}/cancel`,
-        { method: 'PATCH' },
+        {
+          method: 'PATCH',
+          credentials: 'include',
+        },
       )
       const result = await res.json()
       if (result.code === '200') {
