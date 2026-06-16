@@ -140,6 +140,12 @@ export function fetchProjectReports() {
   return fetchRsDataJson<ReportResponse[]>('/admin/reports?targetType=PROJECT')
 }
 
+export async function withdrawMember(): Promise<void> {
+  const res = await fetch(`${API_BASE}/members/me`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error('회원 탈퇴에 실패했습니다.')
 export function createReview(request: CreateReviewRequest) {
   return fetchRsDataJson<number>('/reviews', {
     method: 'POST',

@@ -19,6 +19,7 @@ import {
 import { Badge, Button, Card } from '../../components/ui'
 import type { Portfolio } from '../../types'
 import { leaderPositionOptions } from '../../constants/project'
+import { withdrawMember } from '../../lib/api'
 import { useAuth } from '../providers'
 import ProjectTab from './components/ProjectTab'
 import ProposalTab from './components/ProposalTab'
@@ -43,6 +44,20 @@ export default function MyPage() {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null)
   const [portfolioLoading, setPortfolioLoading] = useState(true)
   const [avatarError, setAvatarError] = useState(false)
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false)
+  const [withdrawing, setWithdrawing] = useState(false)
+
+  const handleWithdraw = async () => {
+    setWithdrawing(true)
+    try {
+      await withdrawMember()
+      await logout()
+      router.push('/')
+    } catch {
+      setWithdrawing(false)
+      setShowWithdrawModal(false)
+    }
+  }
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab)
@@ -255,12 +270,41 @@ export default function MyPage() {
           </AnimatePresence>
 
           <div className="mt-12 pt-8 border-t border-slate-200 text-center md:text-right">
-            <button className="text-sm text-slate-400 hover:text-slate-600 underline underline-offset-4 transition-colors">
+            <button
+              onClick={() => setShowWithdrawModal(true)}
+              className="text-sm text-slate-400 hover:text-red-500 underline underline-offset-4 transition-colors"
+            >
               회원 탈퇴
             </button>
           </div>
         </div>
       </div>
+      {showWithdrawModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4">
+            <h2 className="text-lg font-bold text-slate-900 mb-2">회원 탈퇴</h2>
+            <p className="text-sm text-slate-500 mb-6">
+              탈퇴하면 모든 데이터가 삭제되며 복구할 수 없습니다. 정말 탈퇴하시겠습니까?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowWithdrawModal(false)}
+                disabled={withdrawing}
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleWithdraw}
+                disabled={withdrawing}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {withdrawing ? '처리 중...' : '탈퇴하기'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -45,4 +45,10 @@ public class Member {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void withdraw() {
+        this.status = "WITHDRAWN";
+        this.deletedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
 }

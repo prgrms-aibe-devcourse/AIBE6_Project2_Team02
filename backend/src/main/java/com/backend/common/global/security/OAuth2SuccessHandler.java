@@ -55,6 +55,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             memberRepository.save(member);
         }
 
+        if (!isNew[0] && !member.getStatus().equals("ACTIVE")) {
+            getRedirectStrategy().sendRedirect(request, response,
+                    frontendUrl + "?error=" + member.getStatus());
+            return;
+        }
+
         String jwt = jwtTokenProvider.generateToken(member.getId(), member.getNickname());
 
         Cookie cookie = new Cookie("access_token", jwt);

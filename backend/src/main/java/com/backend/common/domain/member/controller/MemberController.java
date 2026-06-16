@@ -1,14 +1,16 @@
 package com.backend.common.domain.member.controller;
 
+import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.exception.MemberNotFoundException;
+import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.project.dto.UserResponse;
 import com.backend.common.domain.project.project.service.ProjectService;
 import com.backend.common.global.rsdata.RsData;
+import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -19,6 +21,7 @@ import java.util.NoSuchElementException;
 public class MemberController {
 
     private final ProjectService projectService;
+    private final MemberRepository memberRepository;
 
     @GetMapping
     public RsData<List<UserResponse>> getMembers() {
@@ -32,5 +35,18 @@ public class MemberController {
         } catch (NoSuchElementException ex) {
             throw new MemberNotFoundException("404","Member not found");
         }
+    }
+
+    @DeleteMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public RsData<Void> withdrawMember(
+            @AuthenticationPrincipal CustomMemberDetails userDetails
+    ){
+        Member member = memberRepository.findById(userDetails.getMemberId())
+                .orElseThrow(() -> new MemberNotFoundException("404","회원 정보가 없습니다."));
+
+        member.withdraw();
+        memberRepository.save(member);
+        return RsData.of("200","회원 탈퇴 성공");
     }
 }
