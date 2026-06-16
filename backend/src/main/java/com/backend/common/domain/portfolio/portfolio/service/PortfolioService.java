@@ -8,11 +8,14 @@ import com.backend.common.domain.portfolio.portfolio.dto.PortfolioUpdateRequest;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
 import com.backend.common.domain.portfolio.portfolio.repository.PortfolioRepository;
 import com.backend.common.domain.portfolio.proposals.dto.MyPageProposalResponse;
+import com.backend.common.domain.portfolio.proposals.dto.ProjectProposalCreateRequest;
+import com.backend.common.domain.portfolio.proposals.dto.ProposalProjectResponse;
 import com.backend.common.domain.portfolio.proposals.entity.ProjectProposal;
 import com.backend.common.domain.portfolio.proposals.repository.ProjectProposalRepository;
 import com.backend.common.domain.project.enums.PositionType;
-import com.backend.common.domain.project.enums.SelectionStatus;
+import com.backend.common.domain.project.enums.ProjectStatus;
 import com.backend.common.domain.project.project.entity.ProjectMember;
+import com.backend.common.domain.project.project.entity.ProjectMemberStatus;
 import com.backend.common.domain.project.project.entity.ProjectRole;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.techstack.entity.PortfolioTechStack;
@@ -21,11 +24,10 @@ import com.backend.common.domain.techstack.repository.TechStackRepository;
 import com.backend.common.global.exception.exception.PortfolioInputException;
 import com.backend.common.global.exception.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -53,16 +55,16 @@ public class PortfolioService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 회원입니다."));
 
-        Portfolio portfolio = Portfolio.create(
-                member,
-                request.title(),
-                request.introduction(),
-                request.githubUrl(),
-                request.blogUrl(),
-                request.deployUrl(),
-                request.desiredPosition(),
-                request.isPublished()
-        );
+        Portfolio portfolio = Portfolio.builder()
+                .member(member)
+                .title(request.title())
+                .introduction(request.introduction())
+                .githubUrl(request.githubUrl())
+                .blogUrl(request.blogUrl())
+                .deployUrl(request.deployUrl())
+                .desiredPosition(request.desiredPosition())
+                .isPublished(request.isPublished())
+                .build();
         portfolioRepository.save(portfolio);
 
         List<TechStack> techStacks = techStackRepository.findAllById(request.techStackIds());
@@ -121,6 +123,79 @@ public class PortfolioService {
                 .stream()
                 .map(MyPageProposalResponse::from)
                 .toList();
+    }
+
+    public List<ProposalProjectResponse> getProposalProjects(Long memberId) {
+        return projectMemberRepository.findProposalProjects(memberId).stream()
+                .map(ProjectMember::getProject)
+                .distinct()
+                .map(ProposalProjectResponse::from)
+                .toList();
+    }
+
+    @Transactional
+    public void createProjectProposal(
+            Long targetMemberId,
+            Long proposerId,
+            ProjectProposalCreateRequest request
+    ) {
+        if (targetMemberId.equals(proposerId)) {
+            throw new IllegalArgumentException("본인에게 프로젝트를 제안할 수 없습니다.");
+        }
+        if (request.projectId() == null) {
+            throw new IllegalArgumentException("제안할 프로젝트를 선택해주세요.");
+        }
+
+        Portfolio portfolio = portfolioRepository.findByMemberId(targetMemberId)
+                .filter(Portfolio::isPublished)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "404",
+                        "공개된 포트폴리오를 찾을 수 없습니다."
+                ));
+        ProjectMember proposerMembership = projectMemberRepository
+                .findByProjectIdAndMemberId(request.projectId(), proposerId)
+                .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE)
+                .filter(member ->
+                        member.getRole() == ProjectRole.LEADER
+                                || member.getRole() == ProjectRole.MANAGER
+                )
+                .orElseThrow(() -> new AccessDeniedException(
+                        "해당 프로젝트의 리더 또는 매니저만 제안할 수 있습니다."
+                ));
+
+        if (proposerMembership.getProject().getStatus() != ProjectStatus.RECRUITING
+                || !proposerMembership.getProject().isRecruitmentOpen()) {
+            throw new IllegalArgumentException("모집 중인 프로젝트만 제안할 수 있습니다.");
+        }
+        if (projectMemberRepository.existsByProjectIdAndMemberId(
+                request.projectId(),
+                targetMemberId
+        )) {
+            throw new IllegalArgumentException("이미 프로젝트에 참여 중인 회원입니다.");
+        }
+        if (projectProposalRepository.existsByProjectIdAndPortfolioId(
+                request.projectId(),
+                portfolio.getId()
+        )) {
+            throw new IllegalArgumentException("이미 해당 프로젝트를 제안했습니다.");
+        }
+
+        String message = request.message() == null ? "" : request.message().trim();
+        if (message.isBlank()) {
+            throw new IllegalArgumentException("제안 메시지를 입력해주세요.");
+        }
+
+        Member proposer = memberRepository.findById(proposerId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "404",
+                        "제안자를 찾을 수 없습니다."
+                ));
+        projectProposalRepository.save(ProjectProposal.builder()
+                .project(proposerMembership.getProject())
+                .portfolio(portfolio)
+                .proposer(proposer)
+                .message(message)
+                .build());
     }
 
     /**

@@ -1,15 +1,23 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 
-import { Calendar, Code2, Github, Globe, Mail, MapPin } from 'lucide-react'
+import { Calendar, Code2, Github, Globe, MapPin } from 'lucide-react'
 
-import { Badge, Button, Card } from '../../../components/ui'
-import { fetchMember, fetchProjects } from '../../../lib/api'
+import { LoginModal } from '../../../components/LoginModal'
+import { Badge, Button, Card, Modal } from '../../../components/ui'
+import {
+  createProjectProposal,
+  fetchMember,
+  fetchProjects,
+  fetchProposalProjects,
+} from '../../../lib/api'
 import type { Project, User } from '../../../types'
+import type { ProposalProject } from '../../../types/dto/proposal'
 import { useAuth } from '../../providers'
 
 const statusMap: Record<string, string> = {
@@ -28,11 +36,20 @@ const categoryMap: Record<string, string> = {
 export default function DeveloperProfilePage() {
   const params = useParams()
   const id = params.id as string
-  const { user: authUser } = useAuth()
+  const { user: authUser, loading: authLoading } = useAuth()
   const isMyProfile = authUser !== null && String(authUser.memberId) === id
   const [user, setUser] = useState<User | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [isProposalModalOpen, setIsProposalModalOpen] = useState(false)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [proposalProjects, setProposalProjects] = useState<ProposalProject[]>(
+    [],
+  )
+  const [selectedProjectId, setSelectedProjectId] = useState('')
+  const [proposalMessage, setProposalMessage] = useState('')
+  const [proposalLoading, setProposalLoading] = useState(false)
+  const [proposalSubmitting, setProposalSubmitting] = useState(false)
 
   useEffect(() => {
     if (!id) {
@@ -56,6 +73,59 @@ export default function DeveloperProfilePage() {
   const participatedProjects = projects.filter((p) =>
     p.teamMembers.some((m) => m.id === id),
   )
+
+  const handleOpenProposal = async () => {
+    if (authLoading) return
+    if (!authUser) {
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    setIsProposalModalOpen(true)
+    setProposalLoading(true)
+    try {
+      const proposalProjectData = await fetchProposalProjects()
+      setProposalProjects(proposalProjectData)
+      setSelectedProjectId(
+        proposalProjectData.length > 0 ? String(proposalProjectData[0].id) : '',
+      )
+    } catch (error) {
+      setProposalProjects([])
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : '제안 가능한 프로젝트를 불러오지 못했습니다.',
+      )
+    } finally {
+      setProposalLoading(false)
+    }
+  }
+
+  const handleSubmitProposal = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!selectedProjectId || !proposalMessage.trim() || proposalSubmitting) {
+      return
+    }
+
+    setProposalSubmitting(true)
+    try {
+      await createProjectProposal(id, {
+        projectId: Number(selectedProjectId),
+        message: proposalMessage.trim(),
+      })
+      toast.success('프로젝트 제안을 보냈습니다.')
+      setIsProposalModalOpen(false)
+      setProposalMessage('')
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : '프로젝트 제안을 보내지 못했습니다.',
+      )
+    } finally {
+      setProposalSubmitting(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -109,14 +179,14 @@ export default function DeveloperProfilePage() {
                   </Button>
                 </Link>
               ) : (
-                <>
-                  <Button variant="gradient" className="w-full">
-                    프로젝트 제안하기
-                  </Button>
-                  <Button variant="outline" size="icon">
-                    <Mail className="w-4 h-4" />
-                  </Button>
-                </>
+                <Button
+                  variant="gradient"
+                  className="w-full"
+                  onClick={handleOpenProposal}
+                  disabled={authLoading}
+                >
+                  프로젝트 제안하기
+                </Button>
               )}
             </div>
 
@@ -196,9 +266,7 @@ export default function DeveloperProfilePage() {
               <h2 className="text-xl font-bold text-slate-900">
                 만든 프로젝트
               </h2>
-              <Badge variant="default">
-                {createdProjects.length}
-              </Badge>
+              <Badge variant="default">{createdProjects.length}</Badge>
             </div>
             {createdProjects.length > 0 ? (
               <div className="grid gap-4">
@@ -284,6 +352,88 @@ export default function DeveloperProfilePage() {
           </section>
         </div>
       </div>
+
+      <Modal
+        isOpen={isProposalModalOpen}
+        onClose={() => setIsProposalModalOpen(false)}
+        title={`${user.name}님에게 프로젝트 제안`}
+      >
+        {proposalLoading ? (
+          <div className="py-10 text-center text-sm text-slate-500">
+            제안 가능한 프로젝트를 불러오는 중...
+          </div>
+        ) : proposalProjects.length === 0 ? (
+          <div className="space-y-4 py-4 text-center">
+            <p className="text-sm text-slate-600">
+              제안할 수 있는 모집 중 프로젝트가 없습니다.
+            </p>
+            <p className="text-xs text-slate-500">
+              리더 또는 매니저로 참여 중인 모집 프로젝트가 필요합니다.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsProposalModalOpen(false)}
+            >
+              확인
+            </Button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmitProposal} className="space-y-5">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                제안할 프로젝트 <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selectedProjectId}
+                onChange={(event) => setSelectedProjectId(event.target.value)}
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                required
+              >
+                {proposalProjects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                제안 메시지 <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={proposalMessage}
+                onChange={(event) => setProposalMessage(event.target.value)}
+                className="min-h-32 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                placeholder="프로젝트 소개와 함께 합류를 제안하는 이유를 작성해주세요."
+                required
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsProposalModalOpen(false)}
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                variant="gradient"
+                disabled={proposalSubmitting || !proposalMessage.trim()}
+              >
+                {proposalSubmitting ? '제안 보내는 중...' : '제안 보내기'}
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {isLoginModalOpen && (
+        <LoginModal onClose={() => setIsLoginModalOpen(false)} />
+      )}
     </div>
   )
 }

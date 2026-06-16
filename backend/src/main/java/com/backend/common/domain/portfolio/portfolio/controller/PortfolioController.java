@@ -5,11 +5,14 @@ import com.backend.common.domain.portfolio.portfolio.dto.PortfolioResponse;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioUpdateRequest;
 import com.backend.common.domain.portfolio.portfolio.service.PortfolioService;
 import com.backend.common.domain.portfolio.proposals.dto.MyPageProposalResponse;
+import com.backend.common.domain.portfolio.proposals.dto.ProjectProposalCreateRequest;
+import com.backend.common.domain.portfolio.proposals.dto.ProposalProjectResponse;
 import com.backend.common.global.rsdata.RsData;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -83,6 +86,37 @@ public class PortfolioController {
     ) {
         portfolioService.createPortfolio(userDetails.getMemberId(), request);
         return RsData.of("200", "개인 포트폴리오가 등록 되었습니다");
+    }
+
+    @GetMapping("/proposal-projects")
+    public RsData<List<ProposalProjectResponse>> getProposalProjects(
+            @AuthenticationPrincipal CustomMemberDetails userDetails
+    ) {
+        if (userDetails == null) {
+            throw new InsufficientAuthenticationException("로그인이 필요합니다.");
+        }
+        return RsData.of(
+                "200",
+                "제안 가능한 프로젝트 조회가 완료되었습니다.",
+                portfolioService.getProposalProjects(userDetails.getMemberId())
+        );
+    }
+
+    @PostMapping("/{memberId}/proposals")
+    public RsData<Void> createProjectProposal(
+            @PathVariable Long memberId,
+            @RequestBody ProjectProposalCreateRequest request,
+            @AuthenticationPrincipal CustomMemberDetails userDetails
+    ) {
+        if (userDetails == null) {
+            throw new InsufficientAuthenticationException("로그인이 필요합니다.");
+        }
+        portfolioService.createProjectProposal(
+                memberId,
+                userDetails.getMemberId(),
+                request
+        );
+        return RsData.of("200", "프로젝트 제안을 보냈습니다.");
     }
 
 }

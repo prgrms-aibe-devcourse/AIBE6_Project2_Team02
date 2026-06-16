@@ -4,6 +4,7 @@ import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.techstack.entity.PortfolioTechStack;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -41,7 +42,8 @@ public class Portfolio {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    public static Portfolio create(
+    @Builder
+    public Portfolio(
             Member member,
             String title,
             String introduction,
@@ -51,18 +53,16 @@ public class Portfolio {
             String desiredPosition,
             boolean isPublished
     ) {
-        Portfolio portfolio = new Portfolio();
-        portfolio.member = member;
-        portfolio.title = title;
-        portfolio.introduction = introduction;
-        portfolio.githubUrl = githubUrl;
-        portfolio.blogUrl = blogUrl;
-        portfolio.deployUrl = deployUrl;
-        portfolio.desiredPosition = desiredPosition;
-        portfolio.isPublished = isPublished;
-        portfolio.createdAt = LocalDateTime.now();
-        portfolio.updatedAt = portfolio.createdAt;
-        return portfolio;
+        this.member = member;
+        this.title = title;
+        this.introduction = introduction;
+        this.githubUrl = githubUrl;
+        this.blogUrl = blogUrl;
+        this.deployUrl = deployUrl;
+        this.desiredPosition = desiredPosition;
+        this.isPublished = isPublished;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
     }
 
     /**
