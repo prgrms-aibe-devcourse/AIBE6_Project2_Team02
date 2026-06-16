@@ -137,6 +137,7 @@ public class DummyDataInitializer implements ApplicationRunner {
                     .description(seed.description())
                     .goal(seed.goal())
                     .deadline(LocalDate.parse(seed.deadline()))
+                    .positions(buildProjectPositions(seed))
                     .build();
 
             // 만약 seed 데이터가 '진행 중(open = false)' 상태라면 엔티티가 가진 비즈니스 로직 구동!
@@ -169,6 +170,30 @@ public class DummyDataInitializer implements ApplicationRunner {
                 projectMemberRepository.save(generalMember);
             });
         }
+    }
+
+    private List<ProjectPosition> buildProjectPositions(ProjectSeed seed) {
+        Map<String, MemberSeed> seeds = memberSeeds();
+        Map<PositionType, Integer> filledByPosition = new LinkedHashMap<>();
+        List<String> projectMemberIds = new ArrayList<>();
+        projectMemberIds.add(seed.leaderId());
+        projectMemberIds.addAll(seed.memberIds());
+
+        projectMemberIds.forEach(memberId -> {
+            MemberSeed memberSeed = seeds.get(memberId);
+            if (memberSeed == null) return;
+            PositionType position = inferPosition(memberSeed.role());
+            filledByPosition.merge(position, 1, Integer::sum);
+        });
+
+        List<ProjectPosition> positions = new ArrayList<>();
+        filledByPosition.forEach((position, filled) ->
+                positions.add(ProjectPosition.builder()
+                        .role(formatPosition(position))
+                        .total(seed.open() ? filled + 1 : filled)
+                        .build())
+        );
+        return positions;
     }
 
     private void savePeerReviews() {
@@ -241,6 +266,16 @@ public class DummyDataInitializer implements ApplicationRunner {
         return PositionType.FULL_STACK;
     }
 
+    private String formatPosition(PositionType position) {
+        return switch (position) {
+            case BACKEND -> "백엔드 개발자";
+            case FRONTEND -> "프론트엔드 개발자";
+            case FULL_STACK -> "풀스택 개발자";
+            case DESIGNER -> "디자이너";
+            case PRODUCT_MANAGER -> "프로덕트 매니저";
+        };
+    }
+
     private String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value;
     }
@@ -279,7 +314,7 @@ public class DummyDataInitializer implements ApplicationRunner {
         return List.of(
                 project("DevLink - 사이드 프로젝트 플랫폼", "개발자들이 사이드 프로젝트를 찾고 팀원을 모집할 수 있는 플랫폼입니다.", "MVP 출시, 초기 사용자 1,000명 확보, AI 기반 프로젝트 매칭 구현", "2026-07-15", "2026-06-01", true, "u1", List.of("u2"), List.of("React", "TypeScript", "Tailwind CSS", "Node.js", "PostgreSQL")),
                 project("에코트랙(EcoTrack) 모바일 앱", "일상적인 탄소 발자국을 추적하고 줄이는 모바일 애플리케이션입니다.", "크로스 플랫폼 앱 개발, Google Maps API 연동, 게이미피케이션 시스템 설계", "2026-08-01", "2026-05-20", true, "u3", List.of("u4"), List.of("React Native", "Firebase", "TypeScript", "Figma")),
-                project("AI 코드 리뷰어", "LLM을 사용하여 PR을 자동으로 리뷰해주는 CLI 도구입니다.", "CLI 인터페이스 구현, GitHub App 연동, 컨텍스트 기반 코드 리뷰 구현", "2026-06-30", "2026-06-05", true, "u5", List.of("u6", "u7"), List.of("Python", "OpenAI API", "GitHub Actions", "Docker")),
+                project("AI 코드 리뷰어", "LLM을 사용하여 PR을 자동으로 리뷰해주는 CLI 도구입니다.", "CLI 인터페이스 구현, GitHub App 연동, 컨텍스트 기반 코드 리뷰 구현", "2026-06-30", "2026-06-05", false, "u5", List.of("u6", "u7"), List.of("Python", "OpenAI API", "GitHub Actions", "Docker")),
                 project("인디 게임: 네온 나이츠", "Godot 엔진으로 만드는 사이버펑크 테마의 2D 플랫폼 게임입니다.", "플레이 가능한 10개 레벨 완성, Itch.io 데모 배포, 오리지널 사운드트랙 제작", "2026-09-01", "2026-04-15", true, "u8", List.of("u9"), List.of("Godot", "GDScript", "Aseprite", "FMOD")),
                 project("동네 음식 구조대", "남은 음식을 보유한 식당과 지역 봉사자를 연결하는 서비스입니다.", "지역 식당 50곳 파트너십, 실시간 알림 시스템, 봉사자 인증 절차 마련", "2026-05-01", "2026-03-10", false, "u10", List.of("u11", "u12"), List.of("Next.js", "Supabase", "Tailwind CSS", "Vercel")),
                 project("멀티체인 포트폴리오 트래커", "여러 체인의 DeFi 자산을 추적하는 프라이버시 중심 대시보드입니다.", "Ethereum, Solana, Polygon 지원, Recharts 기반 차트, 클라이언트 데이터 처리", "2026-07-20", "2026-06-08", true, "u13", List.of("u14"), List.of("Vue.js", "TypeScript", "Ethers.js", "Tailwind CSS")),
