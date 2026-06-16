@@ -31,6 +31,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     @Value("${app.jwt.expiration-ms:604800000}")
     private long expirationMs;
 
+    @Value("${app.cookie.secure}")
+    private boolean cookieSecure;
+
+    @Value("${app.cookie.same-site}")
+    private String cookieSameSite;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
@@ -62,12 +68,23 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         }
 
         String jwt = jwtTokenProvider.generateToken(member.getId(), member.getNickname());
+        
+        //Cookie cookie = new Cookie("access_token", jwt);
+        //cookie.setHttpOnly(true);
+        //cookie.setPath("/");
+        //cookie.setMaxAge((int) (expirationMs / 1000));
+        //response.addCookie(cookie);
 
-        Cookie cookie = new Cookie("access_token", jwt);
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge((int) (expirationMs / 1000));
-        response.addCookie(cookie);
+        ResponseCookie cookie = ResponseCookie.from("access_token",jwt)
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .sameSite(cookieSameSite)
+                .path("/")
+                .maxAge(expirationMs / 1000)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
 
         String redirectUrl = isNew[0] ? frontendUrl + "/mypage/portfolio/new" : frontendUrl;
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
