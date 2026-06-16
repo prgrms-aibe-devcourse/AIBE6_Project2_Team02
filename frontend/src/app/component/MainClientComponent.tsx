@@ -16,9 +16,9 @@ import {
   Users,
 } from 'lucide-react'
 
-import { Badge, Button, Card } from '../components/ui'
-import { fetchPopularTechStacks, fetchProjects } from '../lib/api'
-import type { Project } from '../types'
+import { Badge, Button, Card } from '../../components/ui'
+import { fetchPopularTechStacks, fetchProjects } from '../../lib/api'
+import type { Project } from '../../types'
 
 const statusMap: Record<string, string> = {
   All: '전체',
