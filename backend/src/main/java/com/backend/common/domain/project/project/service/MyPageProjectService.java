@@ -105,7 +105,7 @@ public class MyPageProjectService {
                     .build();
             projectMemberRepository.save(projectMember);
         } else {
-            application.reject();
+            projectApplicationRepository.delete(application);
         }
     }
 
@@ -119,7 +119,11 @@ public class MyPageProjectService {
         ProjectApplication application = projectApplicationRepository.findById(applicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 지원 내역입니다."));
 
-        application.cancel();
+        if (application.getStatus() != SelectionStatus.PENDING) {
+            throw new IllegalStateException("대기 중인 지원서만 취소할 수 있습니다.");
+        }
+
+        projectApplicationRepository.delete(application);
     }
 
 }

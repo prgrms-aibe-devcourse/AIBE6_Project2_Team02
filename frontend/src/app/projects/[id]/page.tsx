@@ -21,7 +21,13 @@ import {
 
 import { Badge, Button, Card, Modal } from '../../../components/ui'
 import { ReportModal } from '../../../components/ReportModal'
-import { fetchProject, fetchProjectPermissions, checkAlreadyReported } from '../../../lib/api'
+import {
+  applyProject,
+  cancelProjectApplication,
+  checkAlreadyReported,
+  fetchProject,
+  fetchProjectPermissions,
+} from '../../../lib/api'
 import type { Project } from '../../../types'
 
 const categoryMap: Record<string, string> = {
@@ -48,8 +54,14 @@ export default function ProjectDetailPage() {
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [selectedRole, setSelectedRole] = useState<string>('')
+  const [applyMessage, setApplyMessage] = useState('')
   const [canEdit, setCanEdit] = useState(false)
   const [isMember, setIsMember] = useState(false)
+  const [pendingApplicationId, setPendingApplicationId] = useState<number | null>(
+    null,
+  )
+  const [isCancellingApplication, setIsCancellingApplication] = useState(false)
+  const [isApplying, setIsApplying] = useState(false)
 
   const handleOpenReport = async () => {
     try {
@@ -84,10 +96,12 @@ export default function ProjectDetailPage() {
       .then((permission) => {
         setCanEdit(permission.canEdit)
         setIsMember(permission.isMember)
+        setPendingApplicationId(permission.pendingApplicationId)
       })
       .catch(() => {
         setCanEdit(false)
         setIsMember(false)
+        setPendingApplicationId(null)
       })
   }, [id])
 
@@ -112,12 +126,53 @@ export default function ProjectDetailPage() {
     )
   }
 
-  const handleApply = (e: React.FormEvent) => {
+  const handleApply = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsApplyModalOpen(false)
-    toast.success('지원이 완료되었습니다!', {
-      description: `${project.title}의 ${selectedRole} 포지션에 지원했습니다. 프로젝트 리더가 프로필을 검토할 예정입니다.`,
-    })
+    if (isApplying) return
+
+    setIsApplying(true)
+    try {
+      const response = await applyProject(id, {
+        position: selectedRole,
+        message: applyMessage,
+      })
+      setPendingApplicationId(response.applicationId)
+      setIsApplyModalOpen(false)
+      setApplyMessage('')
+      toast.success('지원이 완료되었습니다!', {
+        description: `${project.title}의 ${selectedRole} 포지션에 지원했습니다. 프로젝트 리더가 프로필을 검토할 예정입니다.`,
+      })
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : '프로젝트 지원 중 오류가 발생했습니다.',
+      )
+    } finally {
+      setIsApplying(false)
+    }
+  }
+
+  const handleCancelApplication = async () => {
+    if (!pendingApplicationId || isCancellingApplication) return
+
+    const confirmed = window.confirm('프로젝트 지원 신청을 취소하시겠습니까?')
+    if (!confirmed) return
+
+    setIsCancellingApplication(true)
+    try {
+      await cancelProjectApplication(pendingApplicationId)
+      setPendingApplicationId(null)
+      toast.success('지원이 취소되었습니다.')
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : '지원 취소 처리에 실패했습니다.',
+      )
+    } finally {
+      setIsCancellingApplication(false)
+    }
   }
 
   return (
@@ -166,15 +221,27 @@ export default function ProjectDetailPage() {
                   프로젝트 수정
                 </Button>
               )}
-              <Button
-                size="lg"
-                variant="gradient"
-                className={`w-full md:w-48 ${canEdit ? 'hidden' : ''}`}
-                disabled={isMember || project.recruitmentStatus === 'Closed'}
-                onClick={() => setIsApplyModalOpen(true)}
-              >
-                지원하기
-              </Button>
+              {pendingApplicationId ? (
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className={`w-full md:w-48 border-red-200 text-red-500 hover:bg-red-50 ${canEdit ? 'hidden' : ''}`}
+                  disabled={isCancellingApplication}
+                  onClick={handleCancelApplication}
+                >
+                  {isCancellingApplication ? '취소 중...' : '지원 취소'}
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  variant="gradient"
+                  className={`w-full md:w-48 ${canEdit ? 'hidden' : ''}`}
+                  disabled={isMember || project.recruitmentStatus === 'Closed'}
+                  onClick={() => setIsApplyModalOpen(true)}
+                >
+                  지원하기
+                </Button>
+              )}
               <div className="flex gap-2">
                 <Button
                   size="icon"
@@ -262,13 +329,17 @@ export default function ProjectDetailPage() {
                           variant="outline"
                           size="sm"
                           className={canEdit ? 'hidden' : undefined}
-                          disabled={isMember}
-                          onClick={() => {
-                            setSelectedRole(pos.role)
-                            setIsApplyModalOpen(true)
-                          }}
+                          disabled={isMember || Boolean(pendingApplicationId)}
+                          onClick={
+                            pendingApplicationId
+                              ? undefined
+                              : () => {
+                                  setSelectedRole(pos.role)
+                                  setIsApplyModalOpen(true)
+                                }
+                          }
                         >
-                          지원
+                          {pendingApplicationId ? '지원 완료' : '지원'}
                         </Button>
                       ) : (
                         <Badge variant="secondary">모집 완료</Badge>
@@ -420,6 +491,8 @@ export default function ProjectDetailPage() {
             <textarea
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 min-h-[100px] resize-y"
               placeholder="관련 경험과 이 프로젝트에 참여하고 싶은 이유를 간단히 적어주세요..."
+              value={applyMessage}
+              onChange={(e) => setApplyMessage(e.target.value)}
               required
             />
           </div>
@@ -438,8 +511,8 @@ export default function ProjectDetailPage() {
             >
               취소
             </Button>
-            <Button type="submit" variant="gradient">
-              지원서 제출
+            <Button type="submit" variant="gradient" disabled={isApplying}>
+              {isApplying ? '제출 중...' : '지원서 제출'}
             </Button>
           </div>
         </form>

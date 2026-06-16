@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ProjectApplicationRepository extends JpaRepository<ProjectApplication, Long> {
 
@@ -21,4 +22,15 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
             "AND p.deletedAt IS NULL " +
             "ORDER BY pa.createdAt DESC")
     List<ProjectApplication> findMyProjectApplications(@Param("memberId") Long memberId);
+
+    @Query("SELECT pa FROM ProjectApplication pa " +
+            "WHERE pa.project.id = :projectId " +
+            "AND pa.applicant.id = :memberId " +
+            "AND pa.status = 'PENDING'")
+    Optional<ProjectApplication> findPendingApplication(
+            @Param("projectId") Long projectId,
+            @Param("memberId") Long memberId
+    );
+
+    Optional<ProjectApplication> findByProjectIdAndApplicantId(Long projectId, Long applicantId);
 }

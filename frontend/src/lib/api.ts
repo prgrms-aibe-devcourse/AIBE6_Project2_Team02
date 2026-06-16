@@ -7,6 +7,7 @@ import type {
   ProjectProposal,
   ReportResponse,
   ReportStatus,
+  ReportTargetType,
   ReviewResponse,
   RsData,
   User,
@@ -14,6 +15,8 @@ import type {
 import type { PortfolioCreateRequest } from '../types/dto/portfolio'
 import type {
   ProjectCreateRequest,
+  ProjectApplicationCreateRequest,
+  ProjectApplicationCreateResponse,
   ProjectPermissionResponse,
   ProjectUpdateRequest,
 } from '../types/dto/project'
@@ -70,6 +73,28 @@ export function createProject(payload: ProjectCreateRequest) {
 export function fetchProjectPermissions(id: string) {
   return fetchRsDataJson<ProjectPermissionResponse>(
     `/projects/${id}/permissions`,
+  )
+}
+
+export function cancelProjectApplication(applicationId: number) {
+  return fetchRsDataJson<void>(
+    `/mypage/projects/applications/${applicationId}/cancel`,
+    {
+      method: 'PATCH',
+    },
+  )
+}
+
+export function applyProject(
+  projectId: string,
+  payload: ProjectApplicationCreateRequest,
+) {
+  return fetchRsDataJson<ProjectApplicationCreateResponse>(
+    `/projects/${projectId}/applications`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
   )
 }
 
