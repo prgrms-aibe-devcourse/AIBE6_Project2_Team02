@@ -79,15 +79,4 @@ public class ProjectApplication {
         this.updatedAt = LocalDateTime.now();
     }
 
-    /**
-     * 지원 취소 (CANCELLED) - 지원자 본인이 철회할 때 사용
-     */
-    public void cancel() {
-        if (this.status != SelectionStatus.PENDING) {
-            throw new IllegalStateException("대기 중인 지원서만 취소할 수 있습니다.");
-        }
-        this.status = SelectionStatus.CANCELLED;
-        this.updatedAt = LocalDateTime.now();
-    }
-
 }

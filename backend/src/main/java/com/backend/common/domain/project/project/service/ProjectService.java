@@ -7,7 +7,10 @@ import com.backend.common.domain.member.repository.MemberTechStackRepository;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
 import com.backend.common.domain.portfolio.portfolio.entity.PortfolioLink;
 import com.backend.common.domain.portfolio.portfolio.repository.PortfolioRepository;
+import com.backend.common.domain.project.application.entity.ProjectApplication;
+import com.backend.common.domain.project.application.repository.ProjectApplicationRepository;
 import com.backend.common.domain.project.dto.PositionResponse;
+import com.backend.common.domain.project.dto.ProjectApplicationCreateRequest;
 import com.backend.common.domain.project.dto.PositionUpdateRequest;
 import com.backend.common.domain.project.dto.ProjectCreateRequest;
 import com.backend.common.domain.project.dto.ProjectUpdateRequest;
@@ -61,6 +64,7 @@ public class ProjectService {
     private final PortfolioRepository portfolioRepository;
     private final TechStackRepository techStackRepository;
     private final ProjectViewRepository projectViewRepository;
+    private final ProjectApplicationRepository projectApplicationRepository;
 
     public List<ProjectResponse> getProjects() {
         List<Project> projects = projectRepository.findByDeletedAtIsNullOrderByCreatedAtDesc();
@@ -211,6 +215,65 @@ public class ProjectService {
 
     public boolean isProjectMember(Long projectId, Long memberId) {
         return memberId != null && findActiveProjectMember(projectId, memberId).isPresent();
+    }
+
+    public Optional<Long> findPendingApplicationId(Long projectId, Long memberId) {
+        if (memberId == null) {
+            return Optional.empty();
+        }
+
+        return projectApplicationRepository.findPendingApplication(projectId, memberId)
+                .map(application -> application.getId());
+    }
+
+    @Transactional
+    public Long applyProject(Long projectId, Long memberId, ProjectApplicationCreateRequest request) {
+        Project project = projectRepository.findById(projectId)
+                .filter(item -> item.getDeletedAt() == null)
+                .orElseThrow(() -> new NoSuchElementException("Project not found"));
+        Member applicant = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberNotFoundException("404", "Member not found"));
+
+        if (!project.isRecruitmentOpen() || project.getStatus() != ProjectStatus.RECRUITING) {
+            throw new IllegalStateException("현재 모집 중인 프로젝트에만 지원할 수 있습니다.");
+        }
+        if (isProjectMember(projectId, memberId)) {
+            throw new IllegalStateException("이미 참여 중인 프로젝트입니다.");
+        }
+
+        PositionType position = parsePosition(request.position());
+        String role = formatPosition(position);
+        PositionResponse targetPosition = buildPositions(
+                project,
+                projectMemberRepository.findByProjectId(projectId)
+        ).stream()
+                .filter(item -> normalizeRole(item.role()).equals(normalizeRole(role)))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("모집 중인 포지션이 아닙니다."));
+
+        if (targetPosition.filled() >= targetPosition.total()) {
+            throw new IllegalStateException("이미 모집이 완료된 포지션입니다.");
+        }
+
+        String message = Optional.ofNullable(request.message()).orElse("").trim();
+        if (message.isBlank()) {
+            throw new IllegalArgumentException("지원 메시지를 입력해주세요.");
+        }
+
+        Optional<ProjectApplication> existingApplication =
+                projectApplicationRepository.findByProjectIdAndApplicantId(projectId, memberId);
+        if (existingApplication.isPresent()) {
+            throw new IllegalStateException("이미 지원한 프로젝트입니다.");
+        }
+
+        ProjectApplication application = ProjectApplication.builder()
+                .project(project)
+                .applicant(applicant)
+                .position(position)
+                .message(message)
+                .build();
+
+        return projectApplicationRepository.save(application).getId();
     }
 
     private Optional<ProjectMember> findActiveProjectMember(Long projectId, Long memberId) {
@@ -492,6 +555,22 @@ public class ProjectService {
             case DESIGNER -> "디자이너";
             case PRODUCT_MANAGER -> "프로덕트 매니저";
         };
+    }
+
+    private PositionType parsePosition(String value) {
+        String normalized = normalizeRole(value);
+        if (normalized.isBlank()) {
+            throw new IllegalArgumentException("지원 포지션을 선택해주세요.");
+        }
+
+        for (PositionType position : PositionType.values()) {
+            if (position.name().equalsIgnoreCase(value) ||
+                    normalizeRole(formatPosition(position)).equals(normalized)) {
+                return position;
+            }
+        }
+
+        throw new IllegalArgumentException("지원할 수 없는 포지션입니다.");
     }
 
     private ProjectCategory inferCategory(Project project) {
