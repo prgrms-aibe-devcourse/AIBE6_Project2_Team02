@@ -6,7 +6,7 @@ WORKDIR /home/gradle/src
 RUN ./gradlew build -x test --no-daemon
 
 # 2. 실행 스테이지: 빌드된 가벼운 jar 파일만 추출해서 가동
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-alpine
 EXPOSE 8080
 COPY --from=build /home/gradle/src/build/libs/*-SNAPSHOT.jar app.jar
 ENTRYPOINT ["java", "-jar", "/app.jar"]
