@@ -3,11 +3,46 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Check, Code2, Globe, Github, BookOpen } from 'lucide-react'
-import { Badge, Button, Card, Input } from '../../../../components/ui'
-import { fetchAllTechStacks, fetchMyPortfolio, updateMyPortfolio, type TechStackItem } from '../../../../lib/api'
+import { ArrowLeft, Check, Code2, Globe, Github, BookOpen, Figma, Linkedin } from 'lucide-react'
+import { Button, Card, Input } from '../../../../components/ui'
+import { fetchAllTechStacks, fetchMyPortfolio, updateMyPortfolio } from '../../../../lib/api'
+import type { TechStackItem } from '../../../../types/tech-stack'
 import { useAuth } from '../../../providers'
 import { leaderPositionOptions } from '../../../../constants/project'
+
+type LinkFields = {
+  label: string
+  linkType: string
+  placeholder: string
+  icon: React.ReactNode
+}
+
+const DEVELOPER_POSITIONS = ['BACKEND', 'FRONTEND', 'FULL_STACK']
+
+function getLinkFields(position: string): LinkFields[] {
+  if (DEVELOPER_POSITIONS.includes(position)) {
+    return [
+      { label: 'GitHub', linkType: 'GITHUB', placeholder: 'https://github.com/username', icon: <Github className="w-4 h-4 text-slate-400" /> },
+      { label: '블로그', linkType: 'BLOG', placeholder: 'https://blog.example.com', icon: <BookOpen className="w-4 h-4 text-slate-400" /> },
+      { label: '배포 URL', linkType: 'DEPLOY', placeholder: 'https://myproject.vercel.app', icon: <Globe className="w-4 h-4 text-slate-400" /> },
+    ]
+  }
+  if (position === 'DESIGNER') {
+    return [
+      { label: 'Figma', linkType: 'FIGMA', placeholder: 'https://figma.com/file/...', icon: <Figma className="w-4 h-4 text-slate-400" /> },
+      { label: 'Behance', linkType: 'BEHANCE', placeholder: 'https://behance.net/username', icon: <Globe className="w-4 h-4 text-slate-400" /> },
+      { label: '개인 포폴 URL', linkType: 'PORTFOLIO_URL', placeholder: 'https://my-portfolio.com', icon: <Globe className="w-4 h-4 text-slate-400" /> },
+    ]
+  }
+  if (position === 'PRODUCT_MANAGER') {
+    return [
+      { label: '노션', linkType: 'NOTION', placeholder: 'https://notion.so/...', icon: <Globe className="w-4 h-4 text-slate-400" /> },
+      { label: '링크드인', linkType: 'LINKEDIN', placeholder: 'https://linkedin.com/in/username', icon: <Linkedin className="w-4 h-4 text-slate-400" /> },
+      { label: '개인 포폴 URL', linkType: 'PORTFOLIO_URL', placeholder: 'https://my-portfolio.com', icon: <Globe className="w-4 h-4 text-slate-400" /> },
+    ]
+  }
+  return []
+}
 
 export default function PortfolioEditPage() {
   const router = useRouter()
@@ -18,16 +53,16 @@ export default function PortfolioEditPage() {
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<{ title?: string; desiredPosition?: string; general?: string }>({})
+  const [linkValues, setLinkValues] = useState<Record<string, string>>({})
 
   const [form, setForm] = useState({
     title: '',
     introduction: '',
-    githubUrl: '',
-    blogUrl: '',
-    deployUrl: '',
     desiredPosition: '',
     isPublished: true,
   })
+
+  const linkFields = getLinkFields(form.desiredPosition)
 
   useEffect(() => {
     if (authLoading) return
@@ -38,18 +73,25 @@ export default function PortfolioEditPage() {
         setForm({
           title: portfolio.title ?? '',
           introduction: portfolio.introduction ?? '',
-          githubUrl: portfolio.githubUrl ?? '',
-          blogUrl: portfolio.blogUrl ?? '',
-          deployUrl: portfolio.deployUrl ?? '',
           desiredPosition: portfolio.desiredPosition ?? '',
           isPublished: portfolio.isPublished,
         })
+        const initialLinks: Record<string, string> = {}
+        for (const link of portfolio.links ?? []) {
+          initialLinks[link.linkType] = link.url
+        }
+        setLinkValues(initialLinks)
         setSelectedNames(portfolio.techStacks ?? [])
         setTechStacks(stacks)
       })
       .catch(() => router.replace('/mypage'))
       .finally(() => setLoading(false))
   }, [authLoading, user, router])
+
+  const handlePositionChange = (position: string) => {
+    setForm({ ...form, desiredPosition: position })
+    setLinkValues({})
+  }
 
   const toggleTechStack = (name: string) => {
     setSelectedNames((prev) =>
@@ -62,12 +104,14 @@ export default function PortfolioEditPage() {
     setErrors({})
     setSubmitting(true)
     try {
+      const portfolioLinks = linkFields
+        .filter((f) => linkValues[f.linkType])
+        .map((f) => ({ linkType: f.linkType, url: linkValues[f.linkType] }))
+
       await updateMyPortfolio({
         title: form.title,
         introduction: form.introduction,
-        githubUrl: form.githubUrl || null,
-        blogUrl: form.blogUrl || null,
-        deployUrl: form.deployUrl || null,
+        portfolioLinks,
         desiredPosition: form.desiredPosition,
         techStacks: selectedNames,
         isPublished: form.isPublished,
@@ -109,32 +153,28 @@ export default function PortfolioEditPage() {
               <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <Globe className="w-4 h-4 text-blue-600" /> 링크
               </h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">GitHub</label>
-                  <div className="relative">
-                    <Github className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input placeholder="https://github.com/username" className="pl-9"
-                      value={form.githubUrl} onChange={(e) => setForm({ ...form, githubUrl: e.target.value })} />
-                  </div>
+              {!form.desiredPosition ? (
+                <p className="text-xs text-slate-400">포지션을 먼저 선택해주세요.</p>
+              ) : (
+                <div className="space-y-3">
+                  {linkFields.map((field) => (
+                    <div key={field.linkType}>
+                      <label className="text-xs font-medium text-slate-500 mb-1 block">
+                        {field.label}
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2">{field.icon}</span>
+                        <Input
+                          placeholder={field.placeholder}
+                          className="pl-9"
+                          value={linkValues[field.linkType] ?? ''}
+                          onChange={(e) => setLinkValues({ ...linkValues, [field.linkType]: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">블로그</label>
-                  <div className="relative">
-                    <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input placeholder="https://blog.example.com" className="pl-9"
-                      value={form.blogUrl} onChange={(e) => setForm({ ...form, blogUrl: e.target.value })} />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">배포 URL</label>
-                  <div className="relative">
-                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input placeholder="https://myproject.vercel.app" className="pl-9"
-                      value={form.deployUrl} onChange={(e) => setForm({ ...form, deployUrl: e.target.value })} />
-                  </div>
-                </div>
-              </div>
+              )}
             </Card>
 
             <Card className="p-6">
@@ -179,7 +219,7 @@ export default function PortfolioEditPage() {
                   </label>
                   <select
                     value={form.desiredPosition}
-                    onChange={(e) => setForm({ ...form, desiredPosition: e.target.value })}
+                    onChange={(e) => handlePositionChange(e.target.value)}
                     className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
                   >
                     <option value="">포지션을 선택해주세요</option>
