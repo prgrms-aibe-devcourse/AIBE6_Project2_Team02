@@ -25,7 +25,7 @@ export type Project = {
   goals: string[]
   techStack: string[]
   positions: Position[]
-  recruitmentStatus: 'Open' | 'Closed'
+  recruitmentStatus: 'Open' | 'Closed' | 'Completed' | 'Stopped'
   category: 'Web' | 'Mobile' | 'AI' | 'Game' | 'Other'
   leader: User
   teamMembers: User[]
@@ -82,13 +82,17 @@ export interface CreateReviewRequest {
 }
 
 export type ReportTargetType = 'PORTFOLIO' | 'PROJECT'
-export type ReportStatus = 'PENDING' | 'REVIEWED'
+export type ReportStatus = 'PENDING' | 'RESOLVED' | 'REJECTED'
 
 export interface ReportResponse {
   reportId: number
   reporterId: number
+  reporterNickname: string
   targetType: ReportTargetType
   targetId: number
+  targetTitle: string
+  targetMemberNickname: string
+  targetMemberProfileImage: string
   reasonType: string
   reasonDetail: string
   status: ReportStatus

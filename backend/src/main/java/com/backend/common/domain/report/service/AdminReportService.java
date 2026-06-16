@@ -20,6 +20,8 @@ import java.util.List;
 public class AdminReportService {
     private final ReportRepository reportRepository;
     private final MemberRepository memberRepository;
+    private final com.backend.common.domain.portfolio.portfolio.repository.PortfolioRepository portfolioRepository;
+    private final com.backend.common.domain.project.project.repository.ProjectRepository projectRepository;
 
     public List<ReportResponse> getReports(
             ReportTargetType targetType,
@@ -40,7 +42,29 @@ public class AdminReportService {
         }
 
         return reports.stream()
-                .map(ReportResponse::from)
+                .map(report -> {
+                    String targetTitle = null;
+                    String targetMemberNickname = null;
+                    String targetMemberProfileImage = null;
+
+                    if (report.getTargetType() == ReportTargetType.PORTFOLIO) {
+                        var portfolio = portfolioRepository.findById(report.getTargetId()).orElse(null);
+                        if (portfolio != null) {
+                            targetTitle = portfolio.getTitle();
+                            targetMemberNickname = portfolio.getMember().getNickname();
+                            targetMemberProfileImage = portfolio.getMember().getProfileImageUrl();
+                        }
+                    } else if (report.getTargetType() == ReportTargetType.PROJECT) {
+                        var project = projectRepository.findById(report.getTargetId()).orElse(null);
+                        if (project != null) {
+                            targetTitle = project.getTitle();
+                            targetMemberNickname = project.getLeader().getNickname();
+                            targetMemberProfileImage = project.getLeader().getProfileImageUrl();
+                        }
+                    }
+
+                    return ReportResponse.of(report, targetTitle, targetMemberNickname, targetMemberProfileImage);
+                })
                 .toList();
     }
 

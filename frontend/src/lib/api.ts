@@ -5,6 +5,7 @@ import type {
   Project,
   ProjectProposal,
   ReportResponse,
+  ReportStatus,
   ReviewResponse,
   RsData,
   User,
@@ -130,14 +131,28 @@ export function createProjectProposal(
   })
 }
 
-export function fetchUserReports() {
+export function fetchUserReports(status: ReportStatus = 'PENDING') {
   return fetchRsDataJson<ReportResponse[]>(
-    '/admin/reports?targetType=PORTFOLIO',
+    `/admin/reports?targetType=PORTFOLIO&status=${status}`,
   )
 }
 
-export function fetchProjectReports() {
-  return fetchRsDataJson<ReportResponse[]>('/admin/reports?targetType=PROJECT')
+export function fetchProjectReports(status: ReportStatus = 'PENDING') {
+  return fetchRsDataJson<ReportResponse[]>(
+    `/admin/reports?targetType=PROJECT&status=${status}`,
+  )
+}
+
+export function resolveReport(reportId: number) {
+  return fetchRsDataJson<void>(`/admin/reports/${reportId}/resolve`, {
+    method: 'PATCH',
+  })
+}
+
+export function rejectReport(reportId: number) {
+  return fetchRsDataJson<void>(`/admin/reports/${reportId}/reject`, {
+    method: 'PATCH',
+  })
 }
 
 export async function withdrawMember(): Promise<void> {

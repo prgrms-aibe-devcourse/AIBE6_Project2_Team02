@@ -16,6 +16,8 @@ const statusMap: Record<string, string> = {
   All: '전체',
   Open: '모집중',
   Closed: '마감',
+  Completed: '완료',
+  Stopped: '중단',
 }
 
 const categoryMap: Record<string, string> = {
@@ -35,7 +37,9 @@ const errorMessageMap: Record<string, string> = {
 export default function LandingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [errorMsg, setErrorMsg] = useState<string | null>(errorMessageMap[searchParams.get('error') ?? ''] ?? null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(
+      errorMessageMap[searchParams.get('error') ?? ''] ?? null,
+  )
   const [projects, setProjects] = useState<Project[]>([])
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
   const [projectPage, setProjectPage] = useState(0)
