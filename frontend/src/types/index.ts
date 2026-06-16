@@ -82,13 +82,17 @@ export interface CreateReviewRequest {
 }
 
 export type ReportTargetType = 'PORTFOLIO' | 'PROJECT'
-export type ReportStatus = 'PENDING' | 'REVIEWED'
+export type ReportStatus = 'PENDING' | 'RESOLVED' | 'REJECTED'
 
 export interface ReportResponse {
   reportId: number
   reporterId: number
+  reporterNickname: string
   targetType: ReportTargetType
   targetId: number
+  targetTitle: string
+  targetMemberNickname: string
+  targetMemberProfileImage: string
   reasonType: string
   reasonDetail: string
   status: ReportStatus
