@@ -35,7 +35,7 @@ const errorMessageMap: Record<string, string> = {
 export default function LandingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [errorMsg, setErrorMsg] = useState(errorMessageMap[searchParams.get('error') ?? ''] ?? null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(errorMessageMap[searchParams.get('error') ?? ''] ?? null)
   const [projects, setProjects] = useState<Project[]>([])
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
   const [projectPage, setProjectPage] = useState(0)
