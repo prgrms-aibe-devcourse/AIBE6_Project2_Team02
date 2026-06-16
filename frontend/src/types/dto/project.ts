@@ -7,10 +7,10 @@ export interface ProjectCreateRequest {
   fullDescription: string
   category: Project['category']
   goals: string[]
+  techStacks: string[]
   deadline: string
   open: boolean
   leaderPosition: PositionType
-  techStacks: string[]
   positions: Array<{
     role: string
     total: number
@@ -23,6 +23,7 @@ export interface ProjectUpdateRequest {
   fullDescription: string
   category: Project['category']
   goals: string[]
+  techStacks: string[]
   deadline: string
   open: boolean
   positions: Array<{

@@ -222,6 +222,18 @@ export default function ProjectDetailPage() {
               <p className="text-lg text-slate-600 max-w-3xl">
                 {project.description}
               </p>
+              {project.techStack.length > 0 && (
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {project.techStack.map((tech) => (
+                    <span
+                      key={tech}
+                      className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700"
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-row md:flex-col gap-3 shrink-0">
@@ -375,14 +387,20 @@ export default function ProjectDetailPage() {
                 <Code2 className="h-4 w-4 text-slate-400" /> 기술 스택
               </h3>
               <div className="flex flex-wrap gap-2">
-                {project.techStack.map((tech) => (
-                  <span
-                    key={tech}
-                    className="px-3 py-1.5 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg"
-                  >
-                    {tech}
+                {project.techStack.length > 0 ? (
+                  project.techStack.map((tech) => (
+                    <span
+                      key={tech}
+                      className="px-3 py-1.5 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg"
+                    >
+                      {tech}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm text-slate-500">
+                    등록된 기술 스택이 없습니다.
                   </span>
-                ))}
+                )}
               </div>
             </Card>
 

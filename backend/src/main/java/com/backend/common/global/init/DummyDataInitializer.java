@@ -22,6 +22,7 @@ import com.backend.common.domain.report.repository.ReportRepository;
 import com.backend.common.domain.review.entity.Review;
 import com.backend.common.domain.review.repository.ReviewRepository;
 import com.backend.common.domain.techstack.entity.MemberTechStack;
+import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +60,7 @@ public class DummyDataInitializer implements ApplicationRunner {
         Map<String, TechStack> techStacks = techStacksSeeded ? loadTechStacks() : saveTechStacks();
 
         if (memberRepository.count() > 0 || projectRepository.count() > 0) {
+            backfillProjectTechStacks(techStacks);
             return;
         }
 
@@ -67,7 +69,7 @@ public class DummyDataInitializer implements ApplicationRunner {
 
         saveMemberTechStacks(memberSeeds, members, techStacks);
         savePortfolios(memberSeeds, members);
-        saveProjects(members);
+        saveProjects(members, techStacks);
         savePeerReviews();
         saveReports(members);
 
@@ -273,7 +275,7 @@ public class DummyDataInitializer implements ApplicationRunner {
         ));
     }
 
-    private void saveProjects(Map<String, Member> members) {
+    private void saveProjects(Map<String, Member> members, Map<String, TechStack> techStacks) {
         for (ProjectSeed seed : projectSeeds()) {
 
             Project project = Project.builder()
@@ -284,6 +286,22 @@ public class DummyDataInitializer implements ApplicationRunner {
                     .deadline(LocalDate.parse(seed.deadline()))
                     .positions(buildProjectPositions(seed))
                     .build();
+
+            seed.techStacks().stream()
+                    .map(String::trim)
+                    .filter(name -> !name.isBlank())
+                    .distinct()
+                    .map(name -> techStacks.computeIfAbsent(
+                            name,
+                            key -> techStackRepository.save(
+                                    TechStack.builder().name(key).build()
+                            )
+                    ))
+                    .map(techStack -> ProjectTechStack.builder()
+                            .project(project)
+                            .techStack(techStack)
+                            .build())
+                    .forEach(project::addProjectTechStack);
 
             if (!seed.open()) {
                 project.startProject();
@@ -311,6 +329,38 @@ public class DummyDataInitializer implements ApplicationRunner {
                 projectMemberRepository.save(generalMember);
             });
         }
+    }
+
+    private void backfillProjectTechStacks(Map<String, TechStack> techStacks) {
+        Map<String, ProjectSeed> seedsByTitle = new HashMap<>();
+        projectSeeds().forEach(seed -> seedsByTitle.put(seed.title(), seed));
+
+        projectRepository.findAll().forEach(project -> {
+            ProjectSeed seed = seedsByTitle.get(project.getTitle());
+            if (seed == null) return;
+
+            Set<String> existingTechStackNames = new HashSet<>();
+            project.getProjectTechStacks().forEach(projectTechStack ->
+                    existingTechStackNames.add(projectTechStack.getTechStack().getName())
+            );
+
+            seed.techStacks().stream()
+                    .map(String::trim)
+                    .filter(name -> !name.isBlank())
+                    .filter(name -> !existingTechStackNames.contains(name))
+                    .distinct()
+                    .map(name -> techStacks.computeIfAbsent(
+                            name,
+                            key -> techStackRepository.save(
+                                    TechStack.builder().name(key).build()
+                            )
+                    ))
+                    .map(techStack -> ProjectTechStack.builder()
+                            .project(project)
+                            .techStack(techStack)
+                            .build())
+                    .forEach(project::addProjectTechStack);
+        });
     }
 
     private List<ProjectPosition> buildProjectPositions(ProjectSeed seed) {

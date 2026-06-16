@@ -92,6 +92,12 @@ public class Project {
         this.projectTechStacks.add(projectTechStack);
     }
 
+    public void updateProjectTechStacks(List<ProjectTechStack> projectTechStacks) {
+        this.projectTechStacks.clear();
+        this.projectTechStacks.addAll(projectTechStacks);
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void update(
             String title,
             String description,

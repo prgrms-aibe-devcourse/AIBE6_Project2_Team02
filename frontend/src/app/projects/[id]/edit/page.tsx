@@ -11,6 +11,7 @@ import { Button, Card, Input } from '../../../../components/ui'
 import {
   fetchProject,
   fetchProjectPermissions,
+  fetchPopularTechStacks,
   updateProject,
 } from '../../../../lib/api'
 import { leaderPositionOptions } from '../../../../constants/project'
@@ -35,15 +36,22 @@ export default function ProjectEditPage() {
     fullDescription: '',
     category: 'Web',
     goals: [''],
+    techStacks: [],
     deadline: '',
     open: true,
     positions: [{ role: '', total: 1 }],
   })
   const [positionMinimums, setPositionMinimums] = useState([0])
+  const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
+  const [techInput, setTechInput] = useState('')
 
   useEffect(() => {
-    Promise.all([fetchProject(id), fetchProjectPermissions(id)])
-      .then(([project, permission]) => {
+    Promise.all([
+      fetchProject(id),
+      fetchProjectPermissions(id),
+      fetchPopularTechStacks(),
+    ])
+      .then(([project, permission, techStacks]) => {
         if (!permission.canEdit) {
           toast.error('프로젝트 수정 권한이 없습니다.')
           router.replace(`/projects/${id}`)
@@ -56,6 +64,7 @@ export default function ProjectEditPage() {
           fullDescription: project.fullDescription,
           category: project.category,
           goals: project.goals.length > 0 ? project.goals : [''],
+          techStacks: project.techStack,
           deadline: project.deadline,
           open: project.recruitmentStatus === 'Open',
           positions:
@@ -71,6 +80,7 @@ export default function ProjectEditPage() {
             ? project.positions.map((position) => position.filled)
             : [0],
         )
+        setPopularTechStacks(techStacks)
       })
       .catch(() => {
         toast.error('프로젝트 정보를 불러오지 못했습니다.')
@@ -126,6 +136,24 @@ export default function ProjectEditPage() {
     )
   }
 
+  const handleAddTech = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter' || !techInput.trim()) return
+
+    event.preventDefault()
+    const tech = techInput.trim()
+    if (!form.techStacks.includes(tech)) {
+      setForm({ ...form, techStacks: [...form.techStacks, tech] })
+    }
+    setTechInput('')
+  }
+
+  const handleRemoveTech = (tech: string) => {
+    setForm({
+      ...form,
+      techStacks: form.techStacks.filter((item) => item !== tech),
+    })
+  }
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (submitting) return
@@ -167,6 +195,7 @@ export default function ProjectEditPage() {
         description: form.description.trim(),
         fullDescription: form.fullDescription.trim(),
         goals: form.goals.map((goal) => goal.trim()).filter(Boolean),
+        techStacks: form.techStacks.map((tech) => tech.trim()).filter(Boolean),
         positions: form.positions.map((position) => ({
           role: position.role.trim(),
           total: position.total,
@@ -285,9 +314,9 @@ export default function ProjectEditPage() {
           <div className="mb-2 flex items-center justify-between gap-4">
             <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-sm text-blue-600">
-                3
+                2
               </span>
-              모집 포지션
+              모집 포지션 및 기술 스택
             </h2>
             <Button
               type="button"
@@ -393,12 +422,74 @@ export default function ProjectEditPage() {
               )
             })}
           </div>
+
+          <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+            <h3 className="mb-2 text-sm font-semibold text-slate-900">
+              기술 스택
+            </h3>
+            <p className="mb-4 text-xs text-slate-500">
+              프로젝트에서 사용하는 주요 기술을 추가하거나 삭제해주세요.
+            </p>
+
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {form.techStacks.map((tech) => (
+                  <span
+                    key={tech}
+                    className="inline-flex items-center gap-1 rounded-full bg-white py-1 pl-3 pr-1 text-sm font-medium text-slate-700 ring-1 ring-slate-200"
+                  >
+                    {tech}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTech(tech)}
+                      className="rounded-full p-0.5 transition-colors hover:bg-slate-100"
+                      aria-label={`${tech} 기술 스택 삭제`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+                {form.techStacks.length === 0 && (
+                  <span className="text-sm text-slate-500">
+                    등록된 기술 스택이 없습니다.
+                  </span>
+                )}
+              </div>
+
+              <Input
+                placeholder="기술 스택 입력 후 Enter (예: React, Node.js)"
+                value={techInput}
+                onChange={(event) => setTechInput(event.target.value)}
+                onKeyDown={handleAddTech}
+              />
+
+              <div className="flex flex-wrap gap-2">
+                <span className="py-1 text-xs text-slate-500">추천:</span>
+                {popularTechStacks.slice(0, 8).map((tech) => (
+                  <button
+                    key={tech}
+                    type="button"
+                    onClick={() =>
+                      !form.techStacks.includes(tech) &&
+                      setForm({
+                        ...form,
+                        techStacks: [...form.techStacks, tech],
+                      })
+                    }
+                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 transition-colors hover:bg-slate-100"
+                  >
+                    + {tech}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </Card>
 
         <Card className="p-6 md:p-8">
           <h2 className="mb-2 flex items-center gap-2 text-xl font-bold text-slate-900">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-sm text-blue-600">
-              2
+              3
             </span>
             분류 및 모집 일정
           </h2>

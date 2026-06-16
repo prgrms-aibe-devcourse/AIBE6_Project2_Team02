@@ -311,8 +311,25 @@ public class ProjectService {
                 req.open(),
                 positions
         );
+        project.updateProjectTechStacks(buildProjectTechStacks(project, req.techStacks()));
 
         return toProjectResponse(project, members, false, featuredMemberIds());
+    }
+
+    private List<ProjectTechStack> buildProjectTechStacks(Project project, List<String> techStackNames) {
+        return Optional.ofNullable(techStackNames).orElseGet(List::of).stream()
+                .map(String::trim)
+                .filter(name -> !name.isBlank())
+                .distinct()
+                .map(name -> techStackRepository.findByName(name)
+                        .orElseGet(() -> techStackRepository.save(
+                                TechStack.builder().name(name).build()
+                        )))
+                .map(techStack -> ProjectTechStack.builder()
+                        .project(project)
+                        .techStack(techStack)
+                        .build())
+                .toList();
     }
 
     private List<ProjectPosition> validateAndBuildPositions(
