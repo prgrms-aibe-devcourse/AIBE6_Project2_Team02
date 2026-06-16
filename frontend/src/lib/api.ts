@@ -7,6 +7,7 @@ import type {
   ProjectProposal,
   ReportResponse,
   ReportStatus,
+  ReportTargetType,
   ReviewResponse,
   RsData,
   User,
