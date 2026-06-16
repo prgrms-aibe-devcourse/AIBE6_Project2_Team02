@@ -34,9 +34,14 @@ public class Portfolio {
     @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PortfolioTechStack> portfolioTechStacks = new ArrayList<>();
 
-    private String githubUrl;
-    private String blogUrl;
-    private String deployUrl;
+//    private String githubUrl;
+//    private String blogUrl;
+//    private String deployUrl;
+
+    @ElementCollection
+    @CollectionTable(name="portfolio_links", joinColumns = @JoinColumn(name = "portfolio_id"))
+    private List<PortfolioLink> links = new ArrayList<>();
+
     private String desiredPosition;
     private boolean isPublished;
 
@@ -47,18 +52,14 @@ public class Portfolio {
             Member member,
             String title,
             String introduction,
-            String githubUrl,
-            String blogUrl,
-            String deployUrl,
+            List<PortfolioLink> portfolioLinks,
             String desiredPosition,
             boolean isPublished
     ) {
         this.member = member;
         this.title = title;
         this.introduction = introduction;
-        this.githubUrl = githubUrl;
-        this.blogUrl = blogUrl;
-        this.deployUrl = deployUrl;
+        this.links = portfolioLinks != null ? new ArrayList<>(portfolioLinks) : new ArrayList<>();
         this.desiredPosition = desiredPosition;
         this.isPublished = isPublished;
         this.createdAt = LocalDateTime.now();
@@ -69,14 +70,13 @@ public class Portfolio {
      * 포트폴리오 수정 도메인 메서드 (DDD 패턴)
      */
     public void update(
-            String title, String introduction, String githubUrl,
-            String blogUrl, String deployUrl, String desiredPosition, boolean isPublished
+            String title, String introduction, List<PortfolioLink> portfolioLinks,
+            String desiredPosition, boolean isPublished
     ) {
         this.title = title;
         this.introduction = introduction;
-        this.githubUrl = githubUrl;
-        this.blogUrl = blogUrl;
-        this.deployUrl = deployUrl;
+        this.links.clear();
+        if (portfolioLinks != null) this.links.addAll(portfolioLinks);
         this.desiredPosition = desiredPosition;
         this.isPublished = isPublished;
         this.updatedAt = LocalDateTime.now();

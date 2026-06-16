@@ -41,19 +41,29 @@ export interface RsData<T> {
   data: T
 }
 
+export interface PortfolioLink {
+  linkType: string
+  url: string
+}
+
 export interface Portfolio {
   id: number
   title: string
   introduction: string
-  githubUrl: string | null
-  blogUrl: string | null
-  deployUrl: string | null
+  links: PortfolioLink[]
   desiredPosition: string | null
   isPublished: boolean
   techStacks: string[]
 }
 
-export type PortfolioUpdateRequest = Omit<Portfolio, 'id'>
+export interface PortfolioUpdateRequest {
+  title: string
+  introduction: string
+  portfolioLinks: PortfolioLink[]
+  desiredPosition: string | null
+  isPublished: boolean
+  techStacks: string[]
+}
 
 export interface ProjectProposal {
   proposalId: number
@@ -88,7 +98,7 @@ export interface ReportResponse {
 
 export interface ReviewResponse {
   reviewId: number
-  projectId: number
+  projectTitle: string
   content: Record<string, string>
   createdAt: string
 }
