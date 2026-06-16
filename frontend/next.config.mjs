@@ -1,26 +1,27 @@
 /** @type {import('next').NextConfig} */
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+
 const nextConfig = {
   reactStrictMode: true,
 
-  // 백엔드 스프링 부트 서버(8080)와 주소를 매핑해 주는 프록시 설정 추가
   async rewrites() {
     return [
       {
-        // 프론트에서 /auth로 보내는 모든 요청을 백엔드로 포워딩
         source: '/auth/:path*',
-        destination: 'http://localhost:8080/auth/:path*',
+        destination: `${BACKEND_URL}/auth/:path*`,
       },
       {
         source: '/mypage/:path*',
-        destination: 'http://localhost:8080/mypage/:path*',
+        destination: `${BACKEND_URL}/mypage/:path*`,
       },
       {
         source: '/portfolios/:path*',
-        destination: 'http://localhost:8080/portfolios/:path*',
+        destination: `${BACKEND_URL}/portfolios/:path*`,
       },
       {
         source: '/projects/:path*',
-        destination: 'http://localhost:8080/projects/:path*',
+        destination: `${BACKEND_URL}/projects/:path*`,
       },
     ];
   },
