@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum RecruitmentStatus {
     OPEN("Open"),
-    CLOSED("Closed");
+    CLOSED("Closed"),
+    COMPLETED("Completed"),
+    STOPPED("Stopped");
 
     private final String value;
 
