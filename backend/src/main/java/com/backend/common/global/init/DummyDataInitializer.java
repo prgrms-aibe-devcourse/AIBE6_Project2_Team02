@@ -84,7 +84,7 @@ public class DummyDataInitializer implements ApplicationRunner {
      * 마이페이지 프론트엔드 연동 확인을 위한 테스트 데이터 빌딩
      */
     private void saveMyPageTestData(Map<String, Member> members) {
-        Member testUser = Member.create("테스터", "https://avatars.githubusercontent.com/u/12345678?v=4");
+        Member testUser = Member.create("아무개", "https://avatars.githubusercontent.com/u/12345678?v=4");
         memberRepository.save(testUser);
 
         members.put("testuser", testUser);
