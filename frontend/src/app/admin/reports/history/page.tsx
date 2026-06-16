@@ -1,0 +1,256 @@
+'use client'
+
+import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+
+import Link from 'next/link'
+
+import {
+  CheckCircle2,
+  ExternalLink,
+  FolderX,
+  History as HistoryIcon,
+  UserX,
+} from 'lucide-react'
+
+import { Badge, Card } from '../../../../components/ui'
+import { fetchProjectReports, fetchUserReports } from '../../../../lib/api'
+import type { ReportResponse } from '../../../../types'
+
+export default function AdminReportsHistoryPage() {
+  const [resolvedReports, setResolvedReports] = useState<ReportResponse[]>([])
+  const [rejectedReports, setRejectedReports] = useState<ReportResponse[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'resolved' | 'rejected'>(
+    'resolved',
+  )
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true)
+      try {
+        const [resolvedU, resolvedP, rejectedU, rejectedP] = await Promise.all([
+          fetchUserReports('RESOLVED'),
+          fetchProjectReports('RESOLVED'),
+          fetchUserReports('REJECTED'),
+          fetchProjectReports('REJECTED'),
+        ])
+        setResolvedReports(
+          [...(resolvedU || []), ...(resolvedP || [])].sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          ),
+        )
+        setRejectedReports(
+          [...(rejectedU || []), ...(rejectedP || [])].sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          ),
+        )
+      } catch (err) {
+        console.error('Failed to load history:', err)
+        toast.error('관리 기록을 불러오는데 실패했습니다.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
+
+  const getReasonBadgeColor = (reasonType: string) => {
+    if (reasonType === 'OBSCENE')
+      return 'bg-red-100 text-red-700 border-red-200'
+    if (reasonType === 'DISRUPTIVE')
+      return 'bg-orange-100 text-orange-700 border-orange-200'
+    return 'bg-slate-100 text-slate-700 border-slate-200'
+  }
+
+  const reportsToShow =
+    activeTab === 'resolved' ? resolvedReports : rejectedReports
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-20 text-center text-slate-500">
+        관리 기록을 불러오는 중...
+      </div>
+    )
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-4 max-w-6xl">
+      <div className="mb-8 flex items-center gap-3">
+        <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
+          <HistoryIcon className="w-6 h-6" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">
+            관리 기록 히스토리
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
+            이미 처리되거나 기각된 신고 내역을 확인할 수 있습니다.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex space-x-2 mb-8 bg-slate-100 p-1 rounded-xl w-fit">
+        <button
+          onClick={() => setActiveTab('resolved')}
+          className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all ${
+            activeTab === 'resolved'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          처리 완료 ({resolvedReports.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('rejected')}
+          className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all ${
+            activeTab === 'rejected'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          기각 내역 ({rejectedReports.length})
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {reportsToShow.length === 0 ? (
+          <div className="col-span-full text-center py-20 bg-slate-50 rounded-2xl border border-slate-200 border-dashed">
+            <CheckCircle2 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500 font-medium">해당 내역이 없습니다.</p>
+          </div>
+        ) : (
+          reportsToShow.map((report) => (
+            <motion.div
+              key={report.reportId}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card className="overflow-hidden border-slate-200 hover:shadow-md transition-shadow h-full flex flex-col">
+                <div
+                  className={`h-1 w-full ${activeTab === 'resolved' ? 'bg-emerald-500' : 'bg-red-500'}`}
+                />
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex justify-between items-start mb-4">
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] font-bold uppercase tracking-wider ${getReasonBadgeColor(report.reasonType)}`}
+                    >
+                      {report.reasonType}
+                    </Badge>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      {new Date(report.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <div className="space-y-4 flex-1">
+                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                      <div className="text-[10px] text-slate-400 mb-2 font-bold uppercase tracking-tight">
+                        신고 대상
+                      </div>
+                      <Link
+                        href={
+                          report.targetType === 'PORTFOLIO'
+                            ? `/u/${report.targetId}`
+                            : `/projects/${report.targetId}`
+                        }
+                        className="flex items-center gap-2 group"
+                      >
+                        <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 bg-white flex-shrink-0 flex items-center justify-center">
+                          {report.targetType === 'PORTFOLIO' ? (
+                            report.targetMemberProfileImage ? (
+                              <img
+                                src={report.targetMemberProfileImage}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <UserX className="w-4 h-4 text-slate-400" />
+                            )
+                          ) : (
+                            <FolderX className="w-4 h-4 text-orange-500" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-slate-900 text-xs truncate group-hover:text-blue-600 transition-colors flex items-center gap-1">
+                            {report.targetTitle ||
+                              (report.targetType === 'PORTFOLIO'
+                                ? report.targetMemberNickname
+                                : `Project #${report.targetId}`)}
+                            <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                          <div className="text-[10px] text-slate-500 truncate">
+                            {report.targetType === 'PORTFOLIO'
+                              ? '포트폴리오'
+                              : '프로젝트'}
+                          </div>
+                        </div>
+                      </Link>
+                    </div>
+
+                    <div>
+                      <div className="text-[10px] text-slate-400 mb-1 font-bold uppercase tracking-tight">
+                        상세 사유
+                      </div>
+                      <p className="text-xs text-slate-600 bg-slate-50/50 border border-slate-100 rounded-lg p-3 leading-relaxed italic line-clamp-3">
+                        "{report.reasonDetail}"
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                        {report.reporterNickname?.[0] || 'U'}
+                      </div>
+                      <span className="text-[10px] text-slate-500">
+                        신고자:{' '}
+                        <span className="font-semibold text-slate-700">
+                          {report.reporterNickname}
+                        </span>
+                      </span>
+                    </div>
+                    <Badge
+                      className={
+                        activeTab === 'resolved'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                          : 'bg-red-50 text-red-700 border-red-100'
+                      }
+                    >
+                      {activeTab === 'resolved' ? '처리완료' : '기각됨'}
+                    </Badge>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+function UserXIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <line x1="17" y1="8" x2="22" y2="13" />
+      <line x1="22" y1="8" x2="17" y2="13" />
+    </svg>
+  )
+}
