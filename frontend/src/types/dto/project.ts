@@ -34,4 +34,14 @@ export interface ProjectUpdateRequest {
 export interface ProjectPermissionResponse {
   canEdit: boolean
   isMember: boolean
+  pendingApplicationId: number | null
+}
+
+export interface ProjectApplicationCreateRequest {
+  position: string
+  message: string
+}
+
+export interface ProjectApplicationCreateResponse {
+  applicationId: number
 }

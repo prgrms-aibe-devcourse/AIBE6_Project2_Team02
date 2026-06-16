@@ -4,6 +4,7 @@ import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.project.application.entity.ProjectApplication;
 import com.backend.common.domain.project.application.repository.ProjectApplicationRepository;
 import com.backend.common.domain.project.enums.PositionType;
+import com.backend.common.domain.project.enums.SelectionStatus;
 import com.backend.common.domain.project.project.entity.Project;
 import com.backend.common.domain.project.project.entity.ProjectMember;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
@@ -70,7 +71,7 @@ class MyPageProjectServiceTest {
     }
 
     @Test
-    @DisplayName("들어온 지원서 거절 성공 - 상태만 변경되고 팀원 배치 안 됨")
+    @DisplayName("들어온 지원서 거절 성공 - 지원 내역 삭제 후 팀원 배치 안 됨")
     void handleApplicationAction_reject_success() {
         // given
         ProjectApplication application = mock(ProjectApplication.class);
@@ -80,7 +81,7 @@ class MyPageProjectServiceTest {
         myPageProjectService.handleApplicationAction(1L, 50L, false);
 
         // then
-        verify(application, times(1)).reject();
+        verify(projectApplicationRepository, times(1)).delete(application);
         verify(projectMemberRepository, never()).save(any());
     }
 
@@ -92,12 +93,13 @@ class MyPageProjectServiceTest {
         // given
         ProjectApplication application = mock(ProjectApplication.class);
         given(projectApplicationRepository.findById(50L)).willReturn(Optional.of(application));
+        given(application.getStatus()).willReturn(SelectionStatus.PENDING);
 
         // when
         myPageProjectService.cancelProjectApplication(1L, 50L);
 
         // then
-        verify(application, times(1)).cancel(); // 엔티티의 cancel() 가동 확인
+        verify(projectApplicationRepository, times(1)).delete(application);
     }
 
     @Test

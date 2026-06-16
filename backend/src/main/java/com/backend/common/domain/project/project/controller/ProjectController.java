@@ -1,5 +1,7 @@
 package com.backend.common.domain.project.project.controller;
 
+import com.backend.common.domain.project.dto.ProjectApplicationCreateRequest;
+import com.backend.common.domain.project.dto.ProjectApplicationCreateResponse;
 import com.backend.common.domain.project.dto.ProjectCreateRequest;
 import com.backend.common.domain.project.dto.ProjectPermissionResponse;
 import com.backend.common.domain.project.dto.ProjectResponse;
@@ -66,10 +68,13 @@ public class ProjectController {
                 && projectService.canEditProject(id, principal.getMemberId());
         boolean isMember = principal != null
                 && projectService.isProjectMember(id, principal.getMemberId());
+        Long pendingApplicationId = principal == null
+                ? null
+                : projectService.findPendingApplicationId(id, principal.getMemberId()).orElse(null);
         return RsData.of(
                 "200",
                 "프로젝트 권한 조회 성공",
-                new ProjectPermissionResponse(canEdit, isMember)
+                new ProjectPermissionResponse(canEdit, isMember, pendingApplicationId)
         );
     }
 
@@ -87,6 +92,24 @@ public class ProjectController {
                 "200",
                 "프로젝트 수정 성공",
                 projectService.updateProject(id, req, principal.getMemberId())
+        );
+    }
+
+    @PostMapping("/{id}/applications")
+    public RsData<ProjectApplicationCreateResponse> applyProject(
+            @PathVariable Long id,
+            @RequestBody ProjectApplicationCreateRequest request,
+            @AuthenticationPrincipal CustomMemberDetails principal
+    ) {
+        if (principal == null) {
+            throw new InsufficientAuthenticationException("Login is required");
+        }
+
+        Long applicationId = projectService.applyProject(id, principal.getMemberId(), request);
+        return RsData.of(
+                "200",
+                "프로젝트 지원 신청이 완료되었습니다.",
+                new ProjectApplicationCreateResponse(applicationId)
         );
     }
 }
