@@ -35,7 +35,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 @Component
-@Profile({"local", "dev", "prod"})
+@Profile({"local", "dev"})
 @RequiredArgsConstructor
 public class DummyDataInitializer implements ApplicationRunner {
 
