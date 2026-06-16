@@ -32,10 +32,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // ESLint(문법 검사) 에러로도 터진다면
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+
 }
 
 export default nextConfig
