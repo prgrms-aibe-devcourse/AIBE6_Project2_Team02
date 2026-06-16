@@ -1,25 +1,19 @@
 'use client'
-
-import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
-
-
-
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-
-
-
-import { ArrowLeft, ArrowRight, Ban, Clock, Code, Rocket, Users } from 'lucide-react';
-
-
-
-import { Badge, Button, Card } from '../components/ui';
-import { fetchPopularTechStacks, fetchProjects } from '../lib/api';
-import type { Project } from '../types'
-
 // 이 페이지는 빌드할 때 미리 굽지 말고, 무조건 실서버에서 동적으로 렌더링하라고 강제하는 설정
 export const dynamic = 'force-dynamic'
+
+
+import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+
+import { ArrowLeft, ArrowRight, Ban, Clock, Code, Rocket, Users } from 'lucide-react'
+
+import { Badge, Button, Card } from '../components/ui'
+import { fetchPopularTechStacks, fetchProjects } from '../lib/api'
+import type { Project } from '../types'
 
 const statusMap: Record<string, string> = {
   All: '전체',
