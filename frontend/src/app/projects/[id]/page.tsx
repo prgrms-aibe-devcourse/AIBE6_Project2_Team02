@@ -14,12 +14,14 @@ import {
   Code2,
   Pencil,
   Share2,
+  ShieldAlert,
   Target,
   Users,
 } from 'lucide-react'
 
 import { Badge, Button, Card, Modal } from '../../../components/ui'
-import { fetchProject, fetchProjectPermissions } from '../../../lib/api'
+import { ReportModal } from '../../../components/ReportModal'
+import { fetchProject, fetchProjectPermissions, checkAlreadyReported } from '../../../lib/api'
 import type { Project } from '../../../types'
 
 const categoryMap: Record<string, string> = {
@@ -44,9 +46,24 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [selectedRole, setSelectedRole] = useState<string>('')
   const [canEdit, setCanEdit] = useState(false)
   const [isMember, setIsMember] = useState(false)
+
+  const handleOpenReport = async () => {
+    try {
+      const isAlreadyReported = await checkAlreadyReported('PROJECT', Number(id))
+      if (isAlreadyReported) {
+        toast.error('이미 신고하신 대상입니다.')
+        return
+      }
+      setIsReportModalOpen(true)
+    } catch (error) {
+      console.error('Failed to check report status:', error)
+      toast.error('신고 상태를 확인하는 중 오류가 발생했습니다.')
+    }
+  }
 
   useEffect(() => {
     if (!id) {
@@ -153,9 +170,7 @@ export default function ProjectDetailPage() {
                 size="lg"
                 variant="gradient"
                 className={`w-full md:w-48 ${canEdit ? 'hidden' : ''}`}
-                disabled={
-                  isMember || project.recruitmentStatus === 'Closed'
-                }
+                disabled={isMember || project.recruitmentStatus === 'Closed'}
                 onClick={() => setIsApplyModalOpen(true)}
               >
                 지원하기
@@ -177,6 +192,17 @@ export default function ProjectDetailPage() {
                 >
                   <BookmarkPlus className="h-4 w-4" />
                 </Button>
+                {!canEdit && (
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="flex-1 md:flex-none text-slate-400 hover:text-red-500 hover:border-red-100 hover:bg-red-50"
+                    onClick={handleOpenReport}
+                    title="프로젝트 신고하기"
+                  >
+                    <ShieldAlert className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -418,6 +444,16 @@ export default function ProjectDetailPage() {
           </div>
         </form>
       </Modal>
+
+      {project && (
+        <ReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          targetType="PROJECT"
+          targetId={Number(id)}
+          targetName={project.title}
+        />
+      )}
     </div>
   )
 }

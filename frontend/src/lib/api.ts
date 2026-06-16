@@ -1,4 +1,5 @@
 import type {
+  CreateReportRequest,
   CreateReviewRequest,
   Portfolio,
   PortfolioUpdateRequest,
@@ -140,6 +141,22 @@ export function fetchUserReports(status: ReportStatus = 'PENDING') {
 export function fetchProjectReports(status: ReportStatus = 'PENDING') {
   return fetchRsDataJson<ReportResponse[]>(
     `/admin/reports?targetType=PROJECT&status=${status}`,
+  )
+}
+
+export function createReport(payload: CreateReportRequest) {
+  return fetchRsDataJson<{ reportId: number }>('/reports', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function checkAlreadyReported(
+  targetType: ReportTargetType,
+  targetId: number,
+) {
+  return fetchRsDataJson<boolean>(
+    `/reports/check?targetType=${targetType}&targetId=${targetId}`,
   )
 }
 

@@ -4,6 +4,7 @@ import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.report.dto.CreateReportRequest;
 import com.backend.common.domain.report.entity.Report;
+import com.backend.common.domain.report.enums.ReportTargetType;
 import com.backend.common.domain.report.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -41,5 +42,9 @@ public class ReportService {
         Report savedReport = reportRepository.save(report);
 
         return savedReport.getId();
+    }
+
+    public boolean isAlreadyReported(Long reporterId, ReportTargetType targetType, Long targetId) {
+        return reportRepository.existsByReporterIdAndTargetTypeAndTargetId(reporterId, targetType, targetId);
     }
 }
