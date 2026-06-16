@@ -8,8 +8,14 @@ import { useRouter } from 'next/navigation'
 
 import {
   Briefcase,
+  BookOpen,
   ChevronRight,
+  ExternalLink,
+  Figma,
   FileText,
+  Github,
+  Globe,
+  Linkedin,
   LogOut,
   MessageSquare,
   Pencil,
@@ -19,10 +25,21 @@ import {
 import { Badge, Button, Card } from '../../components/ui'
 import type { Portfolio } from '../../types'
 import { leaderPositionOptions } from '../../constants/project'
-import { withdrawMember } from '../../lib/api'
+import { fetchMyPortfolio, withdrawMember } from '../../lib/api'
 import { useAuth } from '../providers'
 import ProjectTab from './components/ProjectTab'
 import ProposalTab from './components/ProposalTab'
+
+const LINK_META: Record<string, { label: string; icon: React.ReactNode }> = {
+  GITHUB:        { label: 'GitHub',       icon: <Github className="w-4 h-4" /> },
+  BLOG:          { label: '블로그',        icon: <BookOpen className="w-4 h-4" /> },
+  DEPLOY:        { label: '배포 URL',      icon: <Globe className="w-4 h-4" /> },
+  FIGMA:         { label: 'Figma',        icon: <Figma className="w-4 h-4" /> },
+  BEHANCE:       { label: 'Behance',      icon: <Globe className="w-4 h-4" /> },
+  PORTFOLIO_URL: { label: '포폴 URL',     icon: <Globe className="w-4 h-4" /> },
+  NOTION:        { label: '노션',          icon: <Globe className="w-4 h-4" /> },
+  LINKEDIN:      { label: '링크드인',      icon: <Linkedin className="w-4 h-4" /> },
+}
 
 type Tab = 'portfolio' | 'project' | 'proposal'
 type PortfolioSubTab = 'portfolio' | 'peerReview'
@@ -70,11 +87,8 @@ export default function MyPage() {
       return
     }
     if (!authLoading && user) {
-      fetch('/portfolios/me')
-        .then((res) => res.json())
-        .then((res) => {
-          if (res.code === '200') setPortfolio(res.data)
-        })
+      fetchMyPortfolio()
+        .then((data) => setPortfolio(data))
         .catch(() => setPortfolio(null))
         .finally(() => setPortfolioLoading(false))
     }
@@ -238,18 +252,62 @@ export default function MyPage() {
                           )}
                         </div>
                         <Link href="/mypage/portfolio/edit">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1.5"
-                          >
+                          <Button size="sm" variant="outline" className="gap-1.5">
                             <Pencil className="w-3.5 h-3.5" /> 수정
                           </Button>
                         </Link>
                       </div>
-                      <p className="text-slate-600 text-sm leading-relaxed">
-                        {portfolio.introduction}
-                      </p>
+
+                      {portfolio.introduction && (
+                        <p className="text-slate-600 text-sm leading-relaxed">{portfolio.introduction}</p>
+                      )}
+
+                      {portfolio.techStacks && portfolio.techStacks.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-semibold text-slate-500">기술 스택</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {portfolio.techStacks.map((stack) => (
+                              <Badge key={stack} variant="secondary">{stack}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {portfolio.links && portfolio.links.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-semibold text-slate-500">링크</h4>
+                          <div className="flex flex-wrap gap-4">
+                            {portfolio.links.map((link) => {
+                              const meta = LINK_META[link.linkType] ?? { label: link.linkType, icon: <Globe className="w-4 h-4" /> }
+                              return (
+                                <a
+                                  key={link.linkType}
+                                  href={link.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-blue-600 transition-colors"
+                                >
+                                  {meta.icon}
+                                  {meta.label}
+                                  <ExternalLink className="w-3 h-3 opacity-50" />
+                                </a>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      <div>
+                        {portfolio.isPublished ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-medium">
+                            공개
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-xs font-medium">
+                            비공개
+                          </span>
+                        )}
+                      </div>
                     </Card>
                   ) : (
                     <Card className="p-12 text-center border-dashed">

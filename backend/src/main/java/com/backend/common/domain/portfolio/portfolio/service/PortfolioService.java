@@ -55,13 +55,14 @@ public class PortfolioService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 회원입니다."));
 
+        if (portfolioRepository.findByMemberId(memberId).isPresent())
+            throw new PortfolioInputException("400", "이미 등록된 포트폴리오가 있습니다.");
+
         Portfolio portfolio = Portfolio.builder()
                 .member(member)
                 .title(request.title())
                 .introduction(request.introduction())
-                .githubUrl(request.githubUrl())
-                .blogUrl(request.blogUrl())
-                .deployUrl(request.deployUrl())
+                .portfolioLinks(request.portfolioLinks())
                 .desiredPosition(request.desiredPosition())
                 .isPublished(request.isPublished())
                 .build();
@@ -93,8 +94,7 @@ public class PortfolioService {
 
         // 1. 기본 정보 정보 업데이트
         portfolio.update(
-                request.title(), request.introduction(), request.githubUrl(),
-                request.blogUrl(), request.deployUrl(), request.desiredPosition(), request.isPublished()
+                request.title(), request.introduction(), request.portfolioLinks(), request.desiredPosition(), request.isPublished()
         );
 
         // 2. 기존 기술 스택 삭제 후 flush (INSERT 전 DELETE 보장)
