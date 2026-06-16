@@ -23,6 +23,7 @@ import type {
 import type {
   ProjectProposalCreateRequest,
   ProposalProject,
+  SentProjectProposal,
 } from '../types/dto/proposal'
 import type { TechStackItem } from '../types/tech-stack'
 
@@ -154,6 +155,18 @@ export function createProjectProposal(
   return fetchRsDataJson<void>(`/portfolios/${memberId}/proposals`, {
     method: 'POST',
     body: JSON.stringify(payload),
+  })
+}
+
+export function fetchPendingSentProjectProposals(memberId: string) {
+  return fetchRsDataJson<SentProjectProposal[]>(
+    `/portfolios/${memberId}/proposals/sent`,
+  )
+}
+
+export function cancelProjectProposal(proposalId: number) {
+  return fetchRsDataJson<void>(`/portfolios/proposals/${proposalId}`, {
+    method: 'DELETE',
   })
 }
 

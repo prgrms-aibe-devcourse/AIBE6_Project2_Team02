@@ -7,6 +7,7 @@ import com.backend.common.domain.portfolio.portfolio.service.PortfolioService;
 import com.backend.common.domain.portfolio.proposals.dto.MyPageProposalResponse;
 import com.backend.common.domain.portfolio.proposals.dto.ProjectProposalCreateRequest;
 import com.backend.common.domain.portfolio.proposals.dto.ProposalProjectResponse;
+import com.backend.common.domain.portfolio.proposals.dto.SentProjectProposalResponse;
 import com.backend.common.global.rsdata.RsData;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import jakarta.validation.Valid;
@@ -117,6 +118,35 @@ public class PortfolioController {
                 request
         );
         return RsData.of("200", "프로젝트 제안을 보냈습니다.");
+    }
+
+    @GetMapping("/{memberId}/proposals/sent")
+    public RsData<List<SentProjectProposalResponse>> getPendingSentProposals(
+            @PathVariable Long memberId,
+            @AuthenticationPrincipal CustomMemberDetails userDetails
+    ) {
+        if (userDetails == null) {
+            throw new InsufficientAuthenticationException("로그인이 필요합니다.");
+        }
+
+        return RsData.of(
+                "200",
+                "보낸 프로젝트 제안 목록 조회가 완료되었습니다.",
+                portfolioService.getPendingSentProposals(memberId, userDetails.getMemberId())
+        );
+    }
+
+    @DeleteMapping("/proposals/{proposalId}")
+    public RsData<Void> cancelProjectProposal(
+            @PathVariable Long proposalId,
+            @AuthenticationPrincipal CustomMemberDetails userDetails
+    ) {
+        if (userDetails == null) {
+            throw new InsufficientAuthenticationException("로그인이 필요합니다.");
+        }
+
+        portfolioService.cancelProjectProposal(proposalId, userDetails.getMemberId());
+        return RsData.of("200", "프로젝트 제안을 취소했습니다.", null);
     }
 
 }
