@@ -19,6 +19,7 @@ import {
   Users,
 } from 'lucide-react'
 
+import { LoginModal } from '../../../components/LoginModal'
 import { Badge, Button, Card, Modal } from '../../../components/ui'
 import { ReportModal } from '../../../components/ReportModal'
 import {
@@ -29,6 +30,7 @@ import {
   fetchProjectPermissions,
 } from '../../../lib/api'
 import type { Project } from '../../../types'
+import { useAuth } from '../../providers'
 
 const categoryMap: Record<string, string> = {
   Web: '웹',
@@ -49,9 +51,11 @@ export default function ProjectDetailPage() {
   const params = useParams()
   const id = params?.id as string
   const router = useRouter()
+  const { user: authUser, loading: authLoading } = useAuth()
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [selectedRole, setSelectedRole] = useState<string>('')
   const [applyMessage, setApplyMessage] = useState('')
@@ -153,6 +157,17 @@ export default function ProjectDetailPage() {
     }
   }
 
+  const openApplyModal = (role = '') => {
+    if (authLoading) return
+    if (!authUser) {
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    setSelectedRole(role)
+    setIsApplyModalOpen(true)
+  }
+
   const handleCancelApplication = async () => {
     if (!pendingApplicationId || isCancellingApplication) return
 
@@ -237,7 +252,7 @@ export default function ProjectDetailPage() {
                   variant="gradient"
                   className={`w-full md:w-48 ${canEdit ? 'hidden' : ''}`}
                   disabled={isMember || project.recruitmentStatus === 'Closed'}
-                  onClick={() => setIsApplyModalOpen(true)}
+                  onClick={() => openApplyModal()}
                 >
                   지원하기
                 </Button>
@@ -333,10 +348,7 @@ export default function ProjectDetailPage() {
                           onClick={
                             pendingApplicationId
                               ? undefined
-                              : () => {
-                                  setSelectedRole(pos.role)
-                                  setIsApplyModalOpen(true)
-                                }
+                              : () => openApplyModal(pos.role)
                           }
                         >
                           {pendingApplicationId ? '지원 완료' : '지원'}
@@ -526,6 +538,10 @@ export default function ProjectDetailPage() {
           targetId={Number(id)}
           targetName={project.title}
         />
+      )}
+
+      {isLoginModalOpen && (
+        <LoginModal onClose={() => setIsLoginModalOpen(false)} />
       )}
     </div>
   )
