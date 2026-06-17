@@ -30,7 +30,6 @@ export type Project = {
   teamMembers: User[]
   deadline: string
   createdAt: string
-  popularity: number
   featured?: boolean
 }
 

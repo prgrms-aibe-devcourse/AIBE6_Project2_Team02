@@ -9,6 +9,7 @@ import { Clock, Search, Sparkles, Users } from 'lucide-react'
 import { PaginationControls } from '../../../components/PaginationControls'
 import { Badge, Button, Card } from '../../../components/ui'
 import { SearchField } from '../../../components/SearchField'
+import { formatPositionLabel } from '../../../constants/project'
 import { fetchPopularTechStacks, fetchProjects } from '../../../lib/api'
 import { formatDate, getTimeValue } from '../../../lib/date'
 import { formatProjectMemberCount } from '../../../lib/project'
@@ -41,9 +42,21 @@ function matchesProjectFilters(
   }: ProjectFilterOptions,
 ) {
   const normalizedSearchTerm = searchTerm.toLowerCase()
-  const matchesSearch =
-    project.title.toLowerCase().includes(normalizedSearchTerm) ||
-    project.description.toLowerCase().includes(normalizedSearchTerm)
+  const searchableText = [
+    project.title,
+    project.description,
+    project.category,
+    project.leader.name,
+    ...project.goals,
+    ...project.techStack,
+    ...project.positions.flatMap((position) => [
+      position.role,
+      formatPositionLabel(position.role),
+    ]),
+  ]
+    .join(' ')
+    .toLowerCase()
+  const matchesSearch = searchableText.includes(normalizedSearchTerm)
   const matchesCategory =
     selectedCategory === 'All' || project.category === selectedCategory
   const matchesTech =
@@ -54,16 +67,9 @@ function matchesProjectFilters(
   return matchesSearch && matchesCategory && matchesTech && matchesStatus
 }
 
-function sortProjects(
-  projects: Project[],
-  sortBy: 'newest' | 'popularity',
-) {
+function sortProjects(projects: Project[]) {
   return [...projects].sort((a, b) => {
-    if (sortBy === 'newest') {
-      return getTimeValue(b.createdAt) - getTimeValue(a.createdAt)
-    }
-
-    return b.popularity - a.popularity
+    return getTimeValue(b.createdAt) - getTimeValue(a.createdAt)
   })
 }
 
@@ -78,7 +84,6 @@ export default function ProjectListingClient() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>(initialTech || 'All')
   const [selectedStatus, setSelectedStatus] = useState<string>('Open')
-  const [sortBy, setSortBy] = useState<'newest' | 'popularity'>('newest')
 
   useEffect(() => {
     Promise.all([fetchProjects(), fetchPopularTechStacks()])
@@ -106,8 +111,8 @@ export default function ProjectListingClient() {
       }),
     )
 
-    return sortProjects(filtered, sortBy)
-  }, [projects, searchTerm, selectedCategory, selectedTech, selectedStatus, sortBy])
+    return sortProjects(filtered)
+  }, [projects, searchTerm, selectedCategory, selectedTech, selectedStatus])
 
   const projectsPerPage = 6
   const {
@@ -123,7 +128,6 @@ export default function ProjectListingClient() {
       selectedCategory,
       selectedTech,
       selectedStatus,
-      sortBy,
     ],
   })
 
@@ -183,15 +187,6 @@ export default function ProjectListingClient() {
               ))}
             </select>
 
-            {/* Sort Select */}
-            <select
-              className="form-field md:w-auto"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-            >
-              <option value="newest">최신순</option>
-              <option value="popularity">인기순</option>
-            </select>
           </div>
         </div>
       </div>

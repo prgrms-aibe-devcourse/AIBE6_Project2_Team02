@@ -10,49 +10,19 @@ import { Clock, MapPin, Search, Sparkles } from 'lucide-react'
 import { PaginationControls } from '../../components/PaginationControls'
 import { SearchField } from '../../components/SearchField'
 import { Badge, Button, Card } from '../../components/ui'
-import { formatPositionLabel } from '../../constants/project'
+import {
+  formatPositionLabel,
+  leaderPositionOptions,
+  toPositionValue,
+} from '../../constants/project'
 import { usePaginatedList } from '../../hooks/usePaginatedList'
 import { fetchMembers, fetchPopularTechStacks } from '../../lib/api'
 import type { User } from '../../types'
 
-const roleMap: Record<string, string> = {
-  All: '전체',
-  Frontend: '프론트엔드',
-  Backend: '백엔드',
-  Mobile: '모바일',
-  Design: '디자이너',
-  AI: 'AI/데이터',
-  Other: '기타',
-}
-const roles = [
-  'All',
-  'Frontend',
-  'Backend',
-  'Mobile',
-  'Design',
-  'AI',
-  'Other',
+const roleOptions = [
+  { value: 'All', label: '전체' },
+  ...leaderPositionOptions,
 ]
-
-// 간단한 직군 분류 헬퍼 함수
-const getRoleCategory = (role: string) => {
-  if (role === 'FRONTEND') return 'Frontend'
-  if (role === 'BACKEND') return 'Backend'
-  if (role === 'FULL_STACK') return 'Frontend'
-  if (role === 'DESIGNER') return 'Design'
-  if (role === 'PRODUCT_MANAGER') return 'Other'
-  if (role.includes('프론트엔드') || role.includes('풀스택')) return 'Frontend'
-  if (role.includes('백엔드') || role.includes('풀스택')) return 'Backend'
-  if (
-    role.includes('모바일') ||
-    role.includes('iOS') ||
-    role.includes('Android')
-  )
-    return 'Mobile'
-  if (role.includes('디자이너') || role.includes('UI/UX')) return 'Design'
-  if (role.includes('AI') || role.includes('데이터')) return 'AI'
-  return 'Other'
-}
 
 interface TalentFilterOptions {
   searchTerm: string
@@ -66,17 +36,20 @@ function matchesTalentFilters(
 ) {
   const normalizedSearchTerm = searchTerm.toLowerCase()
   const roleLabel = formatPositionLabel(user.role)
-  const matchesSearch =
-    user.name.toLowerCase().includes(normalizedSearchTerm) ||
-    Boolean(user.bio?.toLowerCase().includes(normalizedSearchTerm)) ||
-    user.role.toLowerCase().includes(normalizedSearchTerm) ||
-    roleLabel.toLowerCase().includes(normalizedSearchTerm)
-  const userRoleCategory = getRoleCategory(user.role)
+  const searchableText = [
+    user.name,
+    user.bio ?? '',
+    user.role,
+    roleLabel,
+    ...(user.techStack ?? []),
+  ]
+    .join(' ')
+    .toLowerCase()
+  const matchesSearch = searchableText.includes(normalizedSearchTerm)
+  const userRole = toPositionValue(user.role)
   const matchesRole =
     selectedRole === 'All' ||
-    userRoleCategory === selectedRole ||
-    (selectedRole === 'Frontend' && user.role.includes('풀스택')) ||
-    (selectedRole === 'Backend' && user.role.includes('풀스택'))
+    userRole === selectedRole
   const matchesTech =
     selectedTech === 'All' || Boolean(user.techStack?.includes(selectedTech))
 
@@ -175,13 +148,13 @@ export default function TalentListingPage() {
           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
             {/* Role Segmented Control */}
             <div className="segment-control overflow-x-auto">
-              {roles.map((role) => (
+              {roleOptions.map((role) => (
                 <button
-                  key={role}
-                  onClick={() => setSelectedRole(role)}
-                  className={`segment-option ${selectedRole === role ? 'segment-option-active' : 'segment-option-inactive'}`}
+                  key={role.value}
+                  onClick={() => setSelectedRole(role.value)}
+                  className={`segment-option ${selectedRole === role.value ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
-                  {roleMap[role]}
+                  {role.label}
                 </button>
               ))}
             </div>
