@@ -6,14 +6,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-import {
-  ArrowRight,
-  Ban,
-  Clock,
-  Code,
-  Rocket,
-  Users,
-} from 'lucide-react'
+import { ArrowRight, Ban, Clock, Code, Rocket, Users } from 'lucide-react'
 
 import { PaginationControls } from '../../components/PaginationControls'
 import { Badge, Button, Card } from '../../components/ui'
@@ -48,9 +41,13 @@ export default function MainClientComponent() {
   const [errorMsg, setErrorMsg] = useState<string | null>(
     errorMessageMap[searchParams.get('error') ?? ''] ?? null,
   )
-  const [projects, setProjects] = useState<Project[]>([])
+
+
+  const [latestProjects, setLatestProjects] = useState<Project[]>([]) // 현재 페이지의 프로젝트 데이터 6개
+  const [projectPageCount, setProjectPageCount] = useState(0) // 백엔드가 준 전체 페이지 수 (totalPages)
+  const [projectPage, setProjectPage] = useState(0) // 현재 선택된 페이지 번호
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
-  const [projectPage, setProjectPage] = useState(0)
+  const [contentLoading, setContentLoading] = useState(false)
 
   useEffect(() => {
     if (!errorMsg) return
@@ -59,27 +56,35 @@ export default function MainClientComponent() {
     return () => clearTimeout(timer)
   }, [errorMsg])
 
+  // 메인 로딩 시 인기 기술 스택은 1번만 가져옴
   useEffect(() => {
-    Promise.all([fetchProjects(), fetchPopularTechStacks()])
-      .then(([projectData, techStacks]) => {
-        setProjects(projectData)
-        setPopularTechStacks(techStacks)
-      })
-      .catch(() => {
-        setProjects([])
-        setPopularTechStacks([])
-      })
+    fetchPopularTechStacks()
+      .then(setPopularTechStacks)
+      .catch(() => setPopularTechStacks([]))
   }, [])
 
-  const projectsPerPage = 6
-  const openProjects = projects.filter(
-    (project) => project.recruitmentStatus === 'Open',
-  )
-  const projectPageCount = Math.ceil(openProjects.length / projectsPerPage)
-  const latestProjects = openProjects.slice(
-    projectPage * projectsPerPage,
-    (projectPage + 1) * projectsPerPage,
-  )
+  // 페이지 번호(projectPage)가 변경될 때마다 백엔드에 6개씩 동적 요청
+  useEffect(() => {
+    setContentLoading(true)
+
+    // fetchProjects 파라미터로 현재 페이지 번호 전송
+    fetchProjects(projectPage, 6)
+      .then((res) => {
+        if (res.code === '200' && res.data) {
+          setLatestProjects(res.data.content) // Page 객체 안의 알맹이 리스트
+          setProjectPageCount(res.data.totalPages) // Page 객체 안의 전체 페이지 수
+        } else {
+          setLatestProjects([])
+          setProjectPageCount(0)
+        }
+      })
+      .catch(() => {
+        setLatestProjects([])
+        setProjectPageCount(0)
+      })
+      .finally(() => setContentLoading(false))
+  }, [projectPage])
+
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -94,6 +99,7 @@ export default function MainClientComponent() {
           {errorMsg}
         </div>
       )}
+
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-white pt-24 pb-32">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full overflow-hidden pointer-events-none">
@@ -165,97 +171,115 @@ export default function MainClientComponent() {
               전체 보기 <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           </div>
-          <motion.div
-            variants={containerVariants}
-            whileInView="visible"
-            viewport={{ once: true, margin: '-100px' }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {latestProjects.map((project, index) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card
-                  className="listing-card group flex"
-                  onClick={() => router.push(`/projects/${project.id}`)}
+
+          {contentLoading ? (
+            <div className="text-center py-24 text-slate-400 font-medium">
+              최신 프로젝트 데이터를 가져오는 중...
+            </div>
+          ) : latestProjects.length > 0 ? (
+            <motion.div
+              variants={containerVariants}
+              whileInView="visible"
+              viewport={{ once: true, margin: '-100px' }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {latestProjects.map((project, index) => (
+                <motion.div
+                  key={project.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex gap-2">
-                      <Badge
-                        variant={
-                          project.recruitmentStatus === 'Open'
-                            ? 'success'
-                            : 'secondary'
-                        }
-                      >
-                        {statusMap[project.recruitmentStatus]}
-                      </Badge>
-                      <Badge variant="outline">
-                        {categoryMap[project.category]}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center text-slate-400 text-xs gap-1">
-                      <Clock className="h-3 w-3" />
-                      {formatDate(project.createdAt)}
-                    </div>
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
-                    {project.title}
-                  </h3>
-                  <p className="text-slate-500 text-sm mb-6 line-clamp-2 flex-1">
-                    {project.description}
-                  </p>
-                  <div className="space-y-4 mt-auto">
-                    <div className="flex flex-wrap gap-2">
-                      {project.techStack.slice(0, 4).map((tech, techIndex) => (
-                        <span
-                          key={`${project.id}-${tech}-${techIndex}`}
-                          className="tech-pill"
+                  <Card
+                    className="listing-card group flex h-full"
+                    onClick={() => router.push(`/projects/${project.id}`)}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex gap-2">
+                        <Badge
+                          variant={
+                            project.recruitmentStatus === 'Open'
+                              ? 'success'
+                              : 'secondary'
+                          }
                         >
-                          {tech}
-                        </span>
-                      ))}
-                      {project.techStack.length > 4 && (
-                        <span className="tech-pill">
-                          +{project.techStack.length - 4}
-                        </span>
-                      )}
+                          {statusMap[project.recruitmentStatus] ||
+                            project.recruitmentStatus}
+                        </Badge>
+                        <Badge variant="outline">
+                          {categoryMap[project.category] || project.category}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center text-slate-400 text-xs gap-1">
+                        <Clock className="h-3 w-3" />
+                        {formatDate(project.createdAt)}
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/u/${project.leader.id}`}
-                          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <img
-                            src={project.leader.avatar}
-                            alt={project.leader.name}
-                            className="w-6 h-6 rounded-full"
-                          />
-                          <span className="text-sm font-medium text-slate-700 hover:text-blue-600">
-                            {project.leader.name}
+                    <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
+                      {project.title}
+                    </h3>
+                    <p className="text-slate-500 text-sm mb-6 line-clamp-2 flex-1">
+                      {project.description}
+                    </p>
+                    <div className="space-y-4 mt-auto">
+                      <div className="flex flex-wrap gap-2">
+                        {project.techStack
+                          ?.slice(0, 4)
+                          .map((tech, techIndex) => (
+                            <span
+                              key={`${project.id}-${tech}-${techIndex}`}
+                              className="tech-pill"
+                            >
+                              {tech}
+                            </span>
+                          ))}
+                        {project.techStack?.length > 4 && (
+                          <span className="tech-pill">
+                            +{project.techStack.length - 4}
                           </span>
-                        </Link>
+                        )}
                       </div>
-                      <div className="member-count-badge">
-                        <Users className="h-3 w-3" />
-                        {formatProjectMemberCount(project.positions)}
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/u/${project.leader.id}`}
+                            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <img
+                              src={project.leader.avatar}
+                              alt={project.leader.name}
+                              className="w-6 h-6 rounded-full"
+                            />
+                            <span className="text-sm font-medium text-slate-700 hover:text-blue-600">
+                              {project.leader.name}
+                            </span>
+                          </Link>
+                        </div>
+                        <div className="member-count-badge">
+                          <Users className="h-3 w-3" />
+                          {formatProjectMemberCount(project.positions)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-          <PaginationControls
-            page={projectPage}
-            pageCount={projectPageCount}
-            onPageChange={setProjectPage}
-          />
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : (
+            <div className="text-center py-24 text-slate-400">
+              등록된 최신 프로젝트가 없습니다.
+            </div>
+          )}
+
+          {/* 페이지네이션 버튼 핸들러 연동 */}
+          <div className="mt-12">
+            <PaginationControls
+              page={projectPage}
+              pageCount={projectPageCount}
+              onPageChange={setProjectPage} // 여기서 바뀐 페이지 번호가 useEffect를 호출
+            />
+          </div>
         </div>
       </section>
 

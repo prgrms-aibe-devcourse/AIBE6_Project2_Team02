@@ -56,8 +56,15 @@ async function fetchRsDataJson<T>(
   return rsData.data
 }
 
-export function fetchProjects() {
-  return fetchRsDataJson<Project[]>('/projects')
+export async function fetchProjects(page: number = 0, size: number = 6) {
+  // 백엔드 Pageable 규격은 0번 페이지부터 시작함 (?page=0&size=6&sort=createdAt,desc)
+  const res = await fetch(`/api/projects?page=${page}&size=${size}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  return res.json()
 }
 
 export function fetchProject(id: string) {
