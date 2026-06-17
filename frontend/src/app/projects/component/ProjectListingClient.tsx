@@ -186,7 +186,7 @@ export default function ProjectListingClient() {
                   <div className="space-y-4 mt-auto">
                     <div className="flex flex-wrap gap-2">
                       {project.techStack.slice(0, 4).map((tech) => (
-                        <span key={tech} className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">{tech}</span>
+                        <span key={tech} className="tech-pill">{tech}</span>
                       ))}
                     </div>
                     <div className="flex items-center justify-between pt-4 border-t border-slate-100">
@@ -256,10 +256,10 @@ export default function ProjectListingClient() {
                   <div className="space-y-4 mt-auto">
                     <div className="flex flex-wrap gap-2">
                       {project.techStack.slice(0, 4).map((tech) => (
-                        <span key={tech} className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">{tech}</span>
+                        <span key={tech} className="tech-pill">{tech}</span>
                       ))}
                       {project.techStack.length > 4 && (
-                        <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">+{project.techStack.length - 4}</span>
+                        <span className="tech-pill">+{project.techStack.length - 4}</span>
                       )}
                     </div>
 

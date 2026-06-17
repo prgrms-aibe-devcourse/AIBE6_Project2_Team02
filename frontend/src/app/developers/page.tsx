@@ -300,13 +300,13 @@ export default function TalentListingPage() {
                         {user.techStack?.slice(0, 5).map((tech) => (
                           <span
                             key={tech}
-                            className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md"
+                            className="tech-pill"
                           >
                             {tech}
                           </span>
                         ))}
                         {user.techStack && user.techStack.length > 5 && (
-                          <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
+                          <span className="tech-pill">
                             +{user.techStack.length - 5}
                           </span>
                         )}

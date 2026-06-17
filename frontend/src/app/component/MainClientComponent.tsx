@@ -211,13 +211,13 @@ export default function MainClientComponent() {
                       {project.techStack.slice(0, 4).map((tech, techIndex) => (
                         <span
                           key={`${project.id}-${tech}-${techIndex}`}
-                          className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md"
+                          className="tech-pill"
                         >
                           {tech}
                         </span>
                       ))}
                       {project.techStack.length > 4 && (
-                        <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
+                        <span className="tech-pill">
                           +{project.techStack.length - 4}
                         </span>
                       )}
