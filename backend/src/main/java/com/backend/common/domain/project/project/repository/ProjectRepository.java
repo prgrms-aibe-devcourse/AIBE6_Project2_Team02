@@ -8,7 +8,9 @@ import java.util.List;
 
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
-    List<Project> findByDeletedAtIsNullOrderByCreatedAtDesc();
+    List<Project> findByDeletedAtIsNullAndIsHiddenFalseOrderByCreatedAtDesc();
+
+    List<Project> findByIsHiddenTrueOrderByUpdatedAtDesc();
 
     /**
      * 내가 올린 프로젝트 목록 조회
@@ -64,9 +66,10 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             "JOIN ProjectView pv ON p.id = pv.project.id " +
             "WHERE pv.member.id = :memberId " +
             "AND p.deletedAt IS NULL " +
+            "AND p.isHidden = false " +
             "ORDER BY pv.viewedAt DESC")
     List<Project> findMyRecentlyViewedProjects(@Param("memberId") Long memberId);
 
-    @Query("SELECT p.id FROM Project p WHERE LOWER(p.title) LIKE :pattern AND p.deletedAt IS NULL")
+    @Query("SELECT p.id FROM Project p WHERE LOWER(p.title) LIKE :pattern AND p.deletedAt IS NULL AND p.isHidden = false")
     List<Long> findIdsByTitle(@Param("pattern") String pattern);
 }

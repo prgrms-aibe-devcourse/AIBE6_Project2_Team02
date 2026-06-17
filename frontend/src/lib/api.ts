@@ -191,6 +191,16 @@ export function fetchProjectReports(
   )
 }
 
+export function fetchHiddenProjects() {
+  return fetchRsDataJson<Project[]>('/admin/projects/hidden')
+}
+
+export function unhideProject(projectId: string) {
+  return fetchRsDataJson<void>(`/admin/projects/${projectId}/unhide`, {
+    method: 'PATCH',
+  })
+}
+
 export function createReport(payload: CreateReportRequest) {
   return fetchRsDataJson<{ reportId: number }>('/reports', {
     method: 'POST',
