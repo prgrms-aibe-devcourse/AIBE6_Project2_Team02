@@ -113,15 +113,24 @@ public class MyPageProjectService {
      * 내가 신청한 프로젝트 지원 취소 처리
      */
     @Transactional
+    /**
+     * [주의] 로컬(HTTP) 환경 vs 배포(HTTPS) 환경 동작 차이 안내
+     * * - 로컬 환경 (localhost:3000 -> 8080):
+     * 크롬 등 최신 브라우저의 SameSite 쿠키 정책(일반 HTTP 및 크로스 도메인 제한)으로 인해
+     * 프론트에서 credentials 옵션을 켜도 JWT 쿠키가 백엔드로 전달되지 않습니다.
+     * 이로 인해 SecurityContext가 비어 있게 되어, @PreAuthorize 단계에서 403 Forbidden이 발생합니다.
+     * (로컬 테스트 시 검증이 필요하다면 이 어노테이션을 잠시 주석 처리해야 합니다.)
+     * * - 배포 환경 (Render 실서버 HTTPS):
+     * 보안 프로토콜(HTTPS)이 적용되므로 프론트의 credentials와 백엔드의 allowCredentials(true)
+     * 설정이 정상 작동하여 브라우저가 쿠키를 완벽하게 전달합니다.
+     * 따라서 jwtAuthenticationFilter가 유저를 정상 식별하므로, @PreAuthorize 문턱을 문제없이 통과(200 OK)합니다.
+     */
     @PreAuthorize("@mypageAuthorizer.isApplicant(#applicationId, authentication.principal.memberId)")
-    public void cancelProjectApplication(Long memberId, Long applicationId) {
+    public void cancelProjectApplication(Long memberId, Long projectId) {
 
-        ProjectApplication application = projectApplicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 지원 내역입니다."));
-
-        if (application.getStatus() != SelectionStatus.PENDING) {
-            throw new IllegalStateException("대기 중인 지원서만 취소할 수 있습니다.");
-        }
+        ProjectApplication application = projectApplicationRepository
+                .findByApplicantIdAndProjectIdAndStatus(memberId, projectId, SelectionStatus.PENDING)
+                .orElseThrow(() -> new ResourceNotFoundException("404", "취소 가능한 대기 중인 지원 내역이 존재하지 않습니다."));
 
         projectApplicationRepository.delete(application);
     }

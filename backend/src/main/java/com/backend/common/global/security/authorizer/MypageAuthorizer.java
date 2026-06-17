@@ -4,6 +4,7 @@ import com.backend.common.domain.portfolio.proposals.entity.ProjectProposal;
 import com.backend.common.domain.portfolio.proposals.repository.ProjectProposalRepository;
 import com.backend.common.domain.project.application.entity.ProjectApplication;
 import com.backend.common.domain.project.application.repository.ProjectApplicationRepository;
+import com.backend.common.domain.project.enums.SelectionStatus;
 import com.backend.common.global.exception.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -42,12 +43,12 @@ public class MypageAuthorizer {
     /**
      * 지원서 인가 (취소용): 지원서를 작성한 지원자(Applicant) 본인이 맞는지 검증
      */
-    public boolean isApplicant(Long applicationId, Long memberId) {
-        if (memberId == null) return false;
+    public boolean isApplicant(Long projectId, Long memberId) {
+        if (memberId == null || projectId == null) return false;
 
-        ProjectApplication application = projectApplicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 지원 내역입니다."));
-
-        return application.getApplicant().getId().equals(memberId);
+        // 프로젝트 ID와 로그인한 멤버 ID, 그리고 대기 상태인 지원서가 존재하는지 확인
+        return projectApplicationRepository
+                .findByApplicantIdAndProjectIdAndStatus(memberId, projectId, SelectionStatus.PENDING)
+                .isPresent();
     }
 }
