@@ -140,7 +140,7 @@ export default function ProjectListingClient() {
 
             {/* Tech Stack Select */}
             <select
-              className="form-field"
+              className="form-field md:w-auto"
               value={selectedTech}
               onChange={(e) => setSelectedTech(e.target.value)}
             >
@@ -152,7 +152,7 @@ export default function ProjectListingClient() {
 
             {/* Sort Select */}
             <select
-              className="form-field"
+              className="form-field md:w-auto"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
             >

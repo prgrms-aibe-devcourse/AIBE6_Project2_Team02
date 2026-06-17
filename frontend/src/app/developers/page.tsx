@@ -176,7 +176,7 @@ export default function TalentListingPage() {
 
             {/* Tech Stack Select */}
             <select
-              className="form-field"
+              className="form-field md:w-auto"
               value={selectedTech}
               onChange={(e) => setSelectedTech(e.target.value)}
             >
