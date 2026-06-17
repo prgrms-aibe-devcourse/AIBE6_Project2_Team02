@@ -129,6 +129,10 @@ export function fetchMembers() {
   return fetchRsDataJson<User[]>('/members')
 }
 
+export function fetchPortfolios() {
+  return fetchRsDataJson<User[]>('/portfolios')
+}
+
 export function fetchMember(id: string) {
   return fetchRsDataJson<User>(`/members/${id}`)
 }

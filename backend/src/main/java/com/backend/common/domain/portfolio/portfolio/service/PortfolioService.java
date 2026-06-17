@@ -3,6 +3,7 @@ package com.backend.common.domain.portfolio.portfolio.service;
 import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioCreateRequest;
+import com.backend.common.domain.portfolio.portfolio.dto.PortfolioListResponse;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioResponse;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioUpdateRequest;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
@@ -34,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 @Service
 @Transactional(readOnly = true)
@@ -49,13 +51,26 @@ public class PortfolioService {
     /**
      * 포트폴리오 등록
      */
+    public List<PortfolioListResponse> getPublishedPortfolios() {
+        List<Portfolio> portfolios = portfolioRepository.findLatestPublished();
+        return IntStream.range(0, portfolios.size())
+                .mapToObj(index -> PortfolioListResponse.from(
+                        portfolios.get(index),
+                        index < 8
+                ))
+                .toList();
+    }
+
     @Transactional
     public void createPortfolio(Long memberId, PortfolioCreateRequest request) {
         if(request.title() == null || request.title().isBlank())
             throw new PortfolioInputException("400","포트폴리오 제목은 필수 입니다.");
         if(request.desiredPosition() == null || request.desiredPosition().isBlank())
             throw new PortfolioInputException("400","희망 포지션은 필수 입니다.");
-        PositionType desiredPosition = parseDesiredPosition(request.desiredPosition());
+        PositionType desiredPosition = PositionType.fromDescriptionOrCode(request.desiredPosition());
+        if (desiredPosition == PositionType.ERROR) {
+            throw new PortfolioInputException("400", "지원할 수 없는 포지션입니다.");
+        }
 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 회원입니다."));
@@ -96,7 +111,10 @@ public class PortfolioService {
     public PortfolioResponse updatePortfolio(Long memberId, PortfolioUpdateRequest request) {
         Portfolio portfolio = portfolioRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("404", "등록된 포트폴리오가 없습니다."));
-        PositionType desiredPosition = parseDesiredPosition(request.desiredPosition());
+        PositionType desiredPosition = PositionType.fromDescriptionOrCode(request.desiredPosition());
+        if (desiredPosition == PositionType.ERROR) {
+            throw new PortfolioInputException("400", "지원할 수 없는 포지션입니다.");
+        }
 
         // 1. 기본 정보 정보 업데이트
         portfolio.update(
@@ -254,14 +272,6 @@ public class PortfolioService {
         } else {
             proposal.reject();
         }
-    }
-
-    private PositionType parseDesiredPosition(String value) {
-        PositionType position = PositionType.fromDescriptionOrCode(value);
-        if (position == PositionType.ERROR) {
-            throw new PortfolioInputException("400", "지원할 수 없는 포지션입니다.");
-        }
-        return position;
     }
 
 }

@@ -16,7 +16,7 @@ import {
   toPositionValue,
 } from '../../constants/project'
 import { usePaginatedList } from '../../hooks/usePaginatedList'
-import { fetchMembers, fetchPopularTechStacks } from '../../lib/api'
+import { fetchPopularTechStacks, fetchPortfolios } from '../../lib/api'
 import type { User } from '../../types'
 
 const roleOptions = [
@@ -64,9 +64,9 @@ export default function TalentListingPage() {
   const [selectedTech, setSelectedTech] = useState<string>('All')
 
   useEffect(() => {
-    Promise.all([fetchMembers(), fetchPopularTechStacks()])
-      .then(([members, techStacks]) => {
-        setAllUsers(members)
+    Promise.all([fetchPortfolios(), fetchPopularTechStacks()])
+      .then(([portfolios, techStacks]) => {
+        setAllUsers(portfolios)
         setPopularTechStacks(techStacks)
       })
       .catch(() => {
