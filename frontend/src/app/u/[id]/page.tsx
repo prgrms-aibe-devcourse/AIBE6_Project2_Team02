@@ -29,6 +29,7 @@ import {
   fetchReviews,
   checkAlreadyReported,
 } from '../../../lib/api'
+import { formatDate } from '../../../lib/date'
 import type { Project, ReviewResponse, User } from '../../../types'
 import type {
   ProposalProject,
@@ -522,7 +523,7 @@ export default function DeveloperProfilePage() {
                         <div className="mb-4 flex items-start justify-between gap-3">
                           <Badge variant="outline">{review.projectTitle}</Badge>
                           <span className="text-xs text-slate-400">
-                            {new Date(review.createdAt).toLocaleDateString()}
+                            {formatDate(review.createdAt)}
                           </span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

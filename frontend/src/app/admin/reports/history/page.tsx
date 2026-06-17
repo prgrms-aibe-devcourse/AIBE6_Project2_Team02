@@ -16,6 +16,7 @@ import {
 
 import { Badge, Card } from '../../../../components/ui'
 import { fetchProjectReports, fetchUserReports } from '../../../../lib/api'
+import { formatDate, getTimeValue } from '../../../../lib/date'
 import type { ReportResponse } from '../../../../types'
 
 export default function AdminReportsHistoryPage() {
@@ -38,14 +39,12 @@ export default function AdminReportsHistoryPage() {
         ])
         setResolvedReports(
           [...(resolvedU || []), ...(resolvedP || [])].sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+            (a, b) => getTimeValue(b.createdAt) - getTimeValue(a.createdAt),
           ),
         )
         setRejectedReports(
           [...(rejectedU || []), ...(rejectedP || [])].sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+            (a, b) => getTimeValue(b.createdAt) - getTimeValue(a.createdAt),
           ),
         )
       } catch (err) {
@@ -142,7 +141,7 @@ export default function AdminReportsHistoryPage() {
                       {report.reasonType}
                     </Badge>
                     <span className="text-[10px] text-slate-400 font-medium">
-                      {new Date(report.createdAt).toLocaleDateString()}
+                      {formatDate(report.createdAt)}
                     </span>
                   </div>
 

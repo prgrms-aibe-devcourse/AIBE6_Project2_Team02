@@ -29,6 +29,7 @@ import {
   fetchProject,
   fetchProjectPermissions,
 } from '../../../lib/api'
+import { formatDate } from '../../../lib/date'
 import type { Project } from '../../../types'
 import { useAuth } from '../../providers'
 
@@ -412,13 +413,13 @@ export default function ProjectDetailPage() {
                 <div className="flex justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-500">등록일</span>
                   <span className="font-medium text-slate-900">
-                    {new Date(project.createdAt).toLocaleDateString()}
+                    {formatDate(project.createdAt)}
                   </span>
                 </div>
                 <div className="flex justify-between py-2">
                   <span className="text-slate-500">마감일</span>
                   <span className="font-medium text-slate-900">
-                    {new Date(project.deadline).toLocaleDateString()}
+                    {formatDate(project.deadline)}
                   </span>
                 </div>
               </div>

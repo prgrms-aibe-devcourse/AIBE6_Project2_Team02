@@ -8,6 +8,7 @@ import { Clock, Search, Sparkles, Users } from 'lucide-react'
 
 import { Badge, Button, Card, Input } from '../../../components/ui'
 import { fetchPopularTechStacks, fetchProjects } from '../../../lib/api'
+import { formatDate, getTimeValue } from '../../../lib/date'
 import { formatProjectMemberCount } from '../../../lib/project'
 import type { Project } from '../../../types'
 
@@ -67,7 +68,7 @@ export default function ProjectListingClient() {
       })
       .sort((a, b) => {
         if (sortBy === 'newest') {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          return getTimeValue(b.createdAt) - getTimeValue(a.createdAt)
         } else {
           return b.popularity - a.popularity
         }
@@ -247,7 +248,7 @@ export default function ProjectListingClient() {
                     </div>
                     <div className="flex items-center text-slate-400 text-xs gap-1">
                       <Clock className="h-3 w-3" />
-                      {new Date(project.createdAt).toLocaleDateString()}
+                      {formatDate(project.createdAt)}
                     </div>
                   </div>
 

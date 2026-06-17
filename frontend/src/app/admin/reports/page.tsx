@@ -9,6 +9,7 @@ import Link from 'next/link'
 
 import { Badge, Button, Card } from '../../../components/ui'
 import { fetchProjectReports, fetchUserReports, resolveReport, rejectReport } from '../../../lib/api'
+import { formatDate } from '../../../lib/date'
 import type { ReportResponse } from '../../../types'
 
 export default function AdminReportsPage() {
@@ -157,7 +158,7 @@ export default function AdminReportsPage() {
                     {report.reasonType}
                   </span>
                   <span className="text-xs text-slate-400">
-                    {new Date(report.createdAt).toLocaleDateString()}
+                    {formatDate(report.createdAt)}
                   </span>
                 </div>
 
@@ -274,7 +275,7 @@ export default function AdminReportsPage() {
                         {report.reasonType}
                       </span>
                       <span className="text-xs text-slate-400">
-                        {new Date(report.createdAt).toLocaleDateString()}
+                        {formatDate(report.createdAt)}
                       </span>
                     </div>
 

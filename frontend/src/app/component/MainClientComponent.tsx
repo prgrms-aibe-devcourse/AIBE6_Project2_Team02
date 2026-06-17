@@ -18,6 +18,7 @@ import {
 
 import { Badge, Button, Card } from '../../components/ui'
 import { fetchPopularTechStacks, fetchProjects } from '../../lib/api'
+import { formatDate } from '../../lib/date'
 import { formatProjectMemberCount } from '../../lib/project'
 import type { Project } from '../../types'
 
@@ -198,7 +199,7 @@ export default function MainClientComponent() {
                     </div>
                     <div className="flex items-center text-slate-400 text-xs gap-1">
                       <Clock className="h-3 w-3" />
-                      {new Date(project.createdAt).toLocaleDateString()}
+                      {formatDate(project.createdAt)}
                     </div>
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
