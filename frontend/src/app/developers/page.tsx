@@ -14,7 +14,8 @@ import {
   Sparkles,
 } from 'lucide-react'
 
-import { Badge, Button, Card, Input } from '../../components/ui'
+import { SearchField } from '../../components/SearchField'
+import { Badge, Button, Card } from '../../components/ui'
 import { fetchMembers, fetchPopularTechStacks } from '../../lib/api'
 import type { User } from '../../types'
 
@@ -150,15 +151,11 @@ export default function TalentListingPage() {
       {/* Horizontal Filters */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-12">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="flex-1 w-full md:w-auto relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="이름 / 키워드 검색..."
-              className="pl-9 w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+          <SearchField
+            placeholder="이름 / 키워드 검색..."
+            value={searchTerm}
+            onChange={setSearchTerm}
+          />
 
           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
             {/* Role Segmented Control */}
