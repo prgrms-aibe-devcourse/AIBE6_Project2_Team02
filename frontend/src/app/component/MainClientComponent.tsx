@@ -239,7 +239,7 @@ export default function MainClientComponent() {
                           </span>
                         </Link>
                       </div>
-                      <div className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                      <div className="member-count-badge">
                         <Users className="h-3 w-3" />
                         {project.positions.reduce(
                           (acc, p) => acc + p.filled,

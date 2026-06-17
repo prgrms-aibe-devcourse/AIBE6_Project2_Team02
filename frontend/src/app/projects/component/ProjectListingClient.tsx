@@ -194,7 +194,7 @@ export default function ProjectListingClient() {
                         <img src={project.leader.avatar} alt={project.leader.name} className="w-6 h-6 rounded-full" />
                         <span className="text-sm font-medium text-slate-700">{project.leader.name}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                      <div className="member-count-badge">
                         <Users className="h-3 w-3" />
                         {project.positions.reduce((acc, p) => acc + p.filled, 0)} / {project.positions.reduce((acc, p) => acc + p.total, 0)}명
                       </div>
@@ -270,7 +270,7 @@ export default function ProjectListingClient() {
                           <span className="text-sm font-medium text-slate-700 hover:text-blue-600">{project.leader.name}</span>
                         </Link>
                       </div>
-                      <div className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                      <div className="member-count-badge">
                         <Users className="h-3 w-3" />
                         {project.positions.reduce((acc, p) => acc + p.filled, 0)} / {project.positions.reduce((acc, p) => acc + p.total, 0)}명
                       </div>

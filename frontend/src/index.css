@@ -95,6 +95,10 @@
     @apply rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600;
   }
 
+  .member-count-badge {
+    @apply flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600;
+  }
+
   .empty-state {
     @apply rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-slate-500;
   }
