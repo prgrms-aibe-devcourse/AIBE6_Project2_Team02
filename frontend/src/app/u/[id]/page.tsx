@@ -425,7 +425,7 @@ export default function DeveloperProfilePage() {
                     <div className="grid gap-4">
                       {createdProjects.map((project) => (
                         <Link key={project.id} href={`/projects/${project.id}`}>
-                          <Card className="p-5 hover:border-blue-300 transition-colors cursor-pointer group">
+                          <Card className="compact-listing-card group">
                             <div className="flex justify-between items-start mb-2">
                               <h3 className="font-semibold text-lg text-slate-900 group-hover:text-blue-600 transition-colors">
                                 {project.title}
@@ -477,7 +477,7 @@ export default function DeveloperProfilePage() {
                     <div className="grid gap-4">
                       {participatedProjects.map((project) => (
                         <Link key={project.id} href={`/projects/${project.id}`}>
-                          <Card className="p-5 hover:border-blue-300 transition-colors cursor-pointer group">
+                          <Card className="compact-listing-card group">
                             <div className="flex justify-between items-start mb-2">
                               <h3 className="font-semibold text-lg text-slate-900 group-hover:text-blue-600 transition-colors">
                                 {project.title}

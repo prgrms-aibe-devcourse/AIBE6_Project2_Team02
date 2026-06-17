@@ -177,7 +177,7 @@ export default function MainClientComponent() {
                 transition={{ delay: index * 0.05 }}
               >
                 <Card
-                  className="h-full flex flex-col hover:shadow-md transition-all hover:border-blue-300 group cursor-pointer p-6"
+                  className="listing-card group flex"
                   onClick={() => router.push(`/projects/${project.id}`)}
                 >
                   <div className="flex justify-between items-start mb-4">

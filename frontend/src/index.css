@@ -83,6 +83,14 @@
     @apply text-slate-600 hover:text-slate-900;
   }
 
+  .listing-card {
+    @apply h-full cursor-pointer flex-col p-6 transition-all hover:border-blue-300 hover:shadow-md;
+  }
+
+  .compact-listing-card {
+    @apply cursor-pointer p-5 transition-colors hover:border-blue-300;
+  }
+
   .empty-state {
     @apply rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-slate-500;
   }

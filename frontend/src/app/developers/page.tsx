@@ -200,7 +200,7 @@ export default function TalentListingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredTalents.slice(0, 4).map((user) => (
               <Link key={user.id} href={`/u/${user.id}`}>
-                <Card className="p-6 h-full flex flex-col hover:border-blue-300 hover:shadow-md transition-all group cursor-pointer text-center border-2 border-amber-100/50">
+                <Card className="listing-card group flex border-2 border-amber-100/50 text-center">
                   <div className="relative inline-block mx-auto mb-4">
                     <img
                       src={user.avatar}
@@ -260,7 +260,7 @@ export default function TalentListingPage() {
             paginatedTalents.map((user) => (
               <motion.div key={user.id} variants={itemVariants}>
                 <Link href={`/u/${user.id}`}>
-                  <Card className="h-full flex flex-col hover:shadow-md transition-all hover:border-blue-300 group cursor-pointer p-6">
+                  <Card className="listing-card group flex">
                     <div className="flex items-start gap-4 mb-4">
                       <img
                         src={user.avatar}
