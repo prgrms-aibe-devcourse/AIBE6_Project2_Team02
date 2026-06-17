@@ -23,6 +23,15 @@ const roleMap: Record<string, string> = {
   AI: 'AI/데이터',
   Other: '기타',
 }
+const roles = [
+  'All',
+  'Frontend',
+  'Backend',
+  'Mobile',
+  'Design',
+  'AI',
+  'Other',
+]
 
 // 간단한 직군 분류 헬퍼 함수
 const getRoleCategory = (role: string) => {
@@ -72,15 +81,6 @@ export default function TalentListingPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>('All')
-  const roles = [
-    'All',
-    'Frontend',
-    'Backend',
-    'Mobile',
-    'Design',
-    'AI',
-    'Other',
-  ]
 
   useEffect(() => {
     Promise.all([fetchMembers(), fetchPopularTechStacks()])

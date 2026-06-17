@@ -21,6 +21,8 @@ const categoryMap: Record<string, string> = {
 const statusMap: Record<string, string> = {
   All: '전체', Open: '모집중', Closed: '마감', Completed: '완료', Stopped: '중단',
 }
+const categories = ['All', 'Web', 'Mobile', 'AI', 'Game', 'Other']
+const statuses = ['All', 'Open', 'Closed']
 
 interface ProjectFilterOptions {
   searchTerm: string
@@ -77,9 +79,6 @@ export default function ProjectListingClient() {
   const [selectedTech, setSelectedTech] = useState<string>(initialTech || 'All')
   const [selectedStatus, setSelectedStatus] = useState<string>('Open')
   const [sortBy, setSortBy] = useState<'newest' | 'popularity'>('newest')
-
-  const categories = ['All', 'Web', 'Mobile', 'AI', 'Game', 'Other']
-  const statuses = ['All', 'Open', 'Closed']
 
   useEffect(() => {
     Promise.all([fetchProjects(), fetchPopularTechStacks()])
