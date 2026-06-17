@@ -270,17 +270,18 @@ export default function ProjectEditPage() {
 
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
-                한 줄 소개 <span className="text-red-500">*</span>
+                프로젝트 설명 <span className="text-red-500">*</span>
               </label>
               <p className="mb-2 text-xs text-slate-500">
-                프로젝트 목록에서 보일 핵심 내용을 한 문장으로 작성해주세요.
+                프로젝트 배경, 해결하려는 문제와 주요 기능을 구체적으로 작성해주세요.
               </p>
-              <Input
+              <textarea
+                className="min-h-40 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
                 value={form.description}
                 onChange={(event) =>
                   setForm({ ...form, description: event.target.value })
                 }
-                placeholder="프로젝트를 한 문장으로 소개해주세요."
+                placeholder="프로젝트의 배경, 해결하고자 하는 문제, 주요 기능 등을 상세히 적어주세요."
                 required
               />
             </div>
