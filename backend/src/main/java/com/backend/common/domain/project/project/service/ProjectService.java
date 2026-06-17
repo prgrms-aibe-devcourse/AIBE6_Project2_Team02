@@ -449,7 +449,6 @@ public class ProjectService {
                 teamMembers,
                 project.getDeadline().toString(),
                 project.getCreatedAt().toLocalDate().toString(),
-                Math.max(members.size() * 10, 1),
                 featured
         );
     }
