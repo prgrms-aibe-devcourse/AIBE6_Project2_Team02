@@ -53,6 +53,7 @@ public class PortfolioService {
             throw new PortfolioInputException("400","포트폴리오 제목은 필수 입니다.");
         if(request.desiredPosition() == null || request.desiredPosition().isBlank())
             throw new PortfolioInputException("400","희망 포지션은 필수 입니다.");
+        PositionType desiredPosition = parseDesiredPosition(request.desiredPosition());
 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 회원입니다."));
@@ -65,7 +66,7 @@ public class PortfolioService {
                 .title(request.title())
                 .introduction(request.introduction())
                 .portfolioLinks(request.portfolioLinks())
-                .desiredPosition(request.desiredPosition())
+                .desiredPosition(desiredPosition.name())
                 .isPublished(request.isPublished())
                 .build();
         portfolioRepository.save(portfolio);
@@ -93,10 +94,11 @@ public class PortfolioService {
     public PortfolioResponse updatePortfolio(Long memberId, PortfolioUpdateRequest request) {
         Portfolio portfolio = portfolioRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("404", "등록된 포트폴리오가 없습니다."));
+        PositionType desiredPosition = parseDesiredPosition(request.desiredPosition());
 
         // 1. 기본 정보 정보 업데이트
         portfolio.update(
-                request.title(), request.introduction(), request.portfolioLinks(), request.desiredPosition(), request.isPublished()
+                request.title(), request.introduction(), request.portfolioLinks(), desiredPosition.name(), request.isPublished()
         );
 
         // 2. 기존 기술 스택 삭제 후 flush (INSERT 전 DELETE 보장)
@@ -252,6 +254,14 @@ public class PortfolioService {
         } else {
             proposal.reject();
         }
+    }
+
+    private PositionType parseDesiredPosition(String value) {
+        PositionType position = PositionType.fromDescriptionOrCode(value);
+        if (position == PositionType.ERROR) {
+            throw new PortfolioInputException("400", "지원할 수 없는 포지션입니다.");
+        }
+        return position;
     }
 
 }

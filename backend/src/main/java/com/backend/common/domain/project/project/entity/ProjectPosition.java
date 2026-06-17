@@ -23,5 +23,9 @@ public class ProjectPosition {
         this.role = role;
         this.total = total;
     }
+
+    public void changeRole(String role) {
+        this.role = role;
+    }
 }
 

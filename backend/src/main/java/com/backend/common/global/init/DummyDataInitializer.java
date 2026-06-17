@@ -62,6 +62,8 @@ public class DummyDataInitializer implements ApplicationRunner {
 
         if (memberRepository.count() > 0 || projectRepository.count() > 0) {
             backfillProjectTechStacks(techStacks);
+            backfillProjectPositionRoles();
+            backfillPortfolioDesiredPositions();
             return;
         }
 
@@ -99,6 +101,7 @@ public class DummyDataInitializer implements ApplicationRunner {
                 .desiredPosition("백엔드 개발자")
                 .isPublished(true)
                 .build();
+        testPortfolio.changeDesiredPosition(PositionType.BACKEND.name());
         portfolioRepository.save(testPortfolio);
 
         // ----------------------------------------------------
@@ -270,7 +273,7 @@ public class DummyDataInitializer implements ApplicationRunner {
                         .title(seed.name() + " Portfolio")
                         .introduction(seed.bio())
                         .portfolioLinks(null)
-                        .desiredPosition(seed.role())
+                        .desiredPosition(inferPosition(seed.role()).name())
                         .isPublished(true)
                         .build()
         ));
@@ -382,11 +385,41 @@ public class DummyDataInitializer implements ApplicationRunner {
         List<ProjectPosition> positions = new ArrayList<>();
         filledByPosition.forEach((position, filled) ->
                 positions.add(ProjectPosition.builder()
-                        .role(formatPosition(position))
+                        .role(position.name())
                         .total(seed.open() ? filled + 1 : filled)
                         .build())
         );
         return positions;
+    }
+
+    private void backfillProjectPositionRoles() {
+        projectRepository.findAll().forEach(project ->
+                project.getPositions().forEach(position -> {
+                    PositionType parsedPosition = parsePosition(position.getRole());
+                    if (parsedPosition == PositionType.ERROR) {
+                        return;
+                    }
+
+                    String roleCode = parsedPosition.name();
+                    if (!roleCode.equals(position.getRole())) {
+                        position.changeRole(roleCode);
+                    }
+                })
+        );
+    }
+
+    private void backfillPortfolioDesiredPositions() {
+        portfolioRepository.findAll().forEach(portfolio -> {
+            PositionType parsedPosition = parsePosition(portfolio.getDesiredPosition());
+            if (parsedPosition == PositionType.ERROR) {
+                return;
+            }
+
+            String roleCode = parsedPosition.name();
+            if (!roleCode.equals(portfolio.getDesiredPosition())) {
+                portfolio.changeDesiredPosition(roleCode);
+            }
+        });
     }
 
     private void savePeerReviews() {
@@ -451,6 +484,27 @@ public class DummyDataInitializer implements ApplicationRunner {
 
     private String formatPosition(PositionType position) {
         return position.toRequiredFormat();
+    }
+
+    private PositionType parsePosition(String value) {
+        String normalized = normalizeRole(value);
+        if (normalized.isBlank()) {
+            return PositionType.ERROR;
+        }
+
+        for (PositionType position : PositionType.values()) {
+            if (position.name().equalsIgnoreCase(value)
+                    || position.getDescription().equals(value)
+                    || normalizeRole(formatPosition(position)).equals(normalized)) {
+                return position;
+            }
+        }
+
+        return PositionType.ERROR;
+    }
+
+    private String normalizeRole(String role) {
+        return role == null ? "" : role.replaceAll("\\s+", "").toLowerCase(Locale.ROOT);
     }
 
     private ProjectCategory inferCategory(ProjectSeed seed) {

@@ -8,7 +8,7 @@ import { Button, Card, Input } from '../../../../components/ui'
 import { fetchAllTechStacks, fetchMyPortfolio, updateMyPortfolio } from '../../../../lib/api'
 import type { TechStackItem } from '../../../../types/tech-stack'
 import { useAuth } from '../../../providers'
-import { leaderPositionOptions } from '../../../../constants/project'
+import { leaderPositionOptions, toPositionValue } from '../../../../constants/project'
 
 type LinkFields = {
   label: string
@@ -73,7 +73,7 @@ export default function PortfolioEditPage() {
         setForm({
           title: portfolio.title ?? '',
           introduction: portfolio.introduction ?? '',
-          desiredPosition: portfolio.desiredPosition ?? '',
+          desiredPosition: toPositionValue(portfolio.desiredPosition),
           isPublished: portfolio.isPublished,
         })
         const initialLinks: Record<string, string> = {}

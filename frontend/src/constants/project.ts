@@ -18,3 +18,13 @@ export function formatPositionLabel(value: string | null | undefined) {
     ''
   )
 }
+
+export function toPositionValue(value: string | null | undefined) {
+  return (
+    leaderPositionOptions.find(
+      (option) => option.value === value || option.label === value,
+    )?.value ??
+    value ??
+    ''
+  )
+}

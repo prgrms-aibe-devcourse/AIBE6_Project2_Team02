@@ -26,9 +26,11 @@ public enum PositionType {
             return ERROR;
         }
 
+        String trimmed = value.trim();
         return Arrays.stream(PositionType.values())
-                .filter(p -> p.name().equalsIgnoreCase(value.trim()) ||
-                        p.getDescription().equals(value.trim()))
+                .filter(p -> p.name().equalsIgnoreCase(trimmed) ||
+                        p.getDescription().equals(trimmed) ||
+                        p.toRequiredFormat().equals(trimmed))
                 .findFirst()
                 .orElse(ERROR);
     }
