@@ -6,8 +6,13 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Clock, Search, Sparkles, Users } from 'lucide-react'
 
-import { Badge, Button, Card, Input } from '../../../components/ui'
+import { PaginationControls } from '../../../components/PaginationControls'
+import { Badge, Button, Card } from '../../../components/ui'
+import { SearchField } from '../../../components/SearchField'
 import { fetchPopularTechStacks, fetchProjects } from '../../../lib/api'
+import { formatDate, getTimeValue } from '../../../lib/date'
+import { formatProjectMemberCount } from '../../../lib/project'
+import { usePaginatedList } from '../../../hooks/usePaginatedList'
 import type { Project } from '../../../types'
 
 const categoryMap: Record<string, string> = {
@@ -15,6 +20,51 @@ const categoryMap: Record<string, string> = {
 }
 const statusMap: Record<string, string> = {
   All: '전체', Open: '모집중', Closed: '마감', Completed: '완료', Stopped: '중단',
+}
+const categories = ['All', 'Web', 'Mobile', 'AI', 'Game', 'Other']
+const statuses = ['All', 'Open', 'Closed']
+
+interface ProjectFilterOptions {
+  searchTerm: string
+  selectedCategory: string
+  selectedTech: string
+  selectedStatus: string
+}
+
+function matchesProjectFilters(
+  project: Project,
+  {
+    searchTerm,
+    selectedCategory,
+    selectedTech,
+    selectedStatus,
+  }: ProjectFilterOptions,
+) {
+  const normalizedSearchTerm = searchTerm.toLowerCase()
+  const matchesSearch =
+    project.title.toLowerCase().includes(normalizedSearchTerm) ||
+    project.description.toLowerCase().includes(normalizedSearchTerm)
+  const matchesCategory =
+    selectedCategory === 'All' || project.category === selectedCategory
+  const matchesTech =
+    selectedTech === 'All' || project.techStack.includes(selectedTech)
+  const matchesStatus =
+    selectedStatus === 'All' || project.recruitmentStatus === selectedStatus
+
+  return matchesSearch && matchesCategory && matchesTech && matchesStatus
+}
+
+function sortProjects(
+  projects: Project[],
+  sortBy: 'newest' | 'popularity',
+) {
+  return [...projects].sort((a, b) => {
+    if (sortBy === 'newest') {
+      return getTimeValue(b.createdAt) - getTimeValue(a.createdAt)
+    }
+
+    return b.popularity - a.popularity
+  })
 }
 
 export default function ProjectListingClient() {
@@ -29,10 +79,6 @@ export default function ProjectListingClient() {
   const [selectedTech, setSelectedTech] = useState<string>(initialTech || 'All')
   const [selectedStatus, setSelectedStatus] = useState<string>('Open')
   const [sortBy, setSortBy] = useState<'newest' | 'popularity'>('newest')
-  const [page, setPage] = useState(0)
-
-  const categories = ['All', 'Web', 'Mobile', 'AI', 'Game', 'Other']
-  const statuses = ['All', 'Open', 'Closed']
 
   useEffect(() => {
     Promise.all([fetchProjects(), fetchPopularTechStacks()])
@@ -51,44 +97,35 @@ export default function ProjectListingClient() {
   )
 
   const filteredProjects = useMemo(() => {
-    return projects
-      .filter((p) => {
-        const matchesSearch =
-          p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.description.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesCategory =
-          selectedCategory === 'All' || p.category === selectedCategory
-        const matchesTech =
-          selectedTech === 'All' || p.techStack.includes(selectedTech)
-        const matchesStatus =
-          selectedStatus === 'All' || p.recruitmentStatus === selectedStatus
-        return matchesSearch && matchesCategory && matchesTech && matchesStatus
-      })
-      .sort((a, b) => {
-        if (sortBy === 'newest') {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        } else {
-          return b.popularity - a.popularity
-        }
-      })
+    const filtered = projects.filter((project) =>
+      matchesProjectFilters(project, {
+        searchTerm,
+        selectedCategory,
+        selectedTech,
+        selectedStatus,
+      }),
+    )
+
+    return sortProjects(filtered, sortBy)
   }, [projects, searchTerm, selectedCategory, selectedTech, selectedStatus, sortBy])
 
   const projectsPerPage = 6
-  const pageCount = Math.ceil(filteredProjects.length / projectsPerPage)
-  const paginatedProjects = filteredProjects.slice(
-    page * projectsPerPage,
-    (page + 1) * projectsPerPage,
-  )
-
-  useEffect(() => {
-    setPage(0)
-  }, [searchTerm, selectedCategory, selectedTech, selectedStatus, sortBy])
-
-  useEffect(() => {
-    if (pageCount > 0 && page >= pageCount) {
-      setPage(pageCount - 1)
-    }
-  }, [page, pageCount])
+  const {
+    page,
+    pageCount,
+    paginatedItems: paginatedProjects,
+    setPage,
+  } = usePaginatedList({
+    items: filteredProjects,
+    pageSize: projectsPerPage,
+    resetDeps: [
+      searchTerm,
+      selectedCategory,
+      selectedTech,
+      selectedStatus,
+      sortBy,
+    ],
+  })
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -101,24 +138,20 @@ export default function ProjectListingClient() {
       {/* Horizontal Filters */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-12">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="flex-1 w-full md:w-auto relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="키워드 입력..."
-              className="pl-9 w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+          <SearchField
+            placeholder="키워드 입력..."
+            value={searchTerm}
+            onChange={setSearchTerm}
+          />
 
           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
             {/* Category Segmented Control */}
-            <div className="flex bg-slate-100 p-1 rounded-lg overflow-x-auto">
+            <div className="segment-control overflow-x-auto">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${selectedCategory === cat ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`segment-option ${selectedCategory === cat ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
                   {categoryMap[cat]}
                 </button>
@@ -126,12 +159,12 @@ export default function ProjectListingClient() {
             </div>
 
             {/* Status Segmented Control */}
-            <div className="flex bg-slate-100 p-1 rounded-lg">
+            <div className="segment-control">
               {statuses.map((status) => (
                 <button
                   key={status}
                   onClick={() => setSelectedStatus(status)}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${selectedStatus === status ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`segment-option ${selectedStatus === status ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
                   {statusMap[status]}
                 </button>
@@ -140,7 +173,7 @@ export default function ProjectListingClient() {
 
             {/* Tech Stack Select */}
             <select
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+              className="form-field md:w-auto"
               value={selectedTech}
               onChange={(e) => setSelectedTech(e.target.value)}
             >
@@ -152,7 +185,7 @@ export default function ProjectListingClient() {
 
             {/* Sort Select */}
             <select
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+              className="form-field md:w-auto"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
             >
@@ -172,7 +205,7 @@ export default function ProjectListingClient() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredProjects.slice(0, 3).map((project) => (
               <Link key={project.id} href={`/projects/${project.id}`}>
-                <Card className="h-full flex flex-col hover:shadow-md transition-all hover:border-blue-300 group cursor-pointer p-6 border-2 border-amber-100/50">
+                <Card className="listing-card group flex hover:border-blue-300 hover:shadow-md">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex gap-2">
                       <Badge variant={project.recruitmentStatus === 'Open' ? 'success' : 'secondary'}>{statusMap[project.recruitmentStatus]}</Badge>
@@ -186,7 +219,7 @@ export default function ProjectListingClient() {
                   <div className="space-y-4 mt-auto">
                     <div className="flex flex-wrap gap-2">
                       {project.techStack.slice(0, 4).map((tech) => (
-                        <span key={tech} className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">{tech}</span>
+                        <span key={tech} className="tech-pill">{tech}</span>
                       ))}
                     </div>
                     <div className="flex items-center justify-between pt-4 border-t border-slate-100">
@@ -194,9 +227,9 @@ export default function ProjectListingClient() {
                         <img src={project.leader.avatar} alt={project.leader.name} className="w-6 h-6 rounded-full" />
                         <span className="text-sm font-medium text-slate-700">{project.leader.name}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                      <div className="member-count-badge">
                         <Users className="h-3 w-3" />
-                        {project.positions.reduce((acc, p) => acc + p.filled, 0)} / {project.positions.reduce((acc, p) => acc + p.total, 0)}명
+                        {formatProjectMemberCount(project.positions)}
                       </div>
                     </div>
                   </div>
@@ -228,7 +261,7 @@ export default function ProjectListingClient() {
                 transition={{ delay: index * 0.05 }}
               >
                 <Card
-                  className="h-full flex flex-col hover:shadow-md transition-all hover:border-blue-300 group cursor-pointer p-6"
+                  className="listing-card group flex"
                   role="link"
                   tabIndex={0}
                   onClick={() => router.push(`/projects/${project.id}`)}
@@ -246,7 +279,7 @@ export default function ProjectListingClient() {
                     </div>
                     <div className="flex items-center text-slate-400 text-xs gap-1">
                       <Clock className="h-3 w-3" />
-                      {new Date(project.createdAt).toLocaleDateString()}
+                      {formatDate(project.createdAt)}
                     </div>
                   </div>
 
@@ -256,10 +289,10 @@ export default function ProjectListingClient() {
                   <div className="space-y-4 mt-auto">
                     <div className="flex flex-wrap gap-2">
                       {project.techStack.slice(0, 4).map((tech) => (
-                        <span key={tech} className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">{tech}</span>
+                        <span key={tech} className="tech-pill">{tech}</span>
                       ))}
                       {project.techStack.length > 4 && (
-                        <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">+{project.techStack.length - 4}</span>
+                        <span className="tech-pill">+{project.techStack.length - 4}</span>
                       )}
                     </div>
 
@@ -270,9 +303,9 @@ export default function ProjectListingClient() {
                           <span className="text-sm font-medium text-slate-700 hover:text-blue-600">{project.leader.name}</span>
                         </Link>
                       </div>
-                      <div className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                      <div className="member-count-badge">
                         <Users className="h-3 w-3" />
-                        {project.positions.reduce((acc, p) => acc + p.filled, 0)} / {project.positions.reduce((acc, p) => acc + p.total, 0)}명
+                        {formatProjectMemberCount(project.positions)}
                       </div>
                     </div>
                   </div>
@@ -302,15 +335,11 @@ export default function ProjectListingClient() {
           )}
         </div>
 
-        {pageCount > 1 && (
-          <div className="mt-10 flex justify-center">
-            <div className="flex items-center gap-3">
-              <Button type="button" variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((currentPage) => currentPage - 1)}>이전</Button>
-              <span className="min-w-16 text-center text-sm text-slate-500">{page + 1} / {pageCount}</span>
-              <Button type="button" variant="outline" size="sm" disabled={page + 1 >= pageCount} onClick={() => setPage((currentPage) => currentPage + 1)}>다음</Button>
-            </div>
-          </div>
-        )}
+        <PaginationControls
+          page={page}
+          pageCount={pageCount}
+          onPageChange={setPage}
+        />
       </div>
     </div>
   )

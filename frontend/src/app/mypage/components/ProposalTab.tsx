@@ -137,13 +137,13 @@ export default function ProposalTab({ user }: ProposalTabProps) {
       <div className="flex gap-2 mb-6 border-b border-slate-200 pb-4 overflow-x-auto">
         <button
           onClick={() => setActiveProposalFilter('applications')}
-          className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${activeProposalFilter === 'applications' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
+          className={`tab-pill ${activeProposalFilter === 'applications' ? 'tab-pill-active' : 'tab-pill-inactive'}`}
         >
           내 프로젝트에 들어온 지원
         </button>
         <button
           onClick={() => setActiveProposalFilter('proposals')}
-          className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${activeProposalFilter === 'proposals' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
+          className={`tab-pill ${activeProposalFilter === 'proposals' ? 'tab-pill-active' : 'tab-pill-inactive'}`}
         >
           내 포트폴리오에 온 제안
         </button>

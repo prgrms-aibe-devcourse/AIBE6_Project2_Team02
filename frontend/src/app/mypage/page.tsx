@@ -213,13 +213,13 @@ export default function MyPage() {
                 <div className="flex gap-2 mb-6 border-b border-slate-200 pb-4 overflow-x-auto">
                   <button
                     onClick={() => setActivePortfolioSubTab('portfolio')}
-                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${activePortfolioSubTab === 'portfolio' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
+                    className={`tab-pill ${activePortfolioSubTab === 'portfolio' ? 'tab-pill-active' : 'tab-pill-inactive'}`}
                   >
                     포폴
                   </button>
                   <button
                     onClick={() => setActivePortfolioSubTab('peerReview')}
-                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${activePortfolioSubTab === 'peerReview' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
+                    className={`tab-pill ${activePortfolioSubTab === 'peerReview' ? 'tab-pill-active' : 'tab-pill-inactive'}`}
                   >
                     내게 달린 피어리뷰
                   </button>

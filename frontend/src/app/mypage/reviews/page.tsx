@@ -12,6 +12,7 @@ import { ArrowLeft, MessageSquare } from 'lucide-react'
 import { Badge, Button, Card } from '../../../components/ui'
 import { fetchReviews } from '../../../lib/api'
 import { fetchMe } from '../../../lib/auth'
+import { formatDate } from '../../../lib/date'
 import type { ReviewResponse } from '../../../types'
 
 export default function MyReviewsPage() {
@@ -129,7 +130,7 @@ export default function MyReviewsPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-slate-400">
-                        {new Date(review.createdAt).toLocaleDateString()}
+                        {formatDate(review.createdAt)}
                       </p>
                     </div>
                   </div>
