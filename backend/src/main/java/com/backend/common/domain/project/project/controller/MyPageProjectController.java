@@ -115,13 +115,12 @@ public class MyPageProjectController {
      */
     @GetMapping("/applications")
     @PreAuthorize("isAuthenticated()")
-    public RsData<List<MyPageApplicationResponse>> getMyProjectApplications(
-            @AuthenticationPrincipal CustomMemberDetails userDetails
+    public RsData<Page<MyPageApplicationResponse>> getMyProjectApplications(
+            @AuthenticationPrincipal CustomMemberDetails userDetails,
+            @PageableDefault(size = 5, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        List<MyPageApplicationResponse> responses = myPageProjectService.getMyProjectApplications(userDetails.getMemberId())
-                .stream()
-                .map(MyPageApplicationResponse::from)
-                .toList();
+        Page<MyPageApplicationResponse> responses = myPageProjectService.getMyProjectApplications(userDetails.getMemberId(), pageable)
+                .map(MyPageApplicationResponse::from);
         return RsData.of("200", "내 프로젝트에 들어온 지원 목록 조회가 완료되었습니다.", responses);
     }
 

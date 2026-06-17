@@ -67,8 +67,8 @@ public class MyPageProjectService {
     /**
      * 내가 올린 프로젝트 중 지원이 온 목록 조회
      */
-    public List<ProjectApplication> getMyProjectApplications(Long memberId) {
-        return projectApplicationRepository.findMyProjectApplications(memberId);
+    public Page<ProjectApplication> getMyProjectApplications(Long memberId, Pageable pageable) {
+        return projectApplicationRepository.findMyProjectApplications(memberId, pageable);
     }
 
     /**

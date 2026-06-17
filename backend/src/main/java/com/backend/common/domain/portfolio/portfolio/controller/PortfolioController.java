@@ -12,6 +12,10 @@ import com.backend.common.global.rsdata.RsData;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -54,12 +58,13 @@ public class PortfolioController {
     /**
      * 내 포폴에 온 제안 목록 조회
      */
-    @GetMapping("/me/proposals") // 내 포폴(/me) 하위의 자원(/proposals) 명시
+    @GetMapping("/me/proposals")
     @PreAuthorize("isAuthenticated()")
-    public RsData<List<MyPageProposalResponse>> getMyReceivedProposals(
-            @AuthenticationPrincipal CustomMemberDetails userDetails
+    public RsData<Page<MyPageProposalResponse>> getMyReceivedProposals(
+            @AuthenticationPrincipal CustomMemberDetails userDetails,
+            @PageableDefault(size = 5, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        List<MyPageProposalResponse> responses = portfolioService.getMyReceivedProposals(userDetails.getMemberId());
+        Page<MyPageProposalResponse> responses = portfolioService.getMyReceivedProposals(userDetails.getMemberId(), pageable);
         return RsData.of("200", "받은 프로젝트 제안 목록 조회가 완료되었습니다.", responses);
     }
 

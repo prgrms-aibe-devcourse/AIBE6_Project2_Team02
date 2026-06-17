@@ -1,11 +1,11 @@
 'use client'
 
-import { Badge, Card } from '../../../components/ui'
 import { useEffect, useState } from 'react'
-
 import { useRouter } from 'next/navigation'
-
 import { Briefcase, Check, MessageSquare, User, X } from 'lucide-react'
+
+import { PaginationControls } from '../../../components/PaginationControls' // 🎯 페이지네이션 컴포넌트 연동
+import { Badge, Card } from '../../../components/ui'
 
 type ProposalFilter = 'applications' | 'proposals'
 
@@ -37,40 +37,66 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
 export default function ProposalTab({ user }: ProposalTabProps) {
   const router = useRouter()
-  const [activeProposalFilter, setActiveProposalFilter] =
-    useState<ProposalFilter>('applications')
-  const [applications, setApplications] = useState<MyPageApplicationResponse[]>(
-    [],
-  )
+  const [activeProposalFilter, setActiveProposalFilter] = useState<ProposalFilter>('applications')
+  const [applications, setApplications] = useState<MyPageApplicationResponse[]>([])
   const [proposals, setProposals] = useState<MyPageProposalResponse[]>([])
   const [contentLoading, setContentLoading] = useState(false)
+
+  // 🎯 서버 페이징 상태 관리 필드 추가
+  const [page, setPage] = useState(0)
+  const [pageCount, setPageCount] = useState(0)
 
   useEffect(() => {
     if (!user) return
     setContentLoading(true)
 
     if (activeProposalFilter === 'applications') {
-      fetch(`${API_BASE}/mypage/projects/applications`, {
+      // 🎯 페이징 파라미터(?page=X&size=5) 주입 완료
+      fetch(`${API_BASE}/mypage/projects/applications?page=${page}&size=5`, {
         credentials: 'include',
       })
         .then((res) => res.json())
         .then((res) => {
-          if (res.code === '200') setApplications(res.data)
+          if (res.code === '200' && res.data) {
+            setApplications(res.data.content || [])
+            setPageCount(res.data.totalPages || 0)
+          } else {
+            setApplications([])
+            setPageCount(0)
+          }
         })
-        .catch(() => setApplications([]))
+        .catch(() => {
+          setApplications([])
+          setPageCount(0)
+        })
         .finally(() => setContentLoading(false))
     } else {
-      fetch(`${API_BASE}/portfolios/me/proposals`, {
+      // 🎯 페이징 파라미터(?page=X&size=5) 주입 완료
+      fetch(`${API_BASE}/portfolios/me/proposals?page=${page}&size=5`, {
         credentials: 'include',
       })
         .then((res) => res.json())
         .then((res) => {
-          if (res.code === '200') setProposals(res.data)
+          if (res.code === '200' && res.data) {
+            setProposals(res.data.content || [])
+            setPageCount(res.data.totalPages || 0)
+          } else {
+            setProposals([])
+            setPageCount(0)
+          }
         })
-        .catch(() => setProposals([]))
+        .catch(() => {
+          setProposals([])
+          setPageCount(0)
+        })
         .finally(() => setContentLoading(false))
     }
-  }, [activeProposalFilter, user])
+  }, [activeProposalFilter, page, user]) // 🎯 디펜던시에 page 변수 할당
+
+  // 🎯 상위 필터 탭이 전환되면 페이지 번호를 첫 페이지(0)로 깔끔하게 초기화
+  useEffect(() => {
+    setPage(0)
+  }, [activeProposalFilter])
 
   const handleApplicationDecision = async (
     applicationId: number,
@@ -220,6 +246,15 @@ export default function ProposalTab({ user }: ProposalTabProps) {
                 )}
               </div>
             ))}
+
+            {/* 🎯 리스트 출력 하단 정중앙에 페이지네이션 장착 */}
+            <div className="mt-8 flex justify-center w-full">
+              <PaginationControls
+                page={page}
+                pageCount={pageCount}
+                onPageChange={setPage}
+              />
+            </div>
           </div>
         ) : (
           <Card className="p-12 text-center border-dashed">
@@ -293,6 +328,15 @@ export default function ProposalTab({ user }: ProposalTabProps) {
               )}
             </div>
           ))}
+
+          {/* 🎯 리스트 출력 하단 정중앙에 페이지네이션 장착 */}
+          <div className="mt-8 flex justify-center w-full">
+            <PaginationControls
+              page={page}
+              pageCount={pageCount}
+              onPageChange={setPage}
+            />
+          </div>
         </div>
       ) : (
         <Card className="p-12 text-center border-dashed">
