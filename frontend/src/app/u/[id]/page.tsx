@@ -12,6 +12,7 @@ import {
   Github,
   Globe,
   MapPin,
+  MessageSquare,
   ShieldAlert,
 } from 'lucide-react'
 
@@ -25,9 +26,10 @@ import {
   fetchMember,
   fetchProjects,
   fetchProposalProjects,
+  fetchReviews,
   checkAlreadyReported,
 } from '../../../lib/api'
-import type { Project, User } from '../../../types'
+import type { Project, ReviewResponse, User } from '../../../types'
 import type {
   ProposalProject,
   SentProjectProposal,
@@ -49,6 +51,8 @@ const categoryMap: Record<string, string> = {
   Other: '기타',
 }
 
+type ProfileTab = 'projects' | 'peerReviews'
+
 export default function DeveloperProfilePage() {
   const params = useParams()
   const id = params.id as string
@@ -56,6 +60,8 @@ export default function DeveloperProfilePage() {
   const isMyProfile = authUser !== null && String(authUser.memberId) === id
   const [user, setUser] = useState<User | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
+  const [reviews, setReviews] = useState<ReviewResponse[]>([])
+  const [activeTab, setActiveTab] = useState<ProfileTab>('projects')
   const [loading, setLoading] = useState(true)
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false)
   const [isCancelProposalModalOpen, setIsCancelProposalModalOpen] =
@@ -83,14 +89,16 @@ export default function DeveloperProfilePage() {
       return
     }
 
-    Promise.all([fetchMember(id), fetchProjects()])
-      .then(([member, projectData]) => {
+    Promise.all([fetchMember(id), fetchProjects(), fetchReviews(id)])
+      .then(([member, projectData, reviewData]) => {
         setUser(member)
         setProjects(projectData)
+        setReviews(reviewData)
       })
       .catch(() => {
         setUser(null)
         setProjects([])
+        setReviews([])
       })
       .finally(() => setLoading(false))
   }, [id])
@@ -386,93 +394,172 @@ export default function DeveloperProfilePage() {
             </div>
           </section>
 
-          {/* Created Projects */}
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-slate-900">
-                만든 프로젝트
-              </h2>
-              <Badge variant="default">{createdProjects.length}</Badge>
+            <div className="mb-6 flex gap-2 border-b border-slate-200 pb-4 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setActiveTab('projects')}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${activeTab === 'projects' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}
+              >
+                프로젝트
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('peerReviews')}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${activeTab === 'peerReviews' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}
+              >
+                받은 피어리뷰
+              </button>
             </div>
-            {createdProjects.length > 0 ? (
-              <div className="grid gap-4">
-                {createdProjects.map((project) => (
-                  <Link key={project.id} href={`/projects/${project.id}`}>
-                    <Card className="p-5 hover:border-blue-300 transition-colors cursor-pointer group">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold text-lg text-slate-900 group-hover:text-blue-600 transition-colors">
-                          {project.title}
-                        </h3>
-                        <Badge
-                          variant={
-                            project.recruitmentStatus === 'Open'
-                              ? 'default'
-                              : 'secondary'
-                          }
-                        >
-                          {statusMap[project.recruitmentStatus]}
-                        </Badge>
-                      </div>
-                      <p className="text-slate-600 text-sm mb-4 line-clamp-2">
-                        {project.description}
-                      </p>
-                      <div className="flex items-center gap-4 text-sm text-slate-500">
-                        <span className="flex items-center gap-1">
-                          <Code2 className="w-4 h-4" />
-                          {categoryMap[project.category]}
-                        </span>
-                        <span>•</span>
-                        <span>{project.techStack.slice(0, 3).join(', ')}</span>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-slate-50 rounded-2xl border border-slate-200 border-dashed p-8 text-center text-slate-500">
-                아직 만든 프로젝트가 없어요.
-              </div>
-            )}
-          </section>
 
-          {/* Participated Projects */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-slate-900">
-                참여한 프로젝트
-              </h2>
-              <Badge variant="secondary">{participatedProjects.length}</Badge>
-            </div>
-            {participatedProjects.length > 0 ? (
-              <div className="grid gap-4">
-                {participatedProjects.map((project) => (
-                  <Link key={project.id} href={`/projects/${project.id}`}>
-                    <Card className="p-5 hover:border-blue-300 transition-colors cursor-pointer group">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold text-lg text-slate-900 group-hover:text-blue-600 transition-colors">
-                          {project.title}
-                        </h3>
-                      </div>
-                      <p className="text-slate-600 text-sm mb-4 line-clamp-2">
-                        {project.description}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={project.leader.avatar}
-                          alt={project.leader.name}
-                          className="w-6 h-6 rounded-full"
-                        />
-                        <span className="text-sm text-slate-600">
-                          {project.leader.name} 리더
-                        </span>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
+            {activeTab === 'projects' ? (
+              <div className="space-y-8">
+                <section>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-slate-900">
+                      만든 프로젝트
+                    </h2>
+                    <Badge variant="default">{createdProjects.length}</Badge>
+                  </div>
+                  {createdProjects.length > 0 ? (
+                    <div className="grid gap-4">
+                      {createdProjects.map((project) => (
+                        <Link key={project.id} href={`/projects/${project.id}`}>
+                          <Card className="p-5 hover:border-blue-300 transition-colors cursor-pointer group">
+                            <div className="flex justify-between items-start mb-2">
+                              <h3 className="font-semibold text-lg text-slate-900 group-hover:text-blue-600 transition-colors">
+                                {project.title}
+                              </h3>
+                              <Badge
+                                variant={
+                                  project.recruitmentStatus === 'Open'
+                                    ? 'default'
+                                    : 'secondary'
+                                }
+                              >
+                                {statusMap[project.recruitmentStatus]}
+                              </Badge>
+                            </div>
+                            <p className="text-slate-600 text-sm mb-4 line-clamp-2">
+                              {project.description}
+                            </p>
+                            <div className="flex items-center gap-4 text-sm text-slate-500">
+                              <span className="flex items-center gap-1">
+                                <Code2 className="w-4 h-4" />
+                                {categoryMap[project.category]}
+                              </span>
+                              <span>•</span>
+                              <span>
+                                {project.techStack.slice(0, 3).join(', ')}
+                              </span>
+                            </div>
+                          </Card>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 rounded-2xl border border-slate-200 border-dashed p-8 text-center text-slate-500">
+                      아직 만든 프로젝트가 없어요.
+                    </div>
+                  )}
+                </section>
+
+                <section>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-slate-900">
+                      참여한 프로젝트
+                    </h2>
+                    <Badge variant="secondary">
+                      {participatedProjects.length}
+                    </Badge>
+                  </div>
+                  {participatedProjects.length > 0 ? (
+                    <div className="grid gap-4">
+                      {participatedProjects.map((project) => (
+                        <Link key={project.id} href={`/projects/${project.id}`}>
+                          <Card className="p-5 hover:border-blue-300 transition-colors cursor-pointer group">
+                            <div className="flex justify-between items-start mb-2">
+                              <h3 className="font-semibold text-lg text-slate-900 group-hover:text-blue-600 transition-colors">
+                                {project.title}
+                              </h3>
+                            </div>
+                            <p className="text-slate-600 text-sm mb-4 line-clamp-2">
+                              {project.description}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={project.leader.avatar}
+                                alt={project.leader.name}
+                                className="w-6 h-6 rounded-full"
+                              />
+                              <span className="text-sm text-slate-600">
+                                {project.leader.name} 리더
+                              </span>
+                            </div>
+                          </Card>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 rounded-2xl border border-slate-200 border-dashed p-8 text-center text-slate-500">
+                      아직 참여한 프로젝트가 없어요.
+                    </div>
+                  )}
+                </section>
               </div>
             ) : (
-              <div className="bg-slate-50 rounded-2xl border border-slate-200 border-dashed p-8 text-center text-slate-500">
-                아직 참여한 프로젝트가 없어요.
+              <div>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-slate-900">
+                    받은 피어리뷰
+                  </h2>
+                  <Badge variant="secondary">{reviews.length}</Badge>
+                </div>
+                {reviews.length > 0 ? (
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <Card key={review.reviewId} className="p-5">
+                        <div className="mb-4 flex items-start justify-between gap-3">
+                          <Badge variant="outline">{review.projectTitle}</Badge>
+                          <span className="text-xs text-slate-400">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                            <h3 className="mb-2 text-xs font-bold text-blue-600">
+                              좋은 점
+                            </h3>
+                            <p className="text-sm leading-relaxed text-slate-700">
+                              {review.content.a1 || '-'}
+                            </p>
+                          </div>
+                          <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-4">
+                            <h3 className="mb-2 text-xs font-bold text-amber-600">
+                              아쉬운 점
+                            </h3>
+                            <p className="text-sm leading-relaxed text-slate-700">
+                              {review.content.a2 || '-'}
+                            </p>
+                          </div>
+                          <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
+                            <h3 className="mb-2 text-xs font-bold text-emerald-600">
+                              감사한 점
+                            </h3>
+                            <p className="text-sm leading-relaxed text-slate-700">
+                              {review.content.a3 || '-'}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
+                    <MessageSquare className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                    아직 받은 피어리뷰가 없어요.
+                  </div>
+                )}
               </div>
             )}
           </section>
