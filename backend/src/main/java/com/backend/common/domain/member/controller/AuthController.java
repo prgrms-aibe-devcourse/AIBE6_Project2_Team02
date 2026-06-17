@@ -68,7 +68,7 @@ public class AuthController {
 
         String jwt = jwtTokenProvider.generateToken(testMember.getId(), testMember.getNickname());
 
-        ResponseCookie cookie = ResponseCookie.from("access_token",null)
+        ResponseCookie cookie = ResponseCookie.from("access_token",jwt)
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .sameSite(cookieSameSite)
