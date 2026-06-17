@@ -66,4 +66,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             "AND p.deletedAt IS NULL " +
             "ORDER BY pv.viewedAt DESC")
     List<Project> findMyRecentlyViewedProjects(@Param("memberId") Long memberId);
+
+    @Query("SELECT p.id FROM Project p WHERE LOWER(p.title) LIKE :pattern AND p.deletedAt IS NULL")
+    List<Long> findIdsByTitle(@Param("pattern") String pattern);
 }
