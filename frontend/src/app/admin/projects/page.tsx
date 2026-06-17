@@ -54,7 +54,7 @@ export default function AdminProjectsPage() {
 
   const filteredProjects = projects.filter(p => 
     p.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-    p.leader.nickname.toLowerCase().includes(searchKeyword.toLowerCase())
+    p.leader.name.toLowerCase().includes(searchKeyword.toLowerCase())
   )
 
   if (loading) {
