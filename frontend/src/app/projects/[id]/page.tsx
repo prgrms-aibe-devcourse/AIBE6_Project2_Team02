@@ -347,7 +347,7 @@ export default function ProjectDetailPage() {
                     >
                       <div>
                         <h4 className="font-semibold text-slate-900">
-                          {pos.role}
+                          {formatPositionLabel(pos.role)}
                         </h4>
                         <p className="text-sm text-slate-500 mt-1">
                           {pos.total}명 중 {pos.filled}명 모집 완료
@@ -362,7 +362,7 @@ export default function ProjectDetailPage() {
                           onClick={
                             pendingApplicationId
                               ? undefined
-                              : () => openApplyModal(pos.role)
+                              : () => openApplyModal(toPositionValue(pos.role))
                           }
                         >
                           {pendingApplicationId ? '지원 완료' : '지원'}
@@ -511,7 +511,7 @@ export default function ProjectDetailPage() {
                 .filter((p) => p.filled < p.total)
                 .map((p) => (
                   <option key={p.role} value={toPositionValue(p.role)}>
-                    {p.role}
+                    {formatPositionLabel(p.role)}
                   </option>
                 ))}
             </select>
