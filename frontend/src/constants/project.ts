@@ -10,3 +10,11 @@ export const leaderPositionOptions: Array<{
   { value: 'DESIGNER', label: '디자이너' },
   { value: 'PRODUCT_MANAGER', label: '프로덕트 매니저' },
 ]
+
+export function formatPositionLabel(value: string | null | undefined) {
+  return (
+    leaderPositionOptions.find((option) => option.value === value)?.label ??
+    value ??
+    ''
+  )
+}

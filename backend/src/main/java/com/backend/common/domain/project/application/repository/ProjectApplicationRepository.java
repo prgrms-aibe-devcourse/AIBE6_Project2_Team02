@@ -1,6 +1,7 @@
 package com.backend.common.domain.project.application.repository;
 
 import com.backend.common.domain.project.application.entity.ProjectApplication;
+import com.backend.common.domain.project.enums.SelectionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,4 +34,16 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
     );
 
     Optional<ProjectApplication> findByProjectIdAndApplicantId(Long projectId, Long applicantId);
+
+    /**
+     * 내가 지원한 프로젝트 중
+     * 아직 모집중인 프로젝트인 프로젝트에 대한
+     * 나의 지원들 조회
+     */
+    Optional<ProjectApplication> findByApplicantIdAndProjectIdAndStatus(
+            Long applicantId,
+            Long projectId,
+            SelectionStatus status
+    );
+
 }
