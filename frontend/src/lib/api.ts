@@ -201,6 +201,23 @@ export function unhideProject(projectId: string) {
   })
 }
 
+export function searchMembers(nickname?: string) {
+  const query = nickname ? `?nickname=${encodeURIComponent(nickname)}` : ''
+  return fetchRsDataJson<any[]>(`/admin/members${query}`)
+}
+
+export function suspendMember(memberId: string, days: number) {
+  return fetchRsDataJson<void>(`/admin/members/${memberId}/suspend?days=${days}`, {
+    method: 'PATCH',
+  })
+}
+
+export function activateMember(memberId: string) {
+  return fetchRsDataJson<void>(`/admin/members/${memberId}/activate`, {
+    method: 'PATCH',
+  })
+}
+
 export function createReport(payload: CreateReportRequest) {
   return fetchRsDataJson<{ reportId: number }>('/reports', {
     method: 'POST',
