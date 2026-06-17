@@ -22,6 +22,7 @@ import {
 import { LoginModal } from '../../../components/LoginModal'
 import { Badge, Button, Card, Modal } from '../../../components/ui'
 import { ReportModal } from '../../../components/ReportModal'
+import { formatPositionLabel, toPositionValue } from '../../../constants/project'
 import {
   applyProject,
   cancelProjectApplication,
@@ -145,7 +146,7 @@ export default function ProjectDetailPage() {
       setIsApplyModalOpen(false)
       setApplyMessage('')
       toast.success('지원이 완료되었습니다!', {
-        description: `${project.title}의 ${selectedRole} 포지션에 지원했습니다. 프로젝트 리더가 프로필을 검토할 예정입니다.`,
+        description: `${project.title}의 ${formatPositionLabel(selectedRole)} 포지션에 지원했습니다. 프로젝트 리더가 프로필을 검토할 예정입니다.`,
       })
     } catch (error) {
       toast.error(
@@ -509,7 +510,7 @@ export default function ProjectDetailPage() {
               {project.positions
                 .filter((p) => p.filled < p.total)
                 .map((p) => (
-                  <option key={p.role} value={p.role}>
+                  <option key={p.role} value={toPositionValue(p.role)}>
                     {p.role}
                   </option>
                 ))}

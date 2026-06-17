@@ -164,7 +164,10 @@ public class ProjectService {
                 .goal(String.join(", ", Optional.ofNullable(req.goals()).orElseGet(List::of)))
                 .deadline(deadline)
                 .positions(Optional.ofNullable(req.positions()).orElseGet(List::of).stream()
-                        .map(p -> ProjectPosition.builder().role(p.role()).total(p.total()).build())
+                        .map(p -> ProjectPosition.builder()
+                                .role(formatPosition(parsePosition(p.role())))
+                                .total(p.total())
+                                .build())
                         .toList())
                 .build();
 
@@ -353,7 +356,8 @@ public class ProjectService {
                         throw new IllegalArgumentException("모집 포지션명을 입력해주세요.");
                     }
 
-                    String normalizedRole = normalizeRole(role);
+                    String displayRole = formatPosition(parsePosition(role));
+                    String normalizedRole = normalizeRole(displayRole);
                     if (!requestedRoles.add(normalizedRole)) {
                         throw new IllegalArgumentException("같은 모집 포지션을 중복해서 등록할 수 없습니다.");
                     }
@@ -361,12 +365,12 @@ public class ProjectService {
                     int filled = filledByRole.getOrDefault(normalizedRole, 0L).intValue();
                     if (position.total() < Math.max(filled, 1)) {
                         throw new IllegalArgumentException(
-                                role + " 모집 인원은 현재 참여 인원 " + filled + "명보다 적게 설정할 수 없습니다."
+                                displayRole + " 모집 인원은 현재 참여 인원 " + filled + "명보다 적게 설정할 수 없습니다."
                         );
                     }
 
                     return ProjectPosition.builder()
-                            .role(role)
+                            .role(displayRole)
                             .total(position.total())
                             .build();
                 })

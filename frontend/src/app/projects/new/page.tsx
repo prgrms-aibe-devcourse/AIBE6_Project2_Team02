@@ -379,7 +379,7 @@ export default function ProjectCreatePage() {
                           모집할 포지션을 선택해주세요
                         </option>
                         {leaderPositionOptions.map((option) => (
-                          <option key={option.value} value={option.label}>
+                          <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
                         ))}

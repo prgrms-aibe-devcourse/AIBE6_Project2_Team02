@@ -14,7 +14,7 @@ import {
   fetchPopularTechStacks,
   updateProject,
 } from '../../../../lib/api'
-import { leaderPositionOptions } from '../../../../constants/project'
+import { leaderPositionOptions, toPositionValue } from '../../../../constants/project'
 import type { ProjectUpdateRequest } from '../../../../types/dto/project'
 
 export default function ProjectEditPage() {
@@ -68,7 +68,7 @@ export default function ProjectEditPage() {
           positions:
             project.positions.length > 0
               ? project.positions.map(({ role, total }) => ({
-                  role,
+                  role: toPositionValue(role),
                   total,
                 }))
               : [{ role: '', total: 1 }],
@@ -360,7 +360,7 @@ export default function ProjectEditPage() {
                           모집할 포지션을 선택해주세요
                         </option>
                         {leaderPositionOptions.map((option) => (
-                          <option key={option.value} value={option.label}>
+                          <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
                         ))}
