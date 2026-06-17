@@ -16,6 +16,7 @@ import {
 
 import { Badge, Card } from '../../../../components/ui'
 import { fetchProjectReports, fetchUserReports } from '../../../../lib/api'
+import { formatDate, getTimeValue } from '../../../../lib/date'
 import type { ReportResponse } from '../../../../types'
 
 export default function AdminReportsHistoryPage() {
@@ -38,14 +39,12 @@ export default function AdminReportsHistoryPage() {
         ])
         setResolvedReports(
           [...(resolvedU || []), ...(resolvedP || [])].sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+            (a, b) => getTimeValue(b.createdAt) - getTimeValue(a.createdAt),
           ),
         )
         setRejectedReports(
           [...(rejectedU || []), ...(rejectedP || [])].sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+            (a, b) => getTimeValue(b.createdAt) - getTimeValue(a.createdAt),
           ),
         )
       } catch (err) {
@@ -118,7 +117,7 @@ export default function AdminReportsHistoryPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {reportsToShow.length === 0 ? (
-          <div className="col-span-full text-center py-20 bg-slate-50 rounded-2xl border border-slate-200 border-dashed">
+          <div className="empty-state col-span-full py-20">
             <CheckCircle2 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <p className="text-slate-500 font-medium">해당 내역이 없습니다.</p>
           </div>
@@ -142,7 +141,7 @@ export default function AdminReportsHistoryPage() {
                       {report.reasonType}
                     </Badge>
                     <span className="text-[10px] text-slate-400 font-medium">
-                      {new Date(report.createdAt).toLocaleDateString()}
+                      {formatDate(report.createdAt)}
                     </span>
                   </div>
 

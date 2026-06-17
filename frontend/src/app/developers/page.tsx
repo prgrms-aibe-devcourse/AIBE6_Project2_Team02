@@ -5,16 +5,12 @@ import { useEffect, useMemo, useState } from 'react'
 
 import Link from 'next/link'
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  MapPin,
-  Search,
-  Sparkles,
-} from 'lucide-react'
+import { Clock, MapPin, Search, Sparkles } from 'lucide-react'
 
-import { Badge, Button, Card, Input } from '../../components/ui'
+import { PaginationControls } from '../../components/PaginationControls'
+import { SearchField } from '../../components/SearchField'
+import { Badge, Button, Card } from '../../components/ui'
+import { usePaginatedList } from '../../hooks/usePaginatedList'
 import { fetchMembers, fetchPopularTechStacks } from '../../lib/api'
 import type { User } from '../../types'
 
@@ -27,6 +23,15 @@ const roleMap: Record<string, string> = {
   AI: 'AI/데이터',
   Other: '기타',
 }
+const roles = [
+  'All',
+  'Frontend',
+  'Backend',
+  'Mobile',
+  'Design',
+  'AI',
+  'Other',
+]
 
 // 간단한 직군 분류 헬퍼 함수
 const getRoleCategory = (role: string) => {
@@ -43,22 +48,39 @@ const getRoleCategory = (role: string) => {
   return 'Other'
 }
 
+interface TalentFilterOptions {
+  searchTerm: string
+  selectedRole: string
+  selectedTech: string
+}
+
+function matchesTalentFilters(
+  user: User,
+  { searchTerm, selectedRole, selectedTech }: TalentFilterOptions,
+) {
+  const normalizedSearchTerm = searchTerm.toLowerCase()
+  const matchesSearch =
+    user.name.toLowerCase().includes(normalizedSearchTerm) ||
+    Boolean(user.bio?.toLowerCase().includes(normalizedSearchTerm)) ||
+    user.role.toLowerCase().includes(normalizedSearchTerm)
+  const userRoleCategory = getRoleCategory(user.role)
+  const matchesRole =
+    selectedRole === 'All' ||
+    userRoleCategory === selectedRole ||
+    (selectedRole === 'Frontend' && user.role.includes('풀스택')) ||
+    (selectedRole === 'Backend' && user.role.includes('풀스택'))
+  const matchesTech =
+    selectedTech === 'All' || Boolean(user.techStack?.includes(selectedTech))
+
+  return matchesSearch && matchesRole && matchesTech
+}
+
 export default function TalentListingPage() {
   const [allUsers, setAllUsers] = useState<User[]>([])
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>('All')
-  const [page, setPage] = useState(0)
-  const roles = [
-    'All',
-    'Frontend',
-    'Backend',
-    'Mobile',
-    'Design',
-    'AI',
-    'Other',
-  ]
 
   useEffect(() => {
     Promise.all([fetchMembers(), fetchPopularTechStacks()])
@@ -74,39 +96,25 @@ export default function TalentListingPage() {
 
   const featuredTalents = allUsers.filter((u) => u.featured)
   const filteredTalents = useMemo(() => {
-    return allUsers.filter((u) => {
-      const matchesSearch =
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (u.bio && u.bio.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        u.role.toLowerCase().includes(searchTerm.toLowerCase())
-      const userRoleCategory = getRoleCategory(u.role)
-      const matchesRole =
-        selectedRole === 'All' ||
-        userRoleCategory === selectedRole ||
-        (selectedRole === 'Frontend' && u.role.includes('풀스택')) ||
-        (selectedRole === 'Backend' && u.role.includes('풀스택'))
-      const matchesTech =
-        selectedTech === 'All' ||
-        (u.techStack && u.techStack.includes(selectedTech))
-      return matchesSearch && matchesRole && matchesTech
-    })
+    return allUsers.filter((user) =>
+      matchesTalentFilters(user, {
+        searchTerm,
+        selectedRole,
+        selectedTech,
+      }),
+    )
   }, [allUsers, searchTerm, selectedRole, selectedTech])
   const portfoliosPerPage = 9
-  const pageCount = Math.ceil(filteredTalents.length / portfoliosPerPage)
-  const paginatedTalents = filteredTalents.slice(
-    page * portfoliosPerPage,
-    (page + 1) * portfoliosPerPage,
-  )
-
-  useEffect(() => {
-    setPage(0)
-  }, [searchTerm, selectedRole, selectedTech])
-
-  useEffect(() => {
-    if (pageCount > 0 && page >= pageCount) {
-      setPage(pageCount - 1)
-    }
-  }, [page, pageCount])
+  const {
+    page,
+    pageCount,
+    paginatedItems: paginatedTalents,
+    setPage,
+  } = usePaginatedList({
+    items: filteredTalents,
+    pageSize: portfoliosPerPage,
+    resetDeps: [searchTerm, selectedRole, selectedTech],
+  })
 
   const containerVariants = {
     hidden: {
@@ -150,24 +158,20 @@ export default function TalentListingPage() {
       {/* Horizontal Filters */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-12">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="flex-1 w-full md:w-auto relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="이름 / 키워드 검색..."
-              className="pl-9 w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+          <SearchField
+            placeholder="이름 / 키워드 검색..."
+            value={searchTerm}
+            onChange={setSearchTerm}
+          />
 
           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
             {/* Role Segmented Control */}
-            <div className="flex bg-slate-100 p-1 rounded-lg overflow-x-auto">
+            <div className="segment-control overflow-x-auto">
               {roles.map((role) => (
                 <button
                   key={role}
                   onClick={() => setSelectedRole(role)}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${selectedRole === role ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`segment-option ${selectedRole === role ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
                   {roleMap[role]}
                 </button>
@@ -176,7 +180,7 @@ export default function TalentListingPage() {
 
             {/* Tech Stack Select */}
             <select
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+              className="form-field md:w-auto"
               value={selectedTech}
               onChange={(e) => setSelectedTech(e.target.value)}
             >
@@ -200,7 +204,7 @@ export default function TalentListingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredTalents.slice(0, 4).map((user) => (
               <Link key={user.id} href={`/u/${user.id}`}>
-                <Card className="p-6 h-full flex flex-col hover:border-blue-300 hover:shadow-md transition-all group cursor-pointer text-center border-2 border-amber-100/50">
+                <Card className="listing-card group flex text-center hover:border-blue-300 hover:shadow-md">
                   <div className="relative inline-block mx-auto mb-4">
                     <img
                       src={user.avatar}
@@ -260,7 +264,7 @@ export default function TalentListingPage() {
             paginatedTalents.map((user) => (
               <motion.div key={user.id} variants={itemVariants}>
                 <Link href={`/u/${user.id}`}>
-                  <Card className="h-full flex flex-col hover:shadow-md transition-all hover:border-blue-300 group cursor-pointer p-6">
+                  <Card className="listing-card group flex">
                     <div className="flex items-start gap-4 mb-4">
                       <img
                         src={user.avatar}
@@ -300,13 +304,13 @@ export default function TalentListingPage() {
                         {user.techStack?.slice(0, 5).map((tech) => (
                           <span
                             key={tech}
-                            className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md"
+                            className="tech-pill"
                           >
                             {tech}
                           </span>
                         ))}
                         {user.techStack && user.techStack.length > 5 && (
-                          <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
+                          <span className="tech-pill">
                             +{user.techStack.length - 5}
                           </span>
                         )}
@@ -341,33 +345,11 @@ export default function TalentListingPage() {
             </div>
           )}
         </motion.div>
-        {pageCount > 1 && (
-          <div className="mt-10 flex items-center justify-center gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page === 0}
-              onClick={() => setPage((currentPage) => currentPage - 1)}
-            >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              이전
-            </Button>
-            <span className="min-w-16 text-center text-sm text-slate-500">
-              {page + 1} / {pageCount}
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page + 1 >= pageCount}
-              onClick={() => setPage((currentPage) => currentPage + 1)}
-            >
-              다음
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        <PaginationControls
+          page={page}
+          pageCount={pageCount}
+          onPageChange={setPage}
+        />
       </div>
     </div>
   )

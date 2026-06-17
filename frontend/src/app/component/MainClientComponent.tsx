@@ -7,7 +7,6 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 import {
-  ArrowLeft,
   ArrowRight,
   Ban,
   Clock,
@@ -16,8 +15,11 @@ import {
   Users,
 } from 'lucide-react'
 
+import { PaginationControls } from '../../components/PaginationControls'
 import { Badge, Button, Card } from '../../components/ui'
 import { fetchPopularTechStacks, fetchProjects } from '../../lib/api'
+import { formatDate } from '../../lib/date'
+import { formatProjectMemberCount } from '../../lib/project'
 import type { Project } from '../../types'
 
 const statusMap: Record<string, string> = {
@@ -177,7 +179,7 @@ export default function MainClientComponent() {
                 transition={{ delay: index * 0.05 }}
               >
                 <Card
-                  className="h-full flex flex-col hover:shadow-md transition-all hover:border-blue-300 group cursor-pointer p-6"
+                  className="listing-card group flex"
                   onClick={() => router.push(`/projects/${project.id}`)}
                 >
                   <div className="flex justify-between items-start mb-4">
@@ -197,7 +199,7 @@ export default function MainClientComponent() {
                     </div>
                     <div className="flex items-center text-slate-400 text-xs gap-1">
                       <Clock className="h-3 w-3" />
-                      {new Date(project.createdAt).toLocaleDateString()}
+                      {formatDate(project.createdAt)}
                     </div>
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
@@ -211,13 +213,13 @@ export default function MainClientComponent() {
                       {project.techStack.slice(0, 4).map((tech, techIndex) => (
                         <span
                           key={`${project.id}-${tech}-${techIndex}`}
-                          className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md"
+                          className="tech-pill"
                         >
                           {tech}
                         </span>
                       ))}
                       {project.techStack.length > 4 && (
-                        <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
+                        <span className="tech-pill">
                           +{project.techStack.length - 4}
                         </span>
                       )}
@@ -239,15 +241,9 @@ export default function MainClientComponent() {
                           </span>
                         </Link>
                       </div>
-                      <div className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                      <div className="member-count-badge">
                         <Users className="h-3 w-3" />
-                        {project.positions.reduce(
-                          (acc, p) => acc + p.filled,
-                          0,
-                        )}
-                        /
-                        {project.positions.reduce((acc, p) => acc + p.total, 0)}
-                        명
+                        {formatProjectMemberCount(project.positions)}
                       </div>
                     </div>
                   </div>
@@ -255,33 +251,11 @@ export default function MainClientComponent() {
               </motion.div>
             ))}
           </motion.div>
-          {projectPageCount > 1 && (
-            <div className="mt-10 flex items-center justify-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={projectPage === 0}
-                onClick={() => setProjectPage((page) => page - 1)}
-              >
-                <ArrowLeft className="mr-1 h-4 w-4" />
-                이전
-              </Button>
-              <span className="min-w-16 text-center text-sm text-slate-500">
-                {projectPage + 1} / {projectPageCount}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={projectPage + 1 >= projectPageCount}
-                onClick={() => setProjectPage((page) => page + 1)}
-              >
-                다음
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <PaginationControls
+            page={projectPage}
+            pageCount={projectPageCount}
+            onPageChange={setProjectPage}
+          />
         </div>
       </section>
 

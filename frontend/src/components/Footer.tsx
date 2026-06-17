@@ -1,13 +1,13 @@
 'use client';
 
-import Link from 'next/link';
 import { Code2, ShieldAlert } from 'lucide-react';
+import Link from 'next/link';
 
 export function Footer() {
 
   const handleTestLogin = async () => {
     try {
-      const res = await fetch('/auth/test-login', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/test-login`, {
         method: 'POST',
         credentials: 'include',
       });

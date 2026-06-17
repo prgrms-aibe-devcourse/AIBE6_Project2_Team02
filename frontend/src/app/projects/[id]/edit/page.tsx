@@ -241,7 +241,7 @@ export default function ProjectEditPage() {
       <form onSubmit={handleSubmit} className="space-y-8">
         <Card className="p-6 md:p-8">
           <h2 className="mb-2 flex items-center gap-2 text-xl font-bold text-slate-900">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-sm text-blue-600">
+            <span className="section-step">
               1
             </span>
             기본 정보
@@ -276,7 +276,7 @@ export default function ProjectEditPage() {
                 프로젝트 배경, 해결하려는 문제와 주요 기능을 구체적으로 작성해주세요.
               </p>
               <textarea
-                className="min-h-40 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="form-textarea min-h-40"
                 value={form.description}
                 onChange={(event) =>
                   setForm({ ...form, description: event.target.value })
@@ -292,7 +292,7 @@ export default function ProjectEditPage() {
         <Card className="p-6 md:p-8">
           <div className="mb-2 flex items-center justify-between gap-4">
             <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-sm text-blue-600">
+              <span className="section-step">
                 2
               </span>
               모집 포지션 및 기술 스택
@@ -344,7 +344,7 @@ export default function ProjectEditPage() {
                         역할명 <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="form-field disabled:cursor-not-allowed disabled:opacity-60"
                         value={position.role}
                         disabled={minimum > 0}
                         onChange={(event) =>
@@ -467,7 +467,7 @@ export default function ProjectEditPage() {
 
         <Card className="p-6 md:p-8">
           <h2 className="mb-2 flex items-center gap-2 text-xl font-bold text-slate-900">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-sm text-blue-600">
+            <span className="section-step">
               3
             </span>
             분류 및 모집 일정
@@ -494,7 +494,7 @@ export default function ProjectEditPage() {
                         .value as ProjectUpdateRequest['category'],
                     })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  className="form-select"
                 >
                   <option value="Web">웹</option>
                   <option value="Mobile">모바일</option>
@@ -577,7 +577,7 @@ export default function ProjectEditPage() {
         <Card className="p-6 md:p-8">
           <div className="mb-2 flex items-center justify-between gap-4">
             <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-sm text-blue-600">
+              <span className="section-step">
                 4
               </span>
               프로젝트 목표
