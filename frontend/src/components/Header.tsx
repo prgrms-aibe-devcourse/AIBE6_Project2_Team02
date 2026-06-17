@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Bell, Code2, Menu, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Button } from './ui';
-import { Code2, Search, Menu, X, Bell } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 import { useAuth } from '../app/providers';
 import { LoginModal } from './LoginModal';
+import { Button } from './ui';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -88,7 +88,8 @@ export function Header() {
                   </span>
                 )}
               </Link>
-              <Button variant="ghost" size="sm" onClick={logout}>
+              <Button variant="ghost" size="sm" onClick={logout}
+              className='flex-1 md:flex-none gap-2 text-red-600 hover:text-red-700 hover:bg-red-50'>
                 로그아웃
               </Button>
             </>
