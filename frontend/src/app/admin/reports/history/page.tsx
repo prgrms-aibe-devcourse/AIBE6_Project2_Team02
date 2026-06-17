@@ -11,7 +11,9 @@ import {
   ExternalLink,
   FolderX,
   History as HistoryIcon,
+  Search,
   UserX,
+  X,
 } from 'lucide-react'
 
 import { Badge, Card } from '../../../../components/ui'
@@ -19,44 +21,47 @@ import { fetchProjectReports, fetchUserReports } from '../../../../lib/api'
 import type { ReportResponse } from '../../../../types'
 
 export default function AdminReportsHistoryPage() {
-  const [resolvedReports, setResolvedReports] = useState<ReportResponse[]>([])
-  const [rejectedReports, setRejectedReports] = useState<ReportResponse[]>([])
+  const [userReports, setUserReports] = useState<ReportResponse[]>([])
+  const [projectReports, setProjectReports] = useState<ReportResponse[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'resolved' | 'rejected'>(
-    'resolved',
-  )
+  const [statusTab, setStatusTab] = useState<'resolved' | 'rejected'>('resolved')
+  const [targetTab, setTargetTab] = useState<'user' | 'project'>('user')
+  const [searchKeyword, setSearchKeyword] = useState('')
+
+  const loadData = async (keyword?: string) => {
+    setLoading(true)
+    try {
+      const [uResolved, pResolved, uRejected, pRejected] = await Promise.all([
+        fetchUserReports('RESOLVED', keyword),
+        fetchProjectReports('RESOLVED', keyword),
+        fetchUserReports('REJECTED', keyword),
+        fetchProjectReports('REJECTED', keyword),
+      ])
+
+      // Store all history data
+      setUserReports([...(uResolved || []), ...(uRejected || [])])
+      setProjectReports([...(pResolved || []), ...(pRejected || [])])
+    } catch (err) {
+      console.error('Failed to load history:', err)
+      toast.error('관리 기록을 불러오는데 실패했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true)
-      try {
-        const [resolvedU, resolvedP, rejectedU, rejectedP] = await Promise.all([
-          fetchUserReports('RESOLVED'),
-          fetchProjectReports('RESOLVED'),
-          fetchUserReports('REJECTED'),
-          fetchProjectReports('REJECTED'),
-        ])
-        setResolvedReports(
-          [...(resolvedU || []), ...(resolvedP || [])].sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-          ),
-        )
-        setRejectedReports(
-          [...(rejectedU || []), ...(rejectedP || [])].sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-          ),
-        )
-      } catch (err) {
-        console.error('Failed to load history:', err)
-        toast.error('관리 기록을 불러오는데 실패했습니다.')
-      } finally {
-        setLoading(false)
-      }
-    }
     loadData()
   }, [])
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    loadData(searchKeyword)
+  }
+
+  const clearSearch = () => {
+    setSearchKeyword('')
+    loadData('')
+  }
 
   const getReasonBadgeColor = (reasonType: string) => {
     if (reasonType === 'OBSCENE')
@@ -66,8 +71,17 @@ export default function AdminReportsHistoryPage() {
     return 'bg-slate-100 text-slate-700 border-slate-200'
   }
 
-  const reportsToShow =
-    activeTab === 'resolved' ? resolvedReports : rejectedReports
+  // Filter logic based on dual tabs
+  const currentTargetReports = targetTab === 'user' ? userReports : projectReports
+  const reportsToShow = currentTargetReports
+    .filter((r) => r.status === (statusTab === 'resolved' ? 'RESOLVED' : 'REJECTED'))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  // Count helper for tabs
+  const getCount = (target: 'user' | 'project', status: 'RESOLVED' | 'REJECTED') => {
+    const list = target === 'user' ? userReports : projectReports
+    return list.filter(r => r.status === status).length
+  }
 
   if (loading) {
     return (
@@ -78,7 +92,7 @@ export default function AdminReportsHistoryPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-4 max-w-6xl">
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="mb-8 flex items-center gap-3">
         <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
           <HistoryIcon className="w-6 h-6" />
@@ -93,26 +107,91 @@ export default function AdminReportsHistoryPage() {
         </div>
       </div>
 
-      <div className="flex space-x-2 mb-8 bg-slate-100 p-1 rounded-xl w-fit">
+      {/* Target Type Tabs (Portfolio / Project) */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
+          <button
+            onClick={() => setTargetTab('user')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              targetTab === 'user'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            포트폴리오 신고
+          </button>
+          <button
+            onClick={() => setTargetTab('project')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              targetTab === 'project'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            프로젝트 신고
+          </button>
+        </div>
+
+        {/* Search Bar */}
+        <form
+          onSubmit={handleSearch}
+          className="relative flex items-center w-full max-w-xs"
+        >
+          <div className="absolute left-3 text-slate-400">
+            <Search size={18} />
+          </div>
+          <input
+            type="text"
+            placeholder={targetTab === 'user' ? '닉네임으로 검색' : '프로젝트 제목으로 검색'}
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            className="w-full pl-10 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-sm"
+          />
+          {searchKeyword && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </form>
+      </div>
+
+      {/* Status Tabs (Resolved / Rejected) */}
+      <div className="flex space-x-2 mb-8 border-b border-slate-200 pb-px">
         <button
-          onClick={() => setActiveTab('resolved')}
-          className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all ${
-            activeTab === 'resolved'
-              ? 'bg-white text-slate-900 shadow-sm'
+          onClick={() => setStatusTab('resolved')}
+          className={`px-6 py-3 text-sm font-semibold transition-all relative ${
+            statusTab === 'resolved'
+              ? 'text-emerald-600'
               : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          처리 완료 ({resolvedReports.length})
+          처리 완료 ({getCount(targetTab, 'RESOLVED')})
+          {statusTab === 'resolved' && (
+            <motion.div
+              layoutId="activeStatus"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500"
+            />
+          )}
         </button>
         <button
-          onClick={() => setActiveTab('rejected')}
-          className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all ${
-            activeTab === 'rejected'
-              ? 'bg-white text-slate-900 shadow-sm'
+          onClick={() => setStatusTab('rejected')}
+          className={`px-6 py-3 text-sm font-semibold transition-all relative ${
+            statusTab === 'rejected'
+              ? 'text-red-600'
               : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          기각 내역 ({rejectedReports.length})
+          기각 내역 ({getCount(targetTab, 'REJECTED')})
+          {statusTab === 'rejected' && (
+            <motion.div
+              layoutId="activeStatus"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"
+            />
+          )}
         </button>
       </div>
 
@@ -131,7 +210,7 @@ export default function AdminReportsHistoryPage() {
             >
               <Card className="overflow-hidden border-slate-200 hover:shadow-md transition-shadow h-full flex flex-col">
                 <div
-                  className={`h-1 w-full ${activeTab === 'resolved' ? 'bg-emerald-500' : 'bg-red-500'}`}
+                  className={`h-1 w-full ${statusTab === 'resolved' ? 'bg-emerald-500' : 'bg-red-500'}`}
                 />
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-4">
@@ -215,12 +294,12 @@ export default function AdminReportsHistoryPage() {
                     </div>
                     <Badge
                       className={
-                        activeTab === 'resolved'
+                        statusTab === 'resolved'
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
                           : 'bg-red-50 text-red-700 border-red-100'
                       }
                     >
-                      {activeTab === 'resolved' ? '처리완료' : '기각됨'}
+                      {statusTab === 'resolved' ? '처리완료' : '기각됨'}
                     </Badge>
                   </div>
                 </div>
@@ -232,4 +311,3 @@ export default function AdminReportsHistoryPage() {
     </div>
   )
 }
-

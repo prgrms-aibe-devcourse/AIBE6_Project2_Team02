@@ -170,15 +170,23 @@ export function cancelProjectProposal(proposalId: number) {
   })
 }
 
-export function fetchUserReports(status: ReportStatus = 'PENDING') {
+export function fetchUserReports(
+  status: ReportStatus = 'PENDING',
+  keyword?: string,
+) {
+  const query = keyword ? `&keyword=${encodeURIComponent(keyword)}` : ''
   return fetchRsDataJson<ReportResponse[]>(
-    `/admin/reports?targetType=PORTFOLIO&status=${status}`,
+    `/admin/reports?targetType=PORTFOLIO&status=${status}${query}`,
   )
 }
 
-export function fetchProjectReports(status: ReportStatus = 'PENDING') {
+export function fetchProjectReports(
+  status: ReportStatus = 'PENDING',
+  keyword?: string,
+) {
+  const query = keyword ? `&keyword=${encodeURIComponent(keyword)}` : ''
   return fetchRsDataJson<ReportResponse[]>(
-    `/admin/reports?targetType=PROJECT&status=${status}`,
+    `/admin/reports?targetType=PROJECT&status=${status}${query}`,
   )
 }
 

@@ -25,7 +25,8 @@ public class AdminReportService {
 
     public List<ReportResponse> getReports(
             ReportTargetType targetType,
-            ReportStatus status
+            ReportStatus status,
+            String keyword
     ) {
 
         List<Report> reports;
@@ -33,13 +34,26 @@ public class AdminReportService {
         if (targetType == null) {
             reports = reportRepository
                     .findByStatusOrderByCreatedAtDesc(status);
+        } else if (keyword != null && !keyword.trim().isEmpty()) {
+            String searchPattern = "%" + keyword.trim().toLowerCase() + "%";
+            List<Long> targetIds;
+            if (targetType == ReportTargetType.PROJECT) {
+                targetIds = projectRepository.findIdsByTitle(searchPattern);
+            } else {
+                targetIds = portfolioRepository.findIdsByMemberNicknameOrTitle(searchPattern);
+            }
+
+            if (targetIds == null || targetIds.isEmpty()) {
+                return List.of();
+            }
+
+            reports = reportRepository
+                    .findByTargetTypeAndStatusAndTargetIdInOrderByCreatedAtDesc(targetType, status, targetIds);
         } else {
             reports = reportRepository
-                    .findByTargetTypeAndStatusOrderByCreatedAtDesc(
-                            targetType,
-                            status
-                    );
+                    .findByTargetTypeAndStatusOrderByCreatedAtDesc(targetType, status);
         }
+
 
         return reports.stream()
                 .map(report -> {

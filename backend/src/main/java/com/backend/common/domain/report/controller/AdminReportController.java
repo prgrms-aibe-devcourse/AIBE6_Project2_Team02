@@ -22,13 +22,15 @@ public class AdminReportController {
     @GetMapping
     public ResponseEntity<RsData<List<ReportResponse>>> getReports(
             @RequestParam(required = false) ReportTargetType targetType,
-            @RequestParam(defaultValue = "PENDING") ReportStatus status
+            @RequestParam(defaultValue = "PENDING") ReportStatus status,
+            @RequestParam(required = false) String keyword
     ) {
 
         List<ReportResponse> reports =
                 adminReportService.getReports(
                         targetType,
-                        status
+                        status,
+                        keyword
                 );
 
         return ResponseEntity.ok(
