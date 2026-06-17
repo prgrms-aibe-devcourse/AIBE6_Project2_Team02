@@ -67,6 +67,22 @@
     @apply bg-slate-100 text-slate-600 hover:text-slate-900;
   }
 
+  .segment-control {
+    @apply flex rounded-lg bg-slate-100 p-1;
+  }
+
+  .segment-option {
+    @apply rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors;
+  }
+
+  .segment-option-active {
+    @apply bg-white text-slate-900 shadow-sm;
+  }
+
+  .segment-option-inactive {
+    @apply text-slate-600 hover:text-slate-900;
+  }
+
   .empty-state {
     @apply rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-slate-500;
   }

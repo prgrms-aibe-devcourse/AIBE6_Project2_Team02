@@ -162,12 +162,12 @@ export default function TalentListingPage() {
 
           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
             {/* Role Segmented Control */}
-            <div className="flex bg-slate-100 p-1 rounded-lg overflow-x-auto">
+            <div className="segment-control overflow-x-auto">
               {roles.map((role) => (
                 <button
                   key={role}
                   onClick={() => setSelectedRole(role)}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${selectedRole === role ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`segment-option ${selectedRole === role ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
                   {roleMap[role]}
                 </button>
