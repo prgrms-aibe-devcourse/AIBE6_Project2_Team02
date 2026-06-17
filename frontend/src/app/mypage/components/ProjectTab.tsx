@@ -54,6 +54,8 @@ const statusConfig: Record<string, { text: string; className: string }> = {
   },
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
+
 export default function ProjectTab({ user }: ProjectTabProps) {
   const router = useRouter()
   const [activeProjectSubTab, setActiveProjectSubTab] =
@@ -65,11 +67,11 @@ export default function ProjectTab({ user }: ProjectTabProps) {
     if (!user) return
 
     const endpointMap: Record<ProjectSubTab, string> = {
-      uploaded: '/mypage/projects/owned',
-      participating: '/mypage/projects/participating',
-      applied: '/mypage/projects/applied',
-      completed: '/mypage/projects/completed',
-      viewed: '/mypage/projects/recent-views',
+      uploaded: `${API_BASE}/mypage/projects/owned`,
+      participating: `${API_BASE}/mypage/projects/participating`,
+      applied: `${API_BASE}/mypage/projects/applied`,
+      completed: `${API_BASE}/mypage/projects/completed`,
+      viewed: `${API_BASE}/mypage/projects/recent-views`,
     }
 
     setContentLoading(true)
@@ -91,7 +93,7 @@ export default function ProjectTab({ user }: ProjectTabProps) {
     e.stopPropagation()
     if (!confirm('최근 본 프로젝트 내역에서 삭제하시겠습니까?')) return
     try {
-      const res = await fetch(`/mypage/projects/recent-views/${projectId}`, {
+      const res = await fetch(`${API_BASE}/mypage/projects/recent-views/${projectId}`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -112,7 +114,7 @@ export default function ProjectTab({ user }: ProjectTabProps) {
     if (!confirm('프로젝트 지원 신청을 취소하시겠습니까?')) return
     try {
       const res = await fetch(
-        `/mypage/projects/applications/${applicationId}/cancel`,
+        `${API_BASE}/mypage/projects/applications/${applicationId}/cancel`,
         {
           method: 'PATCH',
           credentials: 'include',

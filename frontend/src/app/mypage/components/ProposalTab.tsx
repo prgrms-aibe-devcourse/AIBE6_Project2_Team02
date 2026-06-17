@@ -33,6 +33,8 @@ interface ProposalTabProps {
   user: any
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
+
 export default function ProposalTab({ user }: ProposalTabProps) {
   const router = useRouter()
   const [activeProposalFilter, setActiveProposalFilter] =
@@ -48,7 +50,7 @@ export default function ProposalTab({ user }: ProposalTabProps) {
     setContentLoading(true)
 
     if (activeProposalFilter === 'applications') {
-      fetch('/mypage/projects/applications', {
+      fetch(`${API_BASE}/mypage/projects/applications`, {
         credentials: 'include',
       })
         .then((res) => res.json())
@@ -58,7 +60,7 @@ export default function ProposalTab({ user }: ProposalTabProps) {
         .catch(() => setApplications([]))
         .finally(() => setContentLoading(false))
     } else {
-      fetch('/portfolios/me/proposals', {
+      fetch(`${API_BASE}/portfolios/me/proposals`, {
         credentials: 'include',
       })
         .then((res) => res.json())
@@ -78,7 +80,7 @@ export default function ProposalTab({ user }: ProposalTabProps) {
       return
     try {
       const res = await fetch(
-        `/mypage/projects/applications/${applicationId}?accept=${accept}`,
+        `${API_BASE}/mypage/projects/applications/${applicationId}?accept=${accept}`,
         {
           method: 'PATCH',
           credentials: 'include',
@@ -110,7 +112,7 @@ export default function ProposalTab({ user }: ProposalTabProps) {
       return
     try {
       const res = await fetch(
-        `/portfolios/me/proposals/${proposalId}?accept=${accept}`,
+        `${API_BASE}/portfolios/me/proposals/${proposalId}?accept=${accept}`,
         {
           method: 'PATCH',
           credentials: 'include',
