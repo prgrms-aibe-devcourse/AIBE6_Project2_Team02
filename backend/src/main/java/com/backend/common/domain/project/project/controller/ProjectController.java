@@ -32,9 +32,15 @@ public class ProjectController {
 
     @GetMapping
     public RsData<Page<ProjectResponse>> getProjects(
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "category", required = false) String category,
+            @RequestParam(value = "tech", required = false) String tech,
+            @RequestParam(value = "status", required = false) String status,
             @PageableDefault(size = 6, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return RsData.of("200", "프로젝트 목록 조회 성공", projectService.getProjects(pageable));
+        Page<ProjectResponse> projectPage = projectService.getProjects(search, category, tech, status, pageable);
+        
+        return RsData.of("200", "프로젝트 목록 조회 성공", projectPage);
     }
 
     @GetMapping("/{id}")

@@ -68,15 +68,25 @@ public class ProjectService {
     private final ProjectViewRepository projectViewRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
 
-    public Page<ProjectResponse> getProjects(Pageable pageable) {
+    public Page<ProjectResponse> getProjects(
+            String search,
+            String category,
+            String tech,
+            String status,
+            Pageable pageable
+    ) {
+        String qSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+        String qCategory = (category != null && !"All".equalsIgnoreCase(category)) ? category.trim() : null;
+        String qTech = (tech != null && !"All".equalsIgnoreCase(tech)) ? tech.trim() : null;
+        String qStatus = (status != null && !"All".equalsIgnoreCase(status)) ? status.trim() : null;
 
-        Page<Project> projectPage = projectRepository.findByDeletedAtIsNull(pageable);
+        Page<Project> projectPage = projectRepository.searchProjects(qSearch, qCategory, qTech, qStatus, pageable);
 
         List<Project> projects = projectPage.getContent();
         Set<Long> featuredProjectIds = featuredProjectIds(projects);
         Set<Long> featuredMemberIds = featuredMemberIds();
         Map<Long, List<ProjectMember>> membersByProject = loadMembersByProject(projects);
-        
+
         return projectPage.map(project -> toProjectResponse(
                 project,
                 membersByProject.getOrDefault(project.getId(), List.of()),

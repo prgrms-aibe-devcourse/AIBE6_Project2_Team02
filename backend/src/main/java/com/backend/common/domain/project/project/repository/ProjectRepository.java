@@ -11,7 +11,20 @@ import java.util.List;
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
 
-    Page<Project> findByDeletedAtIsNull(Pageable pageable);
+    @Query("SELECT DISTINCT p FROM Project p " +
+            "LEFT JOIN p.projectTechStacks pts " +
+            "WHERE p.deletedAt IS NULL " +
+            "AND (:search IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "AND (:category IS NULL OR p.category = :category) " +
+            "AND (:status IS NULL OR cast(p.status as string) = :status) " +
+            "AND (:tech IS NULL OR pts.techStack.name = :tech)")
+    Page<Project> searchProjects(
+            @Param("search") String search,
+            @Param("category") String category,
+            @Param("tech") String tech,
+            @Param("status") String status,
+            Pageable pageable
+    );
 
     List<Project> findByDeletedAtIsNullOrderByCreatedAtDesc();
 

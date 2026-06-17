@@ -1,19 +1,119 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
 
-import { ArrowRight, Ban, Clock, Code, Rocket, Users } from 'lucide-react'
 
-import { PaginationControls } from '../../components/PaginationControls'
-import { Badge, Button, Card } from '../../components/ui'
-import { fetchPopularTechStacks, fetchProjects } from '../../lib/api'
-import { formatDate } from '../../lib/date'
-import { formatProjectMemberCount } from '../../lib/project'
-import type { Project } from '../../types'
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+
+
+
+import { ArrowRight, Ban, Clock, Code, Rocket, Users } from 'lucide-react';
+
+
+
+import { PaginationControls } from '../../components/PaginationControls';
+import { Badge, Button, Card } from '../../components/ui';
+import { fetchPopularTechStacks, fetchProjects } from '../../lib/api';
+import { formatDate } from '../../lib/date';
+import { formatProjectMemberCount } from '../../lib/project';
+import type { Project } from '../../types';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const statusMap: Record<string, string> = {
   All: '전체',
@@ -63,28 +163,30 @@ export default function MainClientComponent() {
       .catch(() => setPopularTechStacks([]))
   }, [])
 
-  // 페이지 번호(projectPage)가 변경될 때마다 백엔드에 6개씩 동적 요청
   useEffect(() => {
     setContentLoading(true)
-
-    // fetchProjects 파라미터로 현재 페이지 번호 전송
-    fetchProjects(projectPage, 6)
-      .then((res) => {
-        if (res.code === '200' && res.data) {
-          setLatestProjects(res.data.content) // Page 객체 안의 알맹이 리스트
-          setProjectPageCount(res.data.totalPages) // Page 객체 안의 전체 페이지 수
+    
+    fetchProjects({
+      page: projectPage,
+      size: 6,
+      status: 'RECRUITING',
+    })
+      .then((pageData) => {
+        if (pageData && pageData.content) {
+          setLatestProjects(pageData.content) // 6개의 프로젝트 배열 세팅
+          setProjectPageCount(pageData.totalPages) // 전체 페이지 수 세팅
         } else {
           setLatestProjects([])
           setProjectPageCount(0)
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('데이터 로드 실패:', err)
         setLatestProjects([])
         setProjectPageCount(0)
       })
       .finally(() => setContentLoading(false))
   }, [projectPage])
-
 
   const containerVariants = {
     hidden: { opacity: 0 },
