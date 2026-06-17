@@ -69,12 +69,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         }
 
         String jwt = jwtTokenProvider.generateToken(member.getId(), member.getNickname());
-        
-        //Cookie cookie = new Cookie("access_token", jwt);
-        //cookie.setHttpOnly(true);
-        //cookie.setPath("/");
-        //cookie.setMaxAge((int) (expirationMs / 1000));
-        //response.addCookie(cookie);
 
         ResponseCookie cookie = ResponseCookie.from("access_token",jwt)
                 .httpOnly(true)
