@@ -9,6 +9,7 @@ import Link from 'next/link'
 
 import { Badge, Button, Card } from '../../../components/ui'
 import { fetchProjectReports, fetchUserReports, resolveReport, rejectReport } from '../../../lib/api'
+import { formatDate } from '../../../lib/date'
 import type { ReportResponse } from '../../../types'
 
 export default function AdminReportsPage() {
@@ -74,7 +75,6 @@ export default function AdminReportsPage() {
   }
 
   const getReasonBadgeColor = (reasonType: string) => {
-    // 백엔드 Enum 값에 따라 색상 분기 (예시)
     if (reasonType === 'OBSCENE')
       return 'bg-red-100 text-red-700 border-red-200'
     if (reasonType === 'DISRUPTIVE')
@@ -106,7 +106,6 @@ export default function AdminReportsPage() {
         </div>
       </div>
 
-      {/* Mobile Tabs */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
           <button
@@ -161,10 +160,8 @@ export default function AdminReportsPage() {
         </form>
       </div>
 
-
       <div className="space-y-4">
         {activeTab === 'user' ? (
-          /* User Reports Section */
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
@@ -178,7 +175,7 @@ export default function AdminReportsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {userReports.length === 0 ? (
-                <div className="col-span-full text-center py-12 bg-slate-50 rounded-xl border border-slate-200 border-dashed">
+                <div className="empty-state col-span-full rounded-xl py-12 border border-slate-200 border-dashed bg-slate-50 text-center">
                   <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
                   <p className="text-slate-500 font-medium">
                     처리 대기 중인 포트폴리오 신고가 없습니다.
@@ -200,7 +197,7 @@ export default function AdminReportsPage() {
                           {report.reasonType}
                         </span>
                         <span className="text-xs text-slate-400">
-                          {new Date(report.createdAt).toLocaleDateString()}
+                          {formatDate(report.createdAt)}
                         </span>
                       </div>
 
@@ -279,7 +276,6 @@ export default function AdminReportsPage() {
             </div>
           </div>
         ) : (
-          /* Project Reports Section */
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
@@ -293,7 +289,7 @@ export default function AdminReportsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projectReports.length === 0 ? (
-                <div className="col-span-full text-center py-12 bg-slate-50 rounded-xl border border-slate-200 border-dashed">
+                <div className="empty-state col-span-full rounded-xl py-12 border border-slate-200 border-dashed bg-slate-50 text-center">
                   <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
                   <p className="text-slate-500 font-medium">
                     처리 대기 중인 프로젝트 신고가 없습니다.
@@ -315,7 +311,7 @@ export default function AdminReportsPage() {
                           {report.reasonType}
                         </span>
                         <span className="text-xs text-slate-400">
-                          {new Date(report.createdAt).toLocaleDateString()}
+                          {formatDate(report.createdAt)}
                         </span>
                       </div>
 

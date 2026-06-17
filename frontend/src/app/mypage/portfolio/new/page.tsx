@@ -221,7 +221,7 @@ export default function PortfolioNewPage() {
                   <select
                     value={form.desiredPosition}
                     onChange={(e) => handlePositionChange(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                    className="form-field"
                   >
                     <option value="">포지션을 선택해주세요</option>
                     {leaderPositionOptions.map((opt) => (
@@ -235,7 +235,7 @@ export default function PortfolioNewPage() {
                   <textarea
                     rows={5}
                     placeholder="자신을 소개해주세요. 경험, 관심사, 목표 등을 자유롭게 작성해보세요."
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 resize-none"
+                    className="form-textarea resize-none placeholder:text-slate-500 focus-visible:ring-2"
                     value={form.introduction}
                     onChange={(e) => setForm({ ...form, introduction: e.target.value })}
                   />

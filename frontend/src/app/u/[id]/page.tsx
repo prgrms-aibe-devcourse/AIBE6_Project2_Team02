@@ -29,6 +29,7 @@ import {
   fetchReviews,
   checkAlreadyReported,
 } from '../../../lib/api'
+import { formatDate } from '../../../lib/date'
 import type { Project, ReviewResponse, User } from '../../../types'
 import type {
   ProposalProject,
@@ -399,14 +400,14 @@ export default function DeveloperProfilePage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('projects')}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${activeTab === 'projects' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}
+                className={`tab-pill ${activeTab === 'projects' ? 'tab-pill-active' : 'tab-pill-inactive'}`}
               >
                 프로젝트
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('peerReviews')}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${activeTab === 'peerReviews' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}
+                className={`tab-pill ${activeTab === 'peerReviews' ? 'tab-pill-active' : 'tab-pill-inactive'}`}
               >
                 받은 피어리뷰
               </button>
@@ -425,7 +426,7 @@ export default function DeveloperProfilePage() {
                     <div className="grid gap-4">
                       {createdProjects.map((project) => (
                         <Link key={project.id} href={`/projects/${project.id}`}>
-                          <Card className="p-5 hover:border-blue-300 transition-colors cursor-pointer group">
+                          <Card className="compact-listing-card group">
                             <div className="flex justify-between items-start mb-2">
                               <h3 className="font-semibold text-lg text-slate-900 group-hover:text-blue-600 transition-colors">
                                 {project.title}
@@ -458,7 +459,7 @@ export default function DeveloperProfilePage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-slate-50 rounded-2xl border border-slate-200 border-dashed p-8 text-center text-slate-500">
+                    <div className="empty-state">
                       아직 만든 프로젝트가 없어요.
                     </div>
                   )}
@@ -477,7 +478,7 @@ export default function DeveloperProfilePage() {
                     <div className="grid gap-4">
                       {participatedProjects.map((project) => (
                         <Link key={project.id} href={`/projects/${project.id}`}>
-                          <Card className="p-5 hover:border-blue-300 transition-colors cursor-pointer group">
+                          <Card className="compact-listing-card group">
                             <div className="flex justify-between items-start mb-2">
                               <h3 className="font-semibold text-lg text-slate-900 group-hover:text-blue-600 transition-colors">
                                 {project.title}
@@ -501,7 +502,7 @@ export default function DeveloperProfilePage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-slate-50 rounded-2xl border border-slate-200 border-dashed p-8 text-center text-slate-500">
+                    <div className="empty-state">
                       아직 참여한 프로젝트가 없어요.
                     </div>
                   )}
@@ -522,7 +523,7 @@ export default function DeveloperProfilePage() {
                         <div className="mb-4 flex items-start justify-between gap-3">
                           <Badge variant="outline">{review.projectTitle}</Badge>
                           <span className="text-xs text-slate-400">
-                            {new Date(review.createdAt).toLocaleDateString()}
+                            {formatDate(review.createdAt)}
                           </span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -555,7 +556,7 @@ export default function DeveloperProfilePage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
+                  <div className="empty-state">
                     <MessageSquare className="mx-auto mb-3 h-10 w-10 text-slate-300" />
                     아직 받은 피어리뷰가 없어요.
                   </div>
@@ -600,7 +601,7 @@ export default function DeveloperProfilePage() {
               <select
                 value={selectedProjectId}
                 onChange={(event) => setSelectedProjectId(event.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="form-select"
                 required
               >
                 {proposalProjects.map((project) => (
@@ -618,7 +619,7 @@ export default function DeveloperProfilePage() {
               <textarea
                 value={proposalMessage}
                 onChange={(event) => setProposalMessage(event.target.value)}
-                className="min-h-32 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="form-textarea min-h-32"
                 placeholder="프로젝트 소개와 함께 합류를 제안하는 이유를 작성해주세요."
                 required
               />
