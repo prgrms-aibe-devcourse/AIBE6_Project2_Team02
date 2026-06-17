@@ -67,7 +67,11 @@ public class ProjectService {
     private final ProjectApplicationRepository projectApplicationRepository;
 
     public List<ProjectResponse> getProjects() {
-        List<Project> projects = projectRepository.findByDeletedAtIsNullOrderByCreatedAtDesc();
+        List<Project> projects = projectRepository.findByDeletedAtIsNullAndIsHiddenFalseOrderByCreatedAtDesc();
+        return convertToResponses(projects);
+    }
+
+    public List<ProjectResponse> convertToResponses(List<Project> projects) {
         Set<Long> featuredProjectIds = featuredProjectIds(projects);
         Set<Long> featuredMemberIds = featuredMemberIds();
         Map<Long, List<ProjectMember>> membersByProject = loadMembersByProject(projects);
@@ -89,7 +93,7 @@ public class ProjectService {
 
         List<ProjectMember> members = projectMemberRepository.findByProjectId(project.getId());
         Set<Long> featuredProjectIds = featuredProjectIds(
-                projectRepository.findByDeletedAtIsNullOrderByCreatedAtDesc()
+                projectRepository.findByDeletedAtIsNullAndIsHiddenFalseOrderByCreatedAtDesc()
         );
 
         return toProjectResponse(

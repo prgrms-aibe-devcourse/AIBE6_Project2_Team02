@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutDashboard, History, ShieldAlert, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, History, ShieldAlert, ChevronRight, FolderX } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -23,6 +23,12 @@ export default function AdminLayout({
       icon: <History className="w-5 h-5" />,
       href: '/admin/reports/history',
       description: '처리/기각 완료된 내역'
+    },
+    {
+      title: '프로젝트 관리',
+      icon: <FolderX className="w-5 h-5" />,
+      href: '/admin/projects',
+      description: '숨김 처리된 프로젝트 관리'
     }
   ]
 

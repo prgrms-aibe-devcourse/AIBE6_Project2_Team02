@@ -46,6 +46,7 @@ public class Project {
     private ProjectStatus status;
 
     private boolean recruitmentOpen;
+    private boolean isHidden;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -79,7 +80,18 @@ public class Project {
         // 중요: 기본값이나 초기화 로직은 빌더 파라미터로 받지 않고 내부에서 강제 세팅
         this.status = ProjectStatus.RECRUITING; // 처음 만들 땐 무조건 모집중
         this.recruitmentOpen = true;            // 처음 만들 땐 무조건 활성화
+        this.isHidden = false;                  // 처음엔 노출 상태
         this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void hide() {
+        this.isHidden = true;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void unhide() {
+        this.isHidden = false;
         this.updatedAt = LocalDateTime.now();
     }
 

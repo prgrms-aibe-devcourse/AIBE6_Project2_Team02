@@ -97,6 +97,12 @@ public class AdminReportService {
                         new IllegalArgumentException("존재하지 않는 관리자입니다."));
 
         report.resolve(admin);
+
+        // 프로젝트 신고 처리 시 해당 프로젝트 숨김 처리
+        if (report.getTargetType() == ReportTargetType.PROJECT) {
+            projectRepository.findById(report.getTargetId())
+                    .ifPresent(com.backend.common.domain.project.project.entity.Project::hide);
+        }
     }
 
     @Transactional
