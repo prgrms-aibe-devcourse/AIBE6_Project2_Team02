@@ -7,7 +7,7 @@ export function Footer() {
 
   const handleTestLogin = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL} /auth/test-login`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/test-login`, {
         method: 'POST',
         credentials: 'include',
       });
