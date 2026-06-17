@@ -7,7 +7,6 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 import {
-  ArrowLeft,
   ArrowRight,
   Ban,
   Clock,
@@ -16,6 +15,7 @@ import {
   Users,
 } from 'lucide-react'
 
+import { PaginationControls } from '../../components/PaginationControls'
 import { Badge, Button, Card } from '../../components/ui'
 import { fetchPopularTechStacks, fetchProjects } from '../../lib/api'
 import { formatDate } from '../../lib/date'
@@ -251,33 +251,11 @@ export default function MainClientComponent() {
               </motion.div>
             ))}
           </motion.div>
-          {projectPageCount > 1 && (
-            <div className="mt-10 flex items-center justify-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={projectPage === 0}
-                onClick={() => setProjectPage((page) => page - 1)}
-              >
-                <ArrowLeft className="mr-1 h-4 w-4" />
-                이전
-              </Button>
-              <span className="min-w-16 text-center text-sm text-slate-500">
-                {projectPage + 1} / {projectPageCount}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={projectPage + 1 >= projectPageCount}
-                onClick={() => setProjectPage((page) => page + 1)}
-              >
-                다음
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <PaginationControls
+            page={projectPage}
+            pageCount={projectPageCount}
+            onPageChange={setProjectPage}
+          />
         </div>
       </section>
 

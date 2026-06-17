@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Clock, Search, Sparkles, Users } from 'lucide-react'
 
+import { PaginationControls } from '../../../components/PaginationControls'
 import { Badge, Button, Card } from '../../../components/ui'
 import { SearchField } from '../../../components/SearchField'
 import { fetchPopularTechStacks, fetchProjects } from '../../../lib/api'
@@ -301,15 +302,11 @@ export default function ProjectListingClient() {
           )}
         </div>
 
-        {pageCount > 1 && (
-          <div className="mt-10 flex justify-center">
-            <div className="flex items-center gap-3">
-              <Button type="button" variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((currentPage) => currentPage - 1)}>이전</Button>
-              <span className="min-w-16 text-center text-sm text-slate-500">{page + 1} / {pageCount}</span>
-              <Button type="button" variant="outline" size="sm" disabled={page + 1 >= pageCount} onClick={() => setPage((currentPage) => currentPage + 1)}>다음</Button>
-            </div>
-          </div>
-        )}
+        <PaginationControls
+          page={page}
+          pageCount={pageCount}
+          onPageChange={setPage}
+        />
       </div>
     </div>
   )

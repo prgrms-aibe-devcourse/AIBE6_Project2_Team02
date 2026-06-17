@@ -5,15 +5,9 @@ import { useEffect, useMemo, useState } from 'react'
 
 import Link from 'next/link'
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  MapPin,
-  Search,
-  Sparkles,
-} from 'lucide-react'
+import { Clock, MapPin, Search, Sparkles } from 'lucide-react'
 
+import { PaginationControls } from '../../components/PaginationControls'
 import { SearchField } from '../../components/SearchField'
 import { Badge, Button, Card } from '../../components/ui'
 import { fetchMembers, fetchPopularTechStacks } from '../../lib/api'
@@ -338,33 +332,11 @@ export default function TalentListingPage() {
             </div>
           )}
         </motion.div>
-        {pageCount > 1 && (
-          <div className="mt-10 flex items-center justify-center gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page === 0}
-              onClick={() => setPage((currentPage) => currentPage - 1)}
-            >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              이전
-            </Button>
-            <span className="min-w-16 text-center text-sm text-slate-500">
-              {page + 1} / {pageCount}
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page + 1 >= pageCount}
-              onClick={() => setPage((currentPage) => currentPage + 1)}
-            >
-              다음
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        <PaginationControls
+          page={page}
+          pageCount={pageCount}
+          onPageChange={setPage}
+        />
       </div>
     </div>
   )
