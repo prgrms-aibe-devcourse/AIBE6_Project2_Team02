@@ -450,13 +450,7 @@ public class DummyDataInitializer implements ApplicationRunner {
     }
 
     private String formatPosition(PositionType position) {
-        return switch (position) {
-            case BACKEND -> "백엔드 개발자";
-            case FRONTEND -> "프론트엔드 개발자";
-            case FULL_STACK -> "풀스택 개발자";
-            case DESIGNER -> "디자이너";
-            case PRODUCT_MANAGER -> "프로덕트 매니저";
-        };
+        return position.toRequiredFormat();
     }
 
     private ProjectCategory inferCategory(ProjectSeed seed) {

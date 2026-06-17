@@ -1,12 +1,12 @@
 'use client'
 
-import { Badge, Button, Card } from '../../../components/ui'
 import { useEffect, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
 import { Briefcase, Trash2 } from 'lucide-react'
 
+import { Badge, Button, Card } from '../../../components/ui'
 
 type ProjectSubTab =
   | 'uploaded'
@@ -29,6 +29,29 @@ interface MyPageProjectResponse {
 
 interface ProjectTabProps {
   user: any
+}
+
+const statusConfig: Record<string, { text: string; className: string }> = {
+  RECRUITING: {
+    text: '모집 중',
+    className: 'bg-green-100 text-green-700 border-green-200',
+  },
+  IN_PROGRESS: {
+    text: '진행 중',
+    className: 'bg-blue-100 text-blue-700 border-blue-200',
+  },
+  COMPLETED: {
+    text: '완료',
+    className: 'bg-purple-100 text-purple-700 border-purple-200',
+  },
+  DISBANDED: {
+    text: '해산',
+    className: 'bg-orange-100 text-orange-700 border-orange-200',
+  },
+  CANCELLED: {
+    text: '취소',
+    className: 'bg-red-100 text-red-700 border-red-200',
+  },
 }
 
 export default function ProjectTab({ user }: ProjectTabProps) {
@@ -135,62 +158,69 @@ export default function ProjectTab({ user }: ProjectTabProps) {
         </div>
       ) : projects && projects.length > 0 ? (
         <div className="grid grid-cols-1 gap-4">
-          {projects.map((proj) => (
-            <div
-              key={proj.id}
-              onClick={() => router.push(`/projects/${proj.id}`)}
-              className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex justify-between items-start gap-4"
-            >
-              <div className="space-y-2 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span
-                    className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${proj.statusText === 'RECRUITING' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}
-                  >
-                    {proj.statusText === 'RECRUITING' ? '모집 중' : '수행/종료'}
-                  </span>
-                  <span className="text-xs text-slate-400">
-                    마감일: {proj.deadline || '상시'}
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 hover:text-blue-600 transition-colors">
-                  {proj.title}
-                </h3>
-                <p className="text-sm text-slate-500 line-clamp-2">
-                  {proj.description}
-                </p>
-                {proj.techStacks.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {proj.techStacks.map((st) => (
-                      <Badge key={st} variant="secondary" className="text-xs">
-                        {st}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
+          {projects.map((proj) => {
+            const currentStatus = statusConfig[proj.statusText] || {
+              text: proj.statusText || '알 수 없음',
+              className: 'bg-slate-100 text-slate-600 border-slate-200',
+            }
 
-              <div className="flex flex-col items-end gap-2">
-                {activeProjectSubTab === 'viewed' && (
-                  <button
-                    onClick={(e) => handleDeleteRecentView(proj.id, e)}
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-slate-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-                {activeProjectSubTab === 'applied' && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs text-red-500 border-red-200 hover:bg-red-50"
-                    onClick={(e) => handleCancelApplication(proj.id, e)}
-                  >
-                    지원 취소
-                  </Button>
-                )}
+            return (
+              <div
+                key={proj.id}
+                onClick={() => router.push(`/projects/${proj.id}`)}
+                className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex justify-between items-start gap-4"
+              >
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${currentStatus.className}`}
+                    >
+                      {currentStatus.text}
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      마감일: {proj.deadline || '상시'}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 hover:text-blue-600 transition-colors">
+                    {proj.title}
+                  </h3>
+                  <p className="text-sm text-slate-500 line-clamp-2">
+                    {proj.description}
+                  </p>
+                  {proj.techStacks.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {proj.techStacks.map((st) => (
+                        <Badge key={st} variant="secondary" className="text-xs">
+                          {st}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col items-end gap-2">
+                  {activeProjectSubTab === 'viewed' && (
+                    <button
+                      onClick={(e) => handleDeleteRecentView(proj.id, e)}
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-slate-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                  {activeProjectSubTab === 'applied' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs text-red-500 border-red-200 hover:bg-red-50"
+                      onClick={(e) => handleCancelApplication(proj.id, e)}
+                    >
+                      지원 취소
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       ) : (
         <Card className="p-12 text-center border-dashed">

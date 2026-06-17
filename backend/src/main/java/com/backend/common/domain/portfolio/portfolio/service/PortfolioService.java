@@ -237,13 +237,14 @@ public class PortfolioService {
 
         if (isAccept) {
             proposal.accept();
-
-            PositionType positionEnum = PositionType.valueOf(proposal.getPortfolio().getDesiredPosition());
+            
+            PositionType positionEnum = PositionType.fromDescriptionOrCode(
+                    proposal.getPortfolio().getDesiredPosition()
+            );
 
             ProjectMember projectMember = ProjectMember.builder()
                     .project(proposal.getProject())
                     .member(proposal.getPortfolio().getMember())
-                    // 만약 포지션 정보가 필요하다면 현재 기획에 맞춰 주입 (예: 포폴의 희망 직군)
                     .position(positionEnum)
                     .role(ProjectRole.MEMBER)
                     .build();

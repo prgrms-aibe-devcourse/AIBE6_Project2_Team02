@@ -146,10 +146,10 @@ public class MyPageProjectController {
     @PatchMapping("/applications/{applicationId}/cancel")
     @PreAuthorize("isAuthenticated()")
     public RsData<Void> cancelProjectApplication(
-            @PathVariable("applicationId") Long applicationId,
+            @PathVariable("applicationId") Long projectId,
             @AuthenticationPrincipal CustomMemberDetails userDetails
     ) {
-        myPageProjectService.cancelProjectApplication(userDetails.getMemberId(), applicationId);
+        myPageProjectService.cancelProjectApplication(userDetails.getMemberId(), projectId);
         return RsData.of("200", "프로젝트 지원 신청이 성공적으로 취소되었습니다.", null);
     }
 

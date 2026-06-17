@@ -82,6 +82,7 @@ export function cancelProjectApplication(applicationId: number) {
     `/mypage/projects/applications/${applicationId}/cancel`,
     {
       method: 'PATCH',
+      credentials: 'include',
     },
   )
 }
