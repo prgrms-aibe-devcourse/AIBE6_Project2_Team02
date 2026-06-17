@@ -19,15 +19,13 @@ import {
   Github,
   Globe,
   Linkedin,
-  LogOut,
   MessageSquare,
   Pencil,
-  Settings,
 } from 'lucide-react'
 
 import { Badge, Button, Card } from '../../components/ui'
 import type { Portfolio } from '../../types'
-import { leaderPositionOptions } from '../../constants/project'
+import { formatPositionLabel } from '../../constants/project'
 import { fetchMyPortfolio, withdrawMember } from '../../lib/api'
 import { useAuth } from '../providers'
 import ProjectTab from './components/ProjectTab'
@@ -48,8 +46,6 @@ type Tab = 'portfolio' | 'project' | 'proposal'
 type PortfolioSubTab = 'portfolio' | 'peerReview'
 
 export default function MyPage() {
-  const positionLabel = (value: string | null) =>
-  leaderPositionOptions.find((o) => o.value === value)?.label ?? value ?? ''
   const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
 
@@ -66,6 +62,40 @@ export default function MyPage() {
   const [avatarError, setAvatarError] = useState(false)
   const [showWithdrawModal, setShowWithdrawModal] = useState(false)
   const [withdrawing, setWithdrawing] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [newNickname, setNewNickname] = useState('')
+  const [nicknameError, setNicknameError] = useState('')
+  const [nicknameLoading, setNicknameLoading] = useState(false)
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
+
+  const handleProfileEdit = async () => {
+    if (!newNickname.trim()) {
+      setNicknameError('닉네임을 입력해주세요.')
+      return
+    }
+    setNicknameLoading(true)
+    setNicknameError('')
+    try {
+      const res = await fetch(`${API_BASE}/members/me/nickname`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname: newNickname.trim() }),
+      })
+      const json = await res.json()
+      if (json.code === '200') {
+        setShowProfileModal(false)
+        window.location.reload()
+      } else {
+        setNicknameError(json.message)
+      }
+    } catch {
+      setNicknameError('서버 오류가 발생했습니다.')
+    } finally {
+      setNicknameLoading(false)
+    }
+  }
 
   const handleWithdraw = async () => {
     setWithdrawing(true)
@@ -123,9 +153,6 @@ export default function MyPage() {
               {user?.nickname?.[0]?.toUpperCase() ?? '?'}
             </div>
           )}
-          <button className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full border border-slate-200 shadow-sm hover:bg-slate-50">
-            <Settings className="w-4 h-4 text-slate-600" />
-          </button>
         </div>
         <div className="flex-1 text-center md:text-left">
           <h1 className="text-2xl font-bold text-slate-900 mb-1">
@@ -133,7 +160,7 @@ export default function MyPage() {
           </h1>
           {portfolio && (
             <>
-              <p className="text-slate-500 mb-3">{positionLabel(portfolio.desiredPosition)}</p>
+              <p className="text-slate-500 mb-3">{formatPositionLabel(portfolio.desiredPosition)}</p>
               {portfolio.techStacks.length > 0 && (
                 <div className="flex flex-wrap justify-center md:justify-start gap-2">
                   {portfolio.techStacks.map((stack) => (
@@ -147,18 +174,8 @@ export default function MyPage() {
           )}
         </div>
         <div className="flex gap-3 w-full md:w-auto">
-          <Button variant="outline" className="flex-1 md:flex-none gap-2">
-            <Settings className="w-4 h-4" /> 설정
-          </Button>
-          <Button
-            variant="ghost"
-            className="flex-1 md:flex-none gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={async () => {
-              await logout()
-              router.push('/')
-            }}
-          >
-            <LogOut className="w-4 h-4" /> 로그아웃
+          <Button variant="outline" className="flex-1 md:flex-none gap-2" onClick={() => { setNewNickname(''); setNicknameError(''); setShowProfileModal(true) }}>
+            <Pencil className="w-4 h-4" /> 프로필 수정
           </Button>
         </div>
       </div>
@@ -251,7 +268,7 @@ export default function MyPage() {
                         <div>
                           <h2 className="text-xl font-bold text-slate-900">{portfolio.title}</h2>
                           {portfolio.desiredPosition && (
-                            <p className="text-sm text-blue-600 mt-1">{positionLabel(portfolio.desiredPosition)}</p>
+                            <p className="text-sm text-blue-600 mt-1">{formatPositionLabel(portfolio.desiredPosition)}</p>
                           )}
                         </div>
                         <Link href="/mypage/portfolio/edit">
@@ -340,6 +357,33 @@ export default function MyPage() {
           </div>
         </div>
       </div>
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4">
+            <h2 className="text-lg font-bold text-slate-900 mb-2">프로필 수정</h2>
+            <p className="text-sm text-slate-500 mb-4">변경할 닉네임을 입력해주세요.</p>
+            <input
+              type="text"
+              value={newNickname}
+              onChange={(e) => setNewNickname(e.target.value)}
+              placeholder={user?.nickname ?? ''}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyDown={(e) => e.key === 'Enter' && handleProfileEdit()}
+            />
+            {nicknameError && (
+              <p className="text-xs text-red-500 mb-3">{nicknameError}</p>
+            )}
+            <div className="flex gap-3 justify-end mt-4">
+              <Button variant="outline" onClick={() => setShowProfileModal(false)} disabled={nicknameLoading}>
+                취소
+              </Button>
+              <Button onClick={handleProfileEdit} disabled={nicknameLoading}>
+                {nicknameLoading ? '저장 중...' : '저장'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       {showWithdrawModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4">

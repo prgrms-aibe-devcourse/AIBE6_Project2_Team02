@@ -22,6 +22,7 @@ import {
 import { LoginModal } from '../../../components/LoginModal'
 import { Badge, Button, Card, Modal } from '../../../components/ui'
 import { ReportModal } from '../../../components/ReportModal'
+import { formatPositionLabel, toPositionValue } from '../../../constants/project'
 import {
   applyProject,
   cancelProjectApplication,
@@ -145,7 +146,7 @@ export default function ProjectDetailPage() {
       setIsApplyModalOpen(false)
       setApplyMessage('')
       toast.success('지원이 완료되었습니다!', {
-        description: `${project.title}의 ${selectedRole} 포지션에 지원했습니다. 프로젝트 리더가 프로필을 검토할 예정입니다.`,
+        description: `${project.title}의 ${formatPositionLabel(selectedRole)} 포지션에 지원했습니다. 프로젝트 리더가 프로필을 검토할 예정입니다.`,
       })
     } catch (error) {
       toast.error(
@@ -346,7 +347,7 @@ export default function ProjectDetailPage() {
                     >
                       <div>
                         <h4 className="font-semibold text-slate-900">
-                          {pos.role}
+                          {formatPositionLabel(pos.role)}
                         </h4>
                         <p className="text-sm text-slate-500 mt-1">
                           {pos.total}명 중 {pos.filled}명 모집 완료
@@ -361,7 +362,7 @@ export default function ProjectDetailPage() {
                           onClick={
                             pendingApplicationId
                               ? undefined
-                              : () => openApplyModal(pos.role)
+                              : () => openApplyModal(toPositionValue(pos.role))
                           }
                         >
                           {pendingApplicationId ? '지원 완료' : '지원'}
@@ -509,8 +510,8 @@ export default function ProjectDetailPage() {
               {project.positions
                 .filter((p) => p.filled < p.total)
                 .map((p) => (
-                  <option key={p.role} value={p.role}>
-                    {p.role}
+                  <option key={p.role} value={toPositionValue(p.role)}>
+                    {formatPositionLabel(p.role)}
                   </option>
                 ))}
             </select>

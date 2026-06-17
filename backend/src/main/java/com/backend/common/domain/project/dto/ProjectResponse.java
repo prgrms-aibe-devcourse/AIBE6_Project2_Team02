@@ -17,7 +17,6 @@ public record ProjectResponse(
         List<UserResponse> teamMembers,
         String deadline,
         String createdAt,
-        int popularity,
         boolean featured
 ) {
 }
