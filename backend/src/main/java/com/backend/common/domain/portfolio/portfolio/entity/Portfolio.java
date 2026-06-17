@@ -82,6 +82,11 @@ public class Portfolio {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void changeDesiredPosition(String desiredPosition) {
+        this.desiredPosition = desiredPosition;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void clearTechStacks() {
         this.portfolioTechStacks.clear();
     }

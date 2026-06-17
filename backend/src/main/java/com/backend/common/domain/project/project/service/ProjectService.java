@@ -164,7 +164,10 @@ public class ProjectService {
                 .goal(String.join(", ", Optional.ofNullable(req.goals()).orElseGet(List::of)))
                 .deadline(deadline)
                 .positions(Optional.ofNullable(req.positions()).orElseGet(List::of).stream()
-                        .map(p -> ProjectPosition.builder().role(p.role()).total(p.total()).build())
+                        .map(p -> ProjectPosition.builder()
+                                .role(parsePosition(p.role()).name())
+                                .total(p.total())
+                                .build())
                         .toList())
                 .build();
 
@@ -241,7 +244,7 @@ public class ProjectService {
         }
 
         PositionType position = parsePosition(request.position());
-        String role = formatPosition(position);
+        String role = position.name();
         PositionResponse targetPosition = buildPositions(
                 project,
                 projectMemberRepository.findByProjectId(projectId)
@@ -341,7 +344,7 @@ public class ProjectService {
 
         Map<String, Long> filledByRole = members.stream()
                 .collect(Collectors.groupingBy(
-                        member -> normalizeRole(formatPosition(member.getPosition())),
+                        member -> normalizeRole(member.getPosition().name()),
                         Collectors.counting()
                 ));
         Set<String> requestedRoles = new HashSet<>();
@@ -353,7 +356,8 @@ public class ProjectService {
                         throw new IllegalArgumentException("모집 포지션명을 입력해주세요.");
                     }
 
-                    String normalizedRole = normalizeRole(role);
+                    String roleCode = parsePosition(role).name();
+                    String normalizedRole = normalizeRole(roleCode);
                     if (!requestedRoles.add(normalizedRole)) {
                         throw new IllegalArgumentException("같은 모집 포지션을 중복해서 등록할 수 없습니다.");
                     }
@@ -361,12 +365,12 @@ public class ProjectService {
                     int filled = filledByRole.getOrDefault(normalizedRole, 0L).intValue();
                     if (position.total() < Math.max(filled, 1)) {
                         throw new IllegalArgumentException(
-                                role + " 모집 인원은 현재 참여 인원 " + filled + "명보다 적게 설정할 수 없습니다."
+                                formatPosition(parsePosition(roleCode)) + " 모집 인원은 현재 참여 인원 " + filled + "명보다 적게 설정할 수 없습니다."
                         );
                     }
 
                     return ProjectPosition.builder()
-                            .role(role)
+                            .role(roleCode)
                             .total(position.total())
                             .build();
                 })
@@ -518,7 +522,7 @@ public class ProjectService {
                 .map(entry -> {
                     int filled = entry.getValue().intValue();
                     int total = recruitmentOpen ? filled + 1 : filled;
-                    return new PositionResponse(formatPosition(entry.getKey()), filled, total);
+                    return new PositionResponse(entry.getKey().name(), filled, total);
                 })
                 .toList();
     }
@@ -527,7 +531,7 @@ public class ProjectService {
         Map<String, Long> filledByRole = members.stream()
                 .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE)
                 .collect(Collectors.groupingBy(
-                        member -> normalizeRole(formatPosition(member.getPosition())),
+                        member -> normalizeRole(member.getPosition().name()),
                         LinkedHashMap::new,
                         Collectors.counting()
                 ));
@@ -535,9 +539,10 @@ public class ProjectService {
         List<PositionResponse> responses = new ArrayList<>();
 
         for (ProjectPosition position : project.getPositions()) {
-            String normalizedRole = normalizeRole(position.getRole());
+            String roleCode = parsePosition(position.getRole()).name();
+            String normalizedRole = normalizeRole(roleCode);
             int filled = filledByRole.getOrDefault(normalizedRole, 0L).intValue();
-            responses.add(new PositionResponse(position.getRole(), filled, position.getTotal()));
+            responses.add(new PositionResponse(roleCode, filled, position.getTotal()));
             includedRoles.add(normalizedRole);
         }
 
@@ -546,7 +551,7 @@ public class ProjectService {
                 .map(ProjectMember::getPosition)
                 .distinct()
                 .forEach(position -> {
-                    String role = formatPosition(position);
+                    String role = position.name();
                     String normalizedRole = normalizeRole(role);
                     if (includedRoles.add(normalizedRole)) {
                         int filled = filledByRole.getOrDefault(normalizedRole, 0L).intValue();
