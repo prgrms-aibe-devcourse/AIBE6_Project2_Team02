@@ -12,6 +12,7 @@ import { SearchField } from '../../../components/SearchField'
 import { fetchPopularTechStacks, fetchProjects } from '../../../lib/api'
 import { formatDate, getTimeValue } from '../../../lib/date'
 import { formatProjectMemberCount } from '../../../lib/project'
+import { usePaginatedList } from '../../../hooks/usePaginatedList'
 import type { Project } from '../../../types'
 
 const categoryMap: Record<string, string> = {
@@ -33,7 +34,6 @@ export default function ProjectListingClient() {
   const [selectedTech, setSelectedTech] = useState<string>(initialTech || 'All')
   const [selectedStatus, setSelectedStatus] = useState<string>('Open')
   const [sortBy, setSortBy] = useState<'newest' | 'popularity'>('newest')
-  const [page, setPage] = useState(0)
 
   const categories = ['All', 'Web', 'Mobile', 'AI', 'Game', 'Other']
   const statuses = ['All', 'Open', 'Closed']
@@ -78,21 +78,22 @@ export default function ProjectListingClient() {
   }, [projects, searchTerm, selectedCategory, selectedTech, selectedStatus, sortBy])
 
   const projectsPerPage = 6
-  const pageCount = Math.ceil(filteredProjects.length / projectsPerPage)
-  const paginatedProjects = filteredProjects.slice(
-    page * projectsPerPage,
-    (page + 1) * projectsPerPage,
-  )
-
-  useEffect(() => {
-    setPage(0)
-  }, [searchTerm, selectedCategory, selectedTech, selectedStatus, sortBy])
-
-  useEffect(() => {
-    if (pageCount > 0 && page >= pageCount) {
-      setPage(pageCount - 1)
-    }
-  }, [page, pageCount])
+  const {
+    page,
+    pageCount,
+    paginatedItems: paginatedProjects,
+    setPage,
+  } = usePaginatedList({
+    items: filteredProjects,
+    pageSize: projectsPerPage,
+    resetDeps: [
+      searchTerm,
+      selectedCategory,
+      selectedTech,
+      selectedStatus,
+      sortBy,
+    ],
+  })
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">

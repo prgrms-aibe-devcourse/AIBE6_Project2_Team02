@@ -10,6 +10,7 @@ import { Clock, MapPin, Search, Sparkles } from 'lucide-react'
 import { PaginationControls } from '../../components/PaginationControls'
 import { SearchField } from '../../components/SearchField'
 import { Badge, Button, Card } from '../../components/ui'
+import { usePaginatedList } from '../../hooks/usePaginatedList'
 import { fetchMembers, fetchPopularTechStacks } from '../../lib/api'
 import type { User } from '../../types'
 
@@ -44,7 +45,6 @@ export default function TalentListingPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>('All')
-  const [page, setPage] = useState(0)
   const roles = [
     'All',
     'Frontend',
@@ -87,21 +87,16 @@ export default function TalentListingPage() {
     })
   }, [allUsers, searchTerm, selectedRole, selectedTech])
   const portfoliosPerPage = 9
-  const pageCount = Math.ceil(filteredTalents.length / portfoliosPerPage)
-  const paginatedTalents = filteredTalents.slice(
-    page * portfoliosPerPage,
-    (page + 1) * portfoliosPerPage,
-  )
-
-  useEffect(() => {
-    setPage(0)
-  }, [searchTerm, selectedRole, selectedTech])
-
-  useEffect(() => {
-    if (pageCount > 0 && page >= pageCount) {
-      setPage(pageCount - 1)
-    }
-  }, [page, pageCount])
+  const {
+    page,
+    pageCount,
+    paginatedItems: paginatedTalents,
+    setPage,
+  } = usePaginatedList({
+    items: filteredTalents,
+    pageSize: portfoliosPerPage,
+    resetDeps: [searchTerm, selectedRole, selectedTech],
+  })
 
   const containerVariants = {
     hidden: {
