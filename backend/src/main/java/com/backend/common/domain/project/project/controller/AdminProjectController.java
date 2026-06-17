@@ -1,6 +1,6 @@
 package com.backend.common.domain.project.project.controller;
 
-import com.backend.common.domain.project.dto.ProjectResponse;
+import com.backend.common.domain.project.project.dto.ProjectResponse;
 import com.backend.common.domain.project.project.service.AdminProjectService;
 import com.backend.common.global.rsdata.RsData;
 import lombok.RequiredArgsConstructor;

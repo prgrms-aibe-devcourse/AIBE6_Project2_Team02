@@ -1,12 +1,12 @@
 package com.backend.common.domain.project.project.controller;
 
-import com.backend.common.domain.project.dto.ProjectApplicationCreateRequest;
-import com.backend.common.domain.project.dto.ProjectApplicationCreateResponse;
-import com.backend.common.domain.project.dto.ProjectCreateRequest;
-import com.backend.common.domain.project.dto.ProjectPermissionResponse;
-import com.backend.common.domain.project.dto.ProjectResponse;
-import com.backend.common.domain.project.dto.ProjectUpdateRequest;
+import com.backend.common.domain.project.application.dto.ProjectApplicationCreateRequest;
+import com.backend.common.domain.project.application.dto.ProjectApplicationCreateResponse;
 import com.backend.common.domain.project.exception.ProjectNotFoundException;
+import com.backend.common.domain.project.project.dto.ProjectCreateRequest;
+import com.backend.common.domain.project.project.dto.ProjectPermissionResponse;
+import com.backend.common.domain.project.project.dto.ProjectResponse;
+import com.backend.common.domain.project.project.dto.ProjectUpdateRequest;
 import com.backend.common.domain.project.project.service.ProjectService;
 import com.backend.common.global.rsdata.RsData;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
