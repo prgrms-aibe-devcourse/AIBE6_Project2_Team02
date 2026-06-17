@@ -70,8 +70,11 @@ export default function MainClientComponent() {
   }, [])
 
   const projectsPerPage = 6
-  const projectPageCount = Math.ceil(projects.length / projectsPerPage)
-  const latestProjects = projects.slice(
+  const openProjects = projects.filter(
+    (project) => project.recruitmentStatus === 'Open',
+  )
+  const projectPageCount = Math.ceil(openProjects.length / projectsPerPage)
+  const latestProjects = openProjects.slice(
     projectPage * projectsPerPage,
     (projectPage + 1) * projectsPerPage,
   )
