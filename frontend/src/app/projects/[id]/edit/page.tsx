@@ -281,7 +281,7 @@ export default function ProjectEditPage() {
                 onChange={(event) =>
                   setForm({ ...form, description: event.target.value })
                 }
-                placeholder="프로젝트의 배경, 해결하고자 하는 문제, 주요 기능 등을 상세히 적어주세요."
+                placeholder="프로젝트의 배경과 진행 방향을 상세히 작성해주세요."
                 required
               />
             </div>
