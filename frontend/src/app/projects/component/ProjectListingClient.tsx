@@ -8,6 +8,7 @@ import { Clock, Search, Sparkles, Users } from 'lucide-react'
 
 import { Badge, Button, Card, Input } from '../../../components/ui'
 import { fetchPopularTechStacks, fetchProjects } from '../../../lib/api'
+import { formatProjectMemberCount } from '../../../lib/project'
 import type { Project } from '../../../types'
 
 const categoryMap: Record<string, string> = {
@@ -196,7 +197,7 @@ export default function ProjectListingClient() {
                       </div>
                       <div className="member-count-badge">
                         <Users className="h-3 w-3" />
-                        {project.positions.reduce((acc, p) => acc + p.filled, 0)} / {project.positions.reduce((acc, p) => acc + p.total, 0)}명
+                        {formatProjectMemberCount(project.positions)}
                       </div>
                     </div>
                   </div>
@@ -272,7 +273,7 @@ export default function ProjectListingClient() {
                       </div>
                       <div className="member-count-badge">
                         <Users className="h-3 w-3" />
-                        {project.positions.reduce((acc, p) => acc + p.filled, 0)} / {project.positions.reduce((acc, p) => acc + p.total, 0)}명
+                        {formatProjectMemberCount(project.positions)}
                       </div>
                     </div>
                   </div>

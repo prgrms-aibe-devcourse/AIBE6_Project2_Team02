@@ -18,6 +18,7 @@ import {
 
 import { Badge, Button, Card } from '../../components/ui'
 import { fetchPopularTechStacks, fetchProjects } from '../../lib/api'
+import { formatProjectMemberCount } from '../../lib/project'
 import type { Project } from '../../types'
 
 const statusMap: Record<string, string> = {
@@ -241,13 +242,7 @@ export default function MainClientComponent() {
                       </div>
                       <div className="member-count-badge">
                         <Users className="h-3 w-3" />
-                        {project.positions.reduce(
-                          (acc, p) => acc + p.filled,
-                          0,
-                        )}
-                        /
-                        {project.positions.reduce((acc, p) => acc + p.total, 0)}
-                        명
+                        {formatProjectMemberCount(project.positions)}
                       </div>
                     </div>
                   </div>
