@@ -29,7 +29,6 @@ export default function ProjectCreatePage() {
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [fullDescription, setFullDescription] = useState('')
   const [category, setCategory] = useState('Web')
   const [deadline, setDeadline] = useState('')
   const [leaderPosition, setLeaderPosition] = useState<PositionType | ''>('')
@@ -119,7 +118,6 @@ export default function ProjectCreatePage() {
     if (
       !title.trim() ||
       !description.trim() ||
-      !fullDescription.trim() ||
       !deadline ||
       !leaderPosition ||
       normalizedPositions.length === 0
@@ -138,7 +136,6 @@ export default function ProjectCreatePage() {
     const payload: ProjectCreateRequest = {
       title: title.trim(),
       description: description.trim(),
-      fullDescription: fullDescription.trim(),
       category: category as ProjectCreateRequest['category'],
       goals: goals.map((goal) => goal.trim()).filter(Boolean),
       deadline,
@@ -214,28 +211,17 @@ export default function ProjectCreatePage() {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                한 줄 소개 <span className="text-red-500">*</span>
+                프로젝트 설명 <span className="text-red-500">*</span>
               </label>
-              <Input
-                placeholder="프로젝트를 한 문장으로 매력적으로 소개해주세요."
+              <textarea
+                className="min-h-[150px] w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                placeholder="프로젝트의 배경, 해결하고자 하는 문제, 주요 기능 등을 상세히 적어주세요."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                상세 설명 <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 min-h-[150px] resize-y"
-                placeholder="프로젝트의 배경, 해결하고자 하는 문제, 주요 기능 등을 상세히 적어주세요."
-                value={fullDescription}
-                onChange={(e) => setFullDescription(e.target.value)}
-                required
-              />
-            </div>
           </div>
         </Card>
 

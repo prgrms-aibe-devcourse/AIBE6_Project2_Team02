@@ -21,7 +21,6 @@ export type Project = {
   id: string
   title: string
   description: string
-  fullDescription: string
   goals: string[]
   techStack: string[]
   positions: Position[]

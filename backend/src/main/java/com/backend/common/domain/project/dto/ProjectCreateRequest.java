@@ -8,7 +8,6 @@ import java.util.List;
 public record ProjectCreateRequest(
         String title,
         String description,
-        String fullDescription,
         ProjectCategory category,
         List<String> goals,
         String deadline,

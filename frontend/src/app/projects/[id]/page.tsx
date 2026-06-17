@@ -314,7 +314,7 @@ export default function ProjectDetailPage() {
               </h2>
               <div className="prose prose-slate max-w-none">
                 <p className="text-slate-600 leading-relaxed whitespace-pre-line">
-                  {project.fullDescription}
+                  {project.description}
                 </p>
               </div>
 

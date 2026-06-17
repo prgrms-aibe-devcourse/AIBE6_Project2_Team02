@@ -8,7 +8,6 @@ public record ProjectResponse(
         String id,
         String title,
         String description,
-        String fullDescription,
         List<String> goals,
         List<String> techStack,
         List<PositionResponse> positions,

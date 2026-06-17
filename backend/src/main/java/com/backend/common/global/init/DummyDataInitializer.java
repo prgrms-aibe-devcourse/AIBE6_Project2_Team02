@@ -11,6 +11,7 @@ import com.backend.common.domain.portfolio.proposals.repository.ProjectProposalR
 import com.backend.common.domain.project.application.entity.ProjectApplication;
 import com.backend.common.domain.project.application.repository.ProjectApplicationRepository;
 import com.backend.common.domain.project.enums.PositionType;
+import com.backend.common.domain.project.enums.ProjectCategory;
 import com.backend.common.domain.project.project.entity.*;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.project.project.repository.ProjectRepository;
@@ -282,6 +283,7 @@ public class DummyDataInitializer implements ApplicationRunner {
                     .leader(members.get(seed.leaderId()))
                     .title(seed.title())
                     .description(seed.description())
+                    .category(inferCategory(seed))
                     .goal(seed.goal())
                     .deadline(LocalDate.parse(seed.deadline()))
                     .positions(buildProjectPositions(seed))
@@ -455,6 +457,23 @@ public class DummyDataInitializer implements ApplicationRunner {
             case DESIGNER -> "디자이너";
             case PRODUCT_MANAGER -> "프로덕트 매니저";
         };
+    }
+
+    private ProjectCategory inferCategory(ProjectSeed seed) {
+        String text = (seed.title() + " " + seed.description()).toLowerCase();
+        List<String> techStacks = seed.techStacks();
+
+        if (text.contains("ai") || text.contains("llm") || techStacks.stream().anyMatch(t -> t.toLowerCase().contains("openai"))) {
+            return ProjectCategory.AI;
+        }
+        if (text.contains("게임") || text.contains("game") || techStacks.stream().anyMatch(t -> t.equalsIgnoreCase("Godot"))) {
+            return ProjectCategory.GAME;
+        }
+        if (text.contains("모바일") || text.contains("앱") || techStacks.stream().anyMatch(t ->
+                t.equalsIgnoreCase("React Native") || t.equalsIgnoreCase("Flutter") || t.equalsIgnoreCase("Swift"))) {
+            return ProjectCategory.MOBILE;
+        }
+        return ProjectCategory.WEB;
     }
 
     private String blankToNull(String value) {
