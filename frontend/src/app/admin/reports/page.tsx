@@ -135,7 +135,7 @@ export default function AdminReportsPage() {
 
           <div className="space-y-4">
             {userReports.length === 0 ? (
-              <div className="text-center py-12 bg-slate-50 rounded-xl border border-slate-200 border-dashed">
+              <div className="empty-state rounded-xl py-12">
               <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
               <p className="text-slate-500 font-medium">
               처리 대기 중인 포트폴리오 신고가 없습니다.
@@ -252,7 +252,7 @@ export default function AdminReportsPage() {
 
           <div className="space-y-4">
             {projectReports.length === 0 ? (
-              <div className="text-center py-12 bg-slate-50 rounded-xl border border-slate-200 border-dashed">
+              <div className="empty-state rounded-xl py-12">
                 <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
                 <p className="text-slate-500 font-medium">
                   처리 대기 중인 프로젝트 신고가 없습니다.
