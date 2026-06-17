@@ -140,7 +140,7 @@ export default function ProjectListingClient() {
 
             {/* Tech Stack Select */}
             <select
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+              className="form-field"
               value={selectedTech}
               onChange={(e) => setSelectedTech(e.target.value)}
             >
@@ -152,7 +152,7 @@ export default function ProjectListingClient() {
 
             {/* Sort Select */}
             <select
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+              className="form-field"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
             >

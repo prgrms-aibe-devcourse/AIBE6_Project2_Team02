@@ -276,7 +276,7 @@ export default function ProjectEditPage() {
                 프로젝트 배경, 해결하려는 문제와 주요 기능을 구체적으로 작성해주세요.
               </p>
               <textarea
-                className="min-h-40 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="form-textarea min-h-40"
                 value={form.description}
                 onChange={(event) =>
                   setForm({ ...form, description: event.target.value })
@@ -344,7 +344,7 @@ export default function ProjectEditPage() {
                         역할명 <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="form-field disabled:cursor-not-allowed disabled:opacity-60"
                         value={position.role}
                         disabled={minimum > 0}
                         onChange={(event) =>
@@ -494,7 +494,7 @@ export default function ProjectEditPage() {
                         .value as ProjectUpdateRequest['category'],
                     })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  className="form-select"
                 >
                   <option value="Web">웹</option>
                   <option value="Mobile">모바일</option>

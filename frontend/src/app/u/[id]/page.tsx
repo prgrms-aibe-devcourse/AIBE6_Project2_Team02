@@ -399,14 +399,14 @@ export default function DeveloperProfilePage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('projects')}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${activeTab === 'projects' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}
+                className={`tab-pill ${activeTab === 'projects' ? 'tab-pill-active' : 'tab-pill-inactive'}`}
               >
                 프로젝트
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('peerReviews')}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${activeTab === 'peerReviews' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}
+                className={`tab-pill ${activeTab === 'peerReviews' ? 'tab-pill-active' : 'tab-pill-inactive'}`}
               >
                 받은 피어리뷰
               </button>
@@ -458,7 +458,7 @@ export default function DeveloperProfilePage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-slate-50 rounded-2xl border border-slate-200 border-dashed p-8 text-center text-slate-500">
+                    <div className="empty-state">
                       아직 만든 프로젝트가 없어요.
                     </div>
                   )}
@@ -501,7 +501,7 @@ export default function DeveloperProfilePage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-slate-50 rounded-2xl border border-slate-200 border-dashed p-8 text-center text-slate-500">
+                    <div className="empty-state">
                       아직 참여한 프로젝트가 없어요.
                     </div>
                   )}
@@ -555,7 +555,7 @@ export default function DeveloperProfilePage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
+                  <div className="empty-state">
                     <MessageSquare className="mx-auto mb-3 h-10 w-10 text-slate-300" />
                     아직 받은 피어리뷰가 없어요.
                   </div>
@@ -600,7 +600,7 @@ export default function DeveloperProfilePage() {
               <select
                 value={selectedProjectId}
                 onChange={(event) => setSelectedProjectId(event.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="form-select"
                 required
               >
                 {proposalProjects.map((project) => (
@@ -618,7 +618,7 @@ export default function DeveloperProfilePage() {
               <textarea
                 value={proposalMessage}
                 onChange={(event) => setProposalMessage(event.target.value)}
-                className="min-h-32 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="form-textarea min-h-32"
                 placeholder="프로젝트 소개와 함께 합류를 제안하는 이유를 작성해주세요."
                 required
               />

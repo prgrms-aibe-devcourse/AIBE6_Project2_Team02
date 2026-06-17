@@ -497,7 +497,7 @@ export default function ProjectDetailPage() {
               포지션 선택
             </label>
             <select
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+              className="form-field"
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
               required
@@ -519,7 +519,7 @@ export default function ProjectDetailPage() {
               왜 이 프로젝트에 적합한가요?
             </label>
             <textarea
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 min-h-[100px] resize-y"
+              className="form-textarea min-h-[100px]"
               placeholder="관련 경험과 이 프로젝트에 참여하고 싶은 이유를 간단히 적어주세요..."
               value={applyMessage}
               onChange={(e) => setApplyMessage(e.target.value)}

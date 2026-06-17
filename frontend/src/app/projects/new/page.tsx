@@ -214,7 +214,7 @@ export default function ProjectCreatePage() {
                 프로젝트 설명 <span className="text-red-500">*</span>
               </label>
               <textarea
-                className="min-h-[150px] w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="form-textarea min-h-[150px]"
                 placeholder="프로젝트의 배경, 해결하고자 하는 문제, 주요 기능 등을 상세히 적어주세요."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -240,7 +240,7 @@ export default function ProjectCreatePage() {
                 카테고리 <span className="text-red-500">*</span>
               </label>
               <select
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 h-10"
+                className="form-select"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
@@ -282,7 +282,7 @@ export default function ProjectCreatePage() {
                 리더 본인 포지션 <span className="text-red-500">*</span>
               </label>
               <select
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="form-field"
                 value={leaderPosition}
                 onChange={(e) =>
                   setLeaderPosition(e.target.value as PositionType)
@@ -368,7 +368,7 @@ export default function ProjectCreatePage() {
                   <div key={index} className="flex items-center gap-3">
                     <div className="flex-1">
                       <select
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                        className="form-field"
                         value={pos.role}
                         onChange={(e) =>
                           handlePositionChange(index, 'role', e.target.value)
