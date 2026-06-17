@@ -7,7 +7,6 @@ import java.util.List;
 public record ProjectUpdateRequest(
         String title,
         String description,
-        String fullDescription,
         ProjectCategory category,
         List<String> goals,
         List<String> techStacks,

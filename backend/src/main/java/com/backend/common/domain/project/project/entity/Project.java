@@ -34,9 +34,6 @@ public class Project {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(columnDefinition = "TEXT")
-    private String fullDescription;
-
     @Enumerated(EnumType.STRING)
     private ProjectCategory category;
 
@@ -66,7 +63,6 @@ public class Project {
             Member leader,
             String title,
             String description,
-            String fullDescription,
             ProjectCategory category,
             String goal,
             LocalDate deadline,
@@ -75,7 +71,6 @@ public class Project {
         this.leader = leader;
         this.title = title;
         this.description = description;
-        this.fullDescription = fullDescription;
         this.category = category;
         this.goal = goal;
         this.deadline = deadline;
@@ -101,7 +96,6 @@ public class Project {
     public void update(
             String title,
             String description,
-            String fullDescription,
             ProjectCategory category,
             String goal,
             LocalDate deadline,
@@ -110,7 +104,6 @@ public class Project {
     ) {
         this.title = title;
         this.description = description;
-        this.fullDescription = fullDescription;
         this.category = category;
         this.goal = goal;
         this.deadline = deadline;

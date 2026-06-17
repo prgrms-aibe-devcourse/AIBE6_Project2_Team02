@@ -4,7 +4,6 @@ import type { PositionType } from '../enums/project'
 export interface ProjectCreateRequest {
   title: string
   description: string
-  fullDescription: string
   category: Project['category']
   goals: string[]
   techStacks: string[]
@@ -20,7 +19,6 @@ export interface ProjectCreateRequest {
 export interface ProjectUpdateRequest {
   title: string
   description: string
-  fullDescription: string
   category: Project['category']
   goals: string[]
   techStacks: string[]

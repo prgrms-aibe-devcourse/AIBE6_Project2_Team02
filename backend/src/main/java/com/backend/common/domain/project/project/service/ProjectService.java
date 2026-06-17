@@ -160,7 +160,6 @@ public class ProjectService {
                 .leader(leader)
                 .title(req.title())
                 .description(req.description())
-                .fullDescription(req.fullDescription())
                 .category(req.category())
                 .goal(String.join(", ", Optional.ofNullable(req.goals()).orElseGet(List::of)))
                 .deadline(deadline)
@@ -304,7 +303,6 @@ public class ProjectService {
         project.update(
                 req.title().trim(),
                 req.description().trim(),
-                req.fullDescription().trim(),
                 req.category(),
                 String.join(", ", Optional.ofNullable(req.goals()).orElseGet(List::of)),
                 deadline,
@@ -434,7 +432,6 @@ public class ProjectService {
                 String.valueOf(project.getId()),
                 project.getTitle(),
                 project.getDescription(),
-                project.getFullDescription() == null ? project.getDescription() : project.getFullDescription(),
                 splitGoals(project.getGoal()),
                 projectTechStackNames(project),
                 positions,

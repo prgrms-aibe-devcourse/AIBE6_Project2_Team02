@@ -33,7 +33,6 @@ export default function ProjectEditPage() {
   const [form, setForm] = useState<ProjectUpdateRequest>({
     title: '',
     description: '',
-    fullDescription: '',
     category: 'Web',
     goals: [''],
     techStacks: [],
@@ -61,7 +60,6 @@ export default function ProjectEditPage() {
         setForm({
           title: project.title,
           description: project.description,
-          fullDescription: project.fullDescription,
           category: project.category,
           goals: project.goals.length > 0 ? project.goals : [''],
           techStacks: project.techStack,
@@ -161,7 +159,6 @@ export default function ProjectEditPage() {
     if (
       !form.title.trim() ||
       !form.description.trim() ||
-      !form.fullDescription.trim() ||
       !form.deadline ||
       form.positions.length === 0 ||
       form.positions.some((position) => !position.role.trim())
@@ -193,7 +190,6 @@ export default function ProjectEditPage() {
         ...form,
         title: form.title.trim(),
         description: form.description.trim(),
-        fullDescription: form.fullDescription.trim(),
         goals: form.goals.map((goal) => goal.trim()).filter(Boolean),
         techStacks: form.techStacks.map((tech) => tech.trim()).filter(Boolean),
         positions: form.positions.map((position) => ({
@@ -289,24 +285,6 @@ export default function ProjectEditPage() {
               />
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                상세 설명 <span className="text-red-500">*</span>
-              </label>
-              <p className="mb-2 text-xs text-slate-500">
-                프로젝트 배경, 해결하려는 문제와 주요 기능을 구체적으로
-                작성해주세요.
-              </p>
-              <textarea
-                value={form.fullDescription}
-                onChange={(event) =>
-                  setForm({ ...form, fullDescription: event.target.value })
-                }
-                className="min-h-40 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                placeholder="프로젝트의 배경과 진행 방향을 상세히 작성해주세요."
-                required
-              />
-            </div>
           </div>
         </Card>
 
