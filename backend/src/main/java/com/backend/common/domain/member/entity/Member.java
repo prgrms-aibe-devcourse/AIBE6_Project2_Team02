@@ -61,4 +61,8 @@ public class Member {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void updateNickName(String nickname){
+        this.nickname = nickname;
+    }
+
 }
