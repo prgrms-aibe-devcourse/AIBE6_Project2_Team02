@@ -39,6 +39,33 @@ const getRoleCategory = (role: string) => {
   return 'Other'
 }
 
+interface TalentFilterOptions {
+  searchTerm: string
+  selectedRole: string
+  selectedTech: string
+}
+
+function matchesTalentFilters(
+  user: User,
+  { searchTerm, selectedRole, selectedTech }: TalentFilterOptions,
+) {
+  const normalizedSearchTerm = searchTerm.toLowerCase()
+  const matchesSearch =
+    user.name.toLowerCase().includes(normalizedSearchTerm) ||
+    Boolean(user.bio?.toLowerCase().includes(normalizedSearchTerm)) ||
+    user.role.toLowerCase().includes(normalizedSearchTerm)
+  const userRoleCategory = getRoleCategory(user.role)
+  const matchesRole =
+    selectedRole === 'All' ||
+    userRoleCategory === selectedRole ||
+    (selectedRole === 'Frontend' && user.role.includes('풀스택')) ||
+    (selectedRole === 'Backend' && user.role.includes('풀스택'))
+  const matchesTech =
+    selectedTech === 'All' || Boolean(user.techStack?.includes(selectedTech))
+
+  return matchesSearch && matchesRole && matchesTech
+}
+
 export default function TalentListingPage() {
   const [allUsers, setAllUsers] = useState<User[]>([])
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
@@ -69,22 +96,13 @@ export default function TalentListingPage() {
 
   const featuredTalents = allUsers.filter((u) => u.featured)
   const filteredTalents = useMemo(() => {
-    return allUsers.filter((u) => {
-      const matchesSearch =
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (u.bio && u.bio.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        u.role.toLowerCase().includes(searchTerm.toLowerCase())
-      const userRoleCategory = getRoleCategory(u.role)
-      const matchesRole =
-        selectedRole === 'All' ||
-        userRoleCategory === selectedRole ||
-        (selectedRole === 'Frontend' && u.role.includes('풀스택')) ||
-        (selectedRole === 'Backend' && u.role.includes('풀스택'))
-      const matchesTech =
-        selectedTech === 'All' ||
-        (u.techStack && u.techStack.includes(selectedTech))
-      return matchesSearch && matchesRole && matchesTech
-    })
+    return allUsers.filter((user) =>
+      matchesTalentFilters(user, {
+        searchTerm,
+        selectedRole,
+        selectedTech,
+      }),
+    )
   }, [allUsers, searchTerm, selectedRole, selectedTech])
   const portfoliosPerPage = 9
   const {

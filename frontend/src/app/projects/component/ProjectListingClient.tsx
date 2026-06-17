@@ -22,6 +22,49 @@ const statusMap: Record<string, string> = {
   All: '전체', Open: '모집중', Closed: '마감', Completed: '완료', Stopped: '중단',
 }
 
+interface ProjectFilterOptions {
+  searchTerm: string
+  selectedCategory: string
+  selectedTech: string
+  selectedStatus: string
+}
+
+function matchesProjectFilters(
+  project: Project,
+  {
+    searchTerm,
+    selectedCategory,
+    selectedTech,
+    selectedStatus,
+  }: ProjectFilterOptions,
+) {
+  const normalizedSearchTerm = searchTerm.toLowerCase()
+  const matchesSearch =
+    project.title.toLowerCase().includes(normalizedSearchTerm) ||
+    project.description.toLowerCase().includes(normalizedSearchTerm)
+  const matchesCategory =
+    selectedCategory === 'All' || project.category === selectedCategory
+  const matchesTech =
+    selectedTech === 'All' || project.techStack.includes(selectedTech)
+  const matchesStatus =
+    selectedStatus === 'All' || project.recruitmentStatus === selectedStatus
+
+  return matchesSearch && matchesCategory && matchesTech && matchesStatus
+}
+
+function sortProjects(
+  projects: Project[],
+  sortBy: 'newest' | 'popularity',
+) {
+  return [...projects].sort((a, b) => {
+    if (sortBy === 'newest') {
+      return getTimeValue(b.createdAt) - getTimeValue(a.createdAt)
+    }
+
+    return b.popularity - a.popularity
+  })
+}
+
 export default function ProjectListingClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -55,26 +98,16 @@ export default function ProjectListingClient() {
   )
 
   const filteredProjects = useMemo(() => {
-    return projects
-      .filter((p) => {
-        const matchesSearch =
-          p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.description.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesCategory =
-          selectedCategory === 'All' || p.category === selectedCategory
-        const matchesTech =
-          selectedTech === 'All' || p.techStack.includes(selectedTech)
-        const matchesStatus =
-          selectedStatus === 'All' || p.recruitmentStatus === selectedStatus
-        return matchesSearch && matchesCategory && matchesTech && matchesStatus
-      })
-      .sort((a, b) => {
-        if (sortBy === 'newest') {
-          return getTimeValue(b.createdAt) - getTimeValue(a.createdAt)
-        } else {
-          return b.popularity - a.popularity
-        }
-      })
+    const filtered = projects.filter((project) =>
+      matchesProjectFilters(project, {
+        searchTerm,
+        selectedCategory,
+        selectedTech,
+        selectedStatus,
+      }),
+    )
+
+    return sortProjects(filtered, sortBy)
   }, [projects, searchTerm, selectedCategory, selectedTech, selectedStatus, sortBy])
 
   const projectsPerPage = 6
