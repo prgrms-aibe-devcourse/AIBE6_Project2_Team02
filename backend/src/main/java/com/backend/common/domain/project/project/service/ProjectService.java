@@ -30,6 +30,8 @@ import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,20 +68,21 @@ public class ProjectService {
     private final ProjectViewRepository projectViewRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
 
-    public List<ProjectResponse> getProjects() {
-        List<Project> projects = projectRepository.findByDeletedAtIsNullOrderByCreatedAtDesc();
+    public Page<ProjectResponse> getProjects(Pageable pageable) {
+
+        Page<Project> projectPage = projectRepository.findByDeletedAtIsNull(pageable);
+
+        List<Project> projects = projectPage.getContent();
         Set<Long> featuredProjectIds = featuredProjectIds(projects);
         Set<Long> featuredMemberIds = featuredMemberIds();
         Map<Long, List<ProjectMember>> membersByProject = loadMembersByProject(projects);
-
-        return projects.stream()
-                .map(project -> toProjectResponse(
-                        project,
-                        membersByProject.getOrDefault(project.getId(), List.of()),
-                        featuredProjectIds.contains(project.getId()),
-                        featuredMemberIds
-                ))
-                .toList();
+        
+        return projectPage.map(project -> toProjectResponse(
+                project,
+                membersByProject.getOrDefault(project.getId(), List.of()),
+                featuredProjectIds.contains(project.getId()),
+                featuredMemberIds
+        ));
     }
 
     public ProjectResponse getProject(Long id) {
