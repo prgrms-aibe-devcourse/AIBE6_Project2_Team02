@@ -200,7 +200,7 @@ export default function TalentListingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredTalents.slice(0, 4).map((user) => (
               <Link key={user.id} href={`/u/${user.id}`}>
-                <Card className="listing-card group flex border-2 border-amber-100/50 text-center">
+                <Card className="listing-card group flex text-center hover:border-blue-300 hover:shadow-md">
                   <div className="relative inline-block mx-auto mb-4">
                     <img
                       src={user.avatar}

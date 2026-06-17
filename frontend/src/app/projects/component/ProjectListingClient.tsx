@@ -172,7 +172,7 @@ export default function ProjectListingClient() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredProjects.slice(0, 3).map((project) => (
               <Link key={project.id} href={`/projects/${project.id}`}>
-                <Card className="listing-card group flex border-2 border-amber-100/50">
+                <Card className="listing-card group flex hover:border-blue-300 hover:shadow-md">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex gap-2">
                       <Badge variant={project.recruitmentStatus === 'Open' ? 'success' : 'secondary'}>{statusMap[project.recruitmentStatus]}</Badge>
