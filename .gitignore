@@ -64,6 +64,8 @@ backend/src/main/resources/application-prod.yml
 backend/src/main/resources/application-secret.yml
 backend/src/main/resources/application-oauth.yml
 
+backend/src/main/resources/google/*.json
+
 # ==========================================
 # IDE
 # ==========================================
