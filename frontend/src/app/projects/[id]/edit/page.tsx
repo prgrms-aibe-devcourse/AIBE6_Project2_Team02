@@ -241,7 +241,7 @@ export default function ProjectEditPage() {
       <form onSubmit={handleSubmit} className="space-y-8">
         <Card className="p-6 md:p-8">
           <h2 className="mb-2 flex items-center gap-2 text-xl font-bold text-slate-900">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-sm text-blue-600">
+            <span className="section-step">
               1
             </span>
             기본 정보
@@ -292,7 +292,7 @@ export default function ProjectEditPage() {
         <Card className="p-6 md:p-8">
           <div className="mb-2 flex items-center justify-between gap-4">
             <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-sm text-blue-600">
+              <span className="section-step">
                 2
               </span>
               모집 포지션 및 기술 스택
@@ -467,7 +467,7 @@ export default function ProjectEditPage() {
 
         <Card className="p-6 md:p-8">
           <h2 className="mb-2 flex items-center gap-2 text-xl font-bold text-slate-900">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-sm text-blue-600">
+            <span className="section-step">
               3
             </span>
             분류 및 모집 일정
@@ -577,7 +577,7 @@ export default function ProjectEditPage() {
         <Card className="p-6 md:p-8">
           <div className="mb-2 flex items-center justify-between gap-4">
             <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-sm text-blue-600">
+              <span className="section-step">
                 4
               </span>
               프로젝트 목표
