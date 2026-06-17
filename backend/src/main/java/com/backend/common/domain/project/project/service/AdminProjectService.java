@@ -1,6 +1,6 @@
 package com.backend.common.domain.project.project.service;
 
-import com.backend.common.domain.project.dto.ProjectResponse;
+import com.backend.common.domain.project.project.dto.ProjectResponse;
 import com.backend.common.domain.project.project.entity.Project;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.project.project.repository.ProjectRepository;

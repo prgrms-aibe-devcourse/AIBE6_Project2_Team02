@@ -1,6 +1,8 @@
 package com.backend.common.domain.project.project.repository;
 
 import com.backend.common.domain.project.project.entity.Project;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -8,9 +10,23 @@ import java.util.List;
 
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
-    List<Project> findByDeletedAtIsNullAndIsHiddenFalseOrderByCreatedAtDesc();
 
-    List<Project> findByIsHiddenTrueOrderByUpdatedAtDesc();
+    @Query("SELECT DISTINCT p FROM Project p " +
+            "LEFT JOIN p.projectTechStacks pts " +
+            "WHERE p.deletedAt IS NULL " +
+            "AND (:search IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "AND (:category IS NULL OR p.category = :category) " +
+            "AND (:status IS NULL OR cast(p.status as string) = :status) " +
+            "AND (:tech IS NULL OR pts.techStack.name = :tech)")
+    Page<Project> searchProjects(
+            @Param("search") String search,
+            @Param("category") String category,
+            @Param("tech") String tech,
+            @Param("status") String status,
+            Pageable pageable
+    );
+
+    List<Project> findByDeletedAtIsNullOrderByCreatedAtDesc();
 
     /**
      * 내가 올린 프로젝트 목록 조회
@@ -66,10 +82,11 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             "JOIN ProjectView pv ON p.id = pv.project.id " +
             "WHERE pv.member.id = :memberId " +
             "AND p.deletedAt IS NULL " +
-            "AND p.isHidden = false " +
             "ORDER BY pv.viewedAt DESC")
     List<Project> findMyRecentlyViewedProjects(@Param("memberId") Long memberId);
 
-    @Query("SELECT p.id FROM Project p WHERE LOWER(p.title) LIKE :pattern AND p.deletedAt IS NULL AND p.isHidden = false")
+    @Query("SELECT p.id FROM Project p WHERE LOWER(p.title) LIKE :pattern AND p.deletedAt IS NULL")
     List<Long> findIdsByTitle(@Param("pattern") String pattern);
+
+    List<Project> findByIsHiddenTrueOrderByUpdatedAtDesc();
 }

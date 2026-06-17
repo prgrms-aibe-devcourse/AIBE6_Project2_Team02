@@ -1,16 +1,20 @@
 package com.backend.common.domain.project.project.controller;
 
-import com.backend.common.domain.project.dto.ProjectApplicationCreateRequest;
-import com.backend.common.domain.project.dto.ProjectApplicationCreateResponse;
-import com.backend.common.domain.project.dto.ProjectCreateRequest;
-import com.backend.common.domain.project.dto.ProjectPermissionResponse;
-import com.backend.common.domain.project.dto.ProjectResponse;
-import com.backend.common.domain.project.dto.ProjectUpdateRequest;
+import com.backend.common.domain.project.application.dto.ProjectApplicationCreateRequest;
+import com.backend.common.domain.project.application.dto.ProjectApplicationCreateResponse;
 import com.backend.common.domain.project.exception.ProjectNotFoundException;
+import com.backend.common.domain.project.project.dto.ProjectCreateRequest;
+import com.backend.common.domain.project.project.dto.ProjectPermissionResponse;
+import com.backend.common.domain.project.project.dto.ProjectResponse;
+import com.backend.common.domain.project.project.dto.ProjectUpdateRequest;
 import com.backend.common.domain.project.project.service.ProjectService;
 import com.backend.common.global.rsdata.RsData;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,8 +31,16 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @GetMapping
-    public RsData<List<ProjectResponse>> getProjects() {
-        return RsData.of("200", "프로젝트 목록 조회 성공", projectService.getProjects());
+    public RsData<Page<ProjectResponse>> getProjects(
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "category", required = false) String category,
+            @RequestParam(value = "tech", required = false) String tech,
+            @RequestParam(value = "status", required = false) String status,
+            @PageableDefault(size = 6, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<ProjectResponse> projectPage = projectService.getProjects(search, category, tech, status, pageable);
+        
+        return RsData.of("200", "프로젝트 목록 조회 성공", projectPage);
     }
 
     @GetMapping("/{id}")
