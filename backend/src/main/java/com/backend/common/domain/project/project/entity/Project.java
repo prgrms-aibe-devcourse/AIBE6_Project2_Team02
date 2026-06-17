@@ -34,6 +34,9 @@ public class Project {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(columnDefinition = "TEXT")
+    private String fullDescription;
+
     @Enumerated(EnumType.STRING)
     private ProjectCategory category;
 
@@ -191,5 +194,10 @@ public class Project {
         this.recruitmentOpen = open;
         this.updatedAt = LocalDateTime.now();
     }
-
+    public void setRecruitmentOpen(boolean recruitmentOpen) {
+        this.recruitmentOpen = recruitmentOpen;
+    }
+    public void setStatus(ProjectStatus status) {
+        this.status = status;
+    }
 }

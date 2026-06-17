@@ -9,13 +9,7 @@ import com.backend.common.domain.portfolio.portfolio.entity.PortfolioLink;
 import com.backend.common.domain.portfolio.portfolio.repository.PortfolioRepository;
 import com.backend.common.domain.project.application.entity.ProjectApplication;
 import com.backend.common.domain.project.application.repository.ProjectApplicationRepository;
-import com.backend.common.domain.project.dto.PositionResponse;
-import com.backend.common.domain.project.dto.ProjectApplicationCreateRequest;
-import com.backend.common.domain.project.dto.PositionUpdateRequest;
-import com.backend.common.domain.project.dto.ProjectCreateRequest;
-import com.backend.common.domain.project.dto.ProjectUpdateRequest;
-import com.backend.common.domain.project.dto.ProjectResponse;
-import com.backend.common.domain.project.dto.UserResponse;
+import com.backend.common.domain.project.dto.*;
 import com.backend.common.domain.project.enums.PositionType;
 import com.backend.common.domain.project.enums.ProjectCategory;
 import com.backend.common.domain.project.enums.ProjectStatus;
@@ -31,6 +25,7 @@ import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -85,7 +80,97 @@ public class ProjectService {
                 ))
                 .toList();
     }
+    public ProjectResponse_manage getProject_manage(Long id) {
+        Project project = projectRepository.findById(id)
+                .filter(p -> p.getDeletedAt() == null)
+                .orElseThrow(() -> new NoSuchElementException("Project not found"));
 
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(project.getId());
+        Set<Long> featuredProjectIds = featuredProjectIds(
+                projectRepository.findByDeletedAtIsNullOrderByCreatedAtDesc()
+        );
+        List<ProjectMember> projectMember = projectMemberRepository.findByProjectId(id);
+        return toProjectResponse_manage(
+                project,
+                members,
+                featuredProjectIds.contains(project.getId()),
+                featuredMemberIds()
+        );
+    }
+    private ProjectResponse_manage toProjectResponse_manage(
+            Project project,
+            List<ProjectMember> members,
+            boolean featured,
+            Set<Long> featuredMemberIds
+    ) {
+        UserResponse leader = toUserResponse(
+                project.getLeader(),
+                featuredMemberIds.contains(project.getLeader().getId())
+        );
+
+
+        List<UserResponse> teamMembers = members.stream()
+                .filter(member -> member.getRole() != ProjectRole.LEADER)
+                .map(member -> toUserResponse(
+                        member.getMember(),
+                        featuredMemberIds.contains(member.getMember().getId())
+                ))
+                .toList();
+        List<PMResponse> pmResponses = members.stream()
+                .filter(member -> member.getRole() != ProjectRole.LEADER)
+                .map(member -> toPMResponse(
+                        project.getId(),
+                        member.getMember(),
+                        featuredMemberIds.contains(member.getMember().getId())
+                ))
+                .toList();
+        return new ProjectResponse_manage(
+                String.valueOf(project.getId()),
+                project.getTitle(),
+                project.getDescription(),
+                project.getFullDescription() == null ? project.getDescription() : project.getFullDescription(),
+                splitGoals(project.getGoal()),
+                projectTechStackNames(project),
+                buildPositions(project, members),
+                project.isRecruitmentOpen() ? RecruitmentStatus.OPEN : RecruitmentStatus.CLOSED,
+                project.getCategory() == null ? inferCategory(project) : project.getCategory(),
+                leader,
+                teamMembers,
+                project.getDeadline().toString(),
+                project.getCreatedAt().toLocalDate().toString(),
+                Math.max(members.size() * 10, 1),
+                featured,
+                pmResponses
+        );
+    }
+    private PMResponse toPMResponse(Long id, Member member, boolean featured) {
+        Portfolio portfolio = portfolioRepository.findByMemberId(member.getId()).orElse(null);
+        List<String> techStack = memberTechStackRepository.findByMemberId(member.getId()).stream()
+                .map(MemberTechStack::getTechStack)
+                .map(TechStack::getName)
+                .toList();
+        PositionType position = null;
+        ProjectRole role = null;
+        List<ProjectMember> projectMember = projectMemberRepository.findByProjectId(id);
+        for (int i = 0; i < projectMember.size(); i++) {
+            if (member.getId() == projectMember.get(i).getMember().getId()) {
+                position = projectMember.get(i).getPosition();
+                role = projectMember.get(i).getRole();
+            }
+        }
+        return new PMResponse(
+                String.valueOf(member.getId()),
+                member.getNickname(),
+                member.getProfileImageUrl(),
+                role,
+                portfolio != null ? portfolio.getIntroduction() : "",
+                techStack,
+                null,
+                featured,
+                position
+
+        );
+    }
     public ProjectResponse getProject(Long id) {
         Project project = projectRepository.findById(id)
                 .filter(p -> p.getDeletedAt() == null)
@@ -639,4 +724,48 @@ public class ProjectService {
         projectViewRepository.save(projectView);
     }
 
+    public List<Member> getProjectApplication(Long projectId) {
+        List<ProjectApplication> applications = projectApplicationRepository.getProjectApplicationByProject_Id(projectId);
+        List<Member> memberListm = new ArrayList<>();
+        for (int i = 0; i < applications.size(); i++) {
+            memberListm.add(applications.get(i).getApplicant());
+        }
+        return memberListm;
+    }
+
+    public ProjectMember addMember(Long id, Long projectID) {
+        Project project = projectRepository.findById(projectID).get();
+        ProjectApplication projectApplication = projectApplicationRepository.findByProjectIdAndApplicantId(projectID, id).get();
+
+        ProjectMember projectMember = new ProjectMember(project, projectApplication.getApplicant(), projectApplication.getPosition(), ProjectRole.MEMBER);
+        try {
+            projectMemberRepository.save(projectMember);
+            return projectMember;
+        } catch (RuntimeException e) {
+            throw new RuntimeException("등록되지 못했습니다.");
+        }
+    }
+
+    public ProjectApplication delMember(Long id, Long projectID) {
+        ProjectApplication projectApplication = projectApplicationRepository.findByProjectIdAndApplicantId(projectID, id).get();
+        projectApplication = projectApplicationRepository.deleteProjectApplicationById(projectApplication.getId());
+        return projectApplication;
+    }
+
+    public Project updateProjectByStatus(Long id, ProjectStatus status) {
+        Project project = projectRepository.findById(id).get();
+
+        project.setStatus(status);
+        if(status.equals(ProjectStatus.IN_PROGRESS)|| status.equals(ProjectStatus.RECRUITING)){
+            project.setRecruitmentOpen(true);
+        }else{
+            project.setRecruitmentOpen(false);
+        }
+        project = projectRepository.save(project);
+        return project;
+    }
+
+    public Project findByID(Long id) {
+        return projectRepository.findById(id).get();
+    }
 }

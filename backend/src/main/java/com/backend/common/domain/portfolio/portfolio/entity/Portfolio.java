@@ -26,6 +26,8 @@ public class Portfolio {
     @JoinColumn(name = "member_id", unique = true, nullable = false)
     private Member member;
 
+
+
     private String title;
 
     @Column(columnDefinition = "TEXT")
@@ -100,5 +102,6 @@ public class Portfolio {
         this.portfolioTechStacks.clear();
         this.portfolioTechStacks.addAll(newStacks);
     }
+
 
 }
