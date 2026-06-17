@@ -1,42 +1,50 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
-import Link from 'next/link'
-import { useParams } from 'next/navigation'
 
-import {
-  Calendar,
-  Code2,
-  Github,
-  Globe,
-  MapPin,
-  MessageSquare,
-  ShieldAlert,
-} from 'lucide-react'
 
-import { LoginModal } from '../../../components/LoginModal'
-import { ReportModal } from '../../../components/ReportModal'
-import { Badge, Button, Card, Modal } from '../../../components/ui'
-import { formatPositionLabel } from '../../../constants/project'
-import {
-  cancelProjectProposal,
-  createProjectProposal,
-  fetchPendingSentProjectProposals,
-  fetchMember,
-  fetchProjects,
-  fetchProposalProjects,
-  fetchReviews,
-  checkAlreadyReported,
-} from '../../../lib/api'
-import { formatDate } from '../../../lib/date'
-import type { Project, ReviewResponse, User } from '../../../types'
-import type {
-  ProposalProject,
-  SentProjectProposal,
-} from '../../../types/dto/proposal'
-import { useAuth } from '../../providers'
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+
+
+
+import { Calendar, Code2, Github, Globe, MapPin, MessageSquare, ShieldAlert } from 'lucide-react';
+
+
+
+import { LoginModal } from '../../../components/LoginModal';
+import { ReportModal } from '../../../components/ReportModal';
+import { Badge, Button, Card, Modal } from '../../../components/ui';
+import { formatPositionLabel } from '../../../constants/project';
+import { cancelProjectProposal, checkAlreadyReported, createProjectProposal, fetchMember, fetchPendingSentProjectProposals, fetchProjects, fetchProposalProjects, fetchReviews } from '../../../lib/api';
+import { formatDate } from '../../../lib/date';
+import type { Project, ReviewResponse, User } from '../../../types';
+import type { ProposalProject, SentProjectProposal } from '../../../types/dto/proposal';
+import { useAuth } from '../../providers';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const statusMap: Record<string, string> = {
   Open: '모집중',
@@ -90,11 +98,15 @@ export default function DeveloperProfilePage() {
       setLoading(false)
       return
     }
-
-    Promise.all([fetchMember(id), fetchProjects(), fetchReviews(id)])
-      .then(([member, projectData, reviewData]) => {
+    
+    Promise.all([
+      fetchMember(id),
+      fetchProjects({ page: 0, size: 100 }),
+      fetchReviews(id),
+    ])
+      .then(([member, pageData, reviewData]) => {
         setUser(member)
-        setProjects(projectData)
+        setProjects(pageData?.content || [])
         setReviews(reviewData)
       })
       .catch(() => {

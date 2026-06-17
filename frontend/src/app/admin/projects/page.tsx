@@ -4,9 +4,7 @@ import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { 
-  FolderX, 
-  Eye, 
-  ExternalLink, 
+  FolderX,
   Search, 
   X,
   AlertCircle,
@@ -56,7 +54,7 @@ export default function AdminProjectsPage() {
 
   const filteredProjects = projects.filter(p => 
     p.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-    p.leader.nickname.toLowerCase().includes(searchKeyword.toLowerCase())
+    p.leader.name.toLowerCase().includes(searchKeyword.toLowerCase())
   )
 
   if (loading) {

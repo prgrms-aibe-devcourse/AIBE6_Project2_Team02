@@ -29,6 +29,8 @@ import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,24 +66,31 @@ public class ProjectService {
     private final ProjectViewRepository projectViewRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
 
-    public List<ProjectResponse> getProjects() {
-        List<Project> projects = projectRepository.findByDeletedAtIsNullAndIsHiddenFalseOrderByCreatedAtDesc();
-        return convertToResponses(projects);
-    }
+    public Page<ProjectResponse> getProjects(
+            String search,
+            String category,
+            String tech,
+            String status,
+            Pageable pageable
+    ) {
+        String qSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+        String qCategory = (category != null && !"All".equalsIgnoreCase(category)) ? category.trim() : null;
+        String qTech = (tech != null && !"All".equalsIgnoreCase(tech)) ? tech.trim() : null;
+        String qStatus = (status != null && !"All".equalsIgnoreCase(status)) ? status.trim() : null;
 
-    public List<ProjectResponse> convertToResponses(List<Project> projects) {
+        Page<Project> projectPage = projectRepository.searchProjects(qSearch, qCategory, qTech, qStatus, pageable);
+
+        List<Project> projects = projectPage.getContent();
         Set<Long> featuredProjectIds = featuredProjectIds(projects);
         Set<Long> featuredMemberIds = featuredMemberIds();
         Map<Long, List<ProjectMember>> membersByProject = loadMembersByProject(projects);
 
-        return projects.stream()
-                .map(project -> toProjectResponse(
-                        project,
-                        membersByProject.getOrDefault(project.getId(), List.of()),
-                        featuredProjectIds.contains(project.getId()),
-                        featuredMemberIds
-                ))
-                .toList();
+        return projectPage.map(project -> toProjectResponse(
+                project,
+                membersByProject.getOrDefault(project.getId(), List.of()),
+                featuredProjectIds.contains(project.getId()),
+                featuredMemberIds
+        ));
     }
 
     public ProjectResponse getProject(Long id) {
@@ -91,7 +100,7 @@ public class ProjectService {
 
         List<ProjectMember> members = projectMemberRepository.findByProjectId(project.getId());
         Set<Long> featuredProjectIds = featuredProjectIds(
-                projectRepository.findByDeletedAtIsNullAndIsHiddenFalseOrderByCreatedAtDesc()
+                projectRepository.findByDeletedAtIsNullOrderByCreatedAtDesc()
         );
 
         return toProjectResponse(
@@ -635,6 +644,21 @@ public class ProjectService {
                 .build();
 
         projectViewRepository.save(projectView);
+    }
+
+    public List<ProjectResponse> convertToResponses(List<Project> projects) {
+        Set<Long> featuredProjectIds = featuredProjectIds(projects);
+        Set<Long> featuredMemberIds = featuredMemberIds();
+        Map<Long, List<ProjectMember>> membersByProject = loadMembersByProject(projects);
+
+        return projects.stream()
+                .map(project -> toProjectResponse(
+                        project,
+                        membersByProject.getOrDefault(project.getId(), List.of()),
+                        featuredProjectIds.contains(project.getId()),
+                        featuredMemberIds
+                ))
+                .toList();
     }
 
 }
