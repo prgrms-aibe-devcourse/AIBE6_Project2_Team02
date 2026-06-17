@@ -1,5 +1,6 @@
-package com.backend.common.domain.project.dto;
+package com.backend.common.domain.project.project.dto;
 
+import com.backend.common.domain.member.dto.UserResponse;
 import com.backend.common.domain.project.enums.ProjectCategory;
 import com.backend.common.domain.project.enums.RecruitmentStatus;
 import java.util.List;

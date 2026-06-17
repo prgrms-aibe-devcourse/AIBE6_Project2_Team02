@@ -1,4 +1,4 @@
-package com.backend.common.domain.project.dto;
+package com.backend.common.domain.project.project.dto;
 
 import com.backend.common.domain.project.enums.ProjectCategory;
 import com.backend.common.domain.project.enums.PositionType;

@@ -1,4 +1,4 @@
-package com.backend.common.domain.project.dto;
+package com.backend.common.domain.member.dto;
 
 import java.util.List;
 

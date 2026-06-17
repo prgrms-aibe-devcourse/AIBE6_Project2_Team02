@@ -3,7 +3,7 @@ package com.backend.common.domain.member.controller;
 import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.exception.MemberNotFoundException;
 import com.backend.common.domain.member.repository.MemberRepository;
-import com.backend.common.domain.project.dto.UserResponse;
+import com.backend.common.domain.member.dto.UserResponse;
 import com.backend.common.domain.project.project.service.ProjectService;
 import com.backend.common.global.rsdata.RsData;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
