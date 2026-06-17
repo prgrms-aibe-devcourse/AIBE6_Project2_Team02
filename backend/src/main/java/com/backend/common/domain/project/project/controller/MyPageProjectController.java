@@ -9,6 +9,10 @@ import com.backend.common.domain.project.project.service.MyPageProjectService;
 import com.backend.common.global.rsdata.RsData;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -27,13 +31,12 @@ public class MyPageProjectController {
      */
     @GetMapping("/owned")
     @PreAuthorize("isAuthenticated()")
-    public RsData<List<MyPageProjectResponse>> getMyOwnedProjects(
-            @AuthenticationPrincipal CustomMemberDetails userDetails
+    public RsData<Page<MyPageProjectResponse>> getMyOwnedProjects(
+            @AuthenticationPrincipal CustomMemberDetails userDetails,
+            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        List<MyPageProjectResponse> responses = myPageProjectService.getMyOwnedProjects(userDetails.getMemberId()) // 🎯 기존 메서드 오타(Participating로 가있던 것)도 정정
-                .stream()
-                .map(project -> MyPageProjectResponse.from(project, extractPositionEnums(project)))
-                .toList();
+        Page<MyPageProjectResponse> responses = myPageProjectService.getMyOwnedProjects(userDetails.getMemberId(), pageable)
+                .map(project -> MyPageProjectResponse.from(project, extractPositionEnums(project)));
         return RsData.of("200", "내가 올린 프로젝트 목록 조회가 완료되었습니다.", responses);
     }
 
@@ -42,13 +45,12 @@ public class MyPageProjectController {
      */
     @GetMapping("/participating")
     @PreAuthorize("isAuthenticated()")
-    public RsData<List<MyPageProjectResponse>> getMyParticipatingProjects(
-            @AuthenticationPrincipal CustomMemberDetails userDetails
+    public RsData<Page<MyPageProjectResponse>> getMyParticipatingProjects(
+            @AuthenticationPrincipal CustomMemberDetails userDetails,
+            @PageableDefault(size = 5, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        List<MyPageProjectResponse> responses = myPageProjectService.getMyParticipatingProjects(userDetails.getMemberId())
-                .stream()
-                .map(project -> MyPageProjectResponse.from(project, extractPositionEnums(project))) // 🎯 하드코딩 제거 완료
-                .toList();
+        Page<MyPageProjectResponse> responses = myPageProjectService.getMyParticipatingProjects(userDetails.getMemberId(), pageable)
+                .map(project -> MyPageProjectResponse.from(project, extractPositionEnums(project)));
         return RsData.of("200", "내가 참여 중인 프로젝트 목록 조회가 완료되었습니다.", responses);
     }
 
@@ -57,13 +59,12 @@ public class MyPageProjectController {
      */
     @GetMapping("/applied")
     @PreAuthorize("isAuthenticated()")
-    public RsData<List<MyPageProjectResponse>> getMyAppliedProjects(
-            @AuthenticationPrincipal CustomMemberDetails userDetails
+    public RsData<Page<MyPageProjectResponse>> getMyAppliedProjects(
+            @AuthenticationPrincipal CustomMemberDetails userDetails,
+            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        List<MyPageProjectResponse> responses = myPageProjectService.getMyAppliedProjects(userDetails.getMemberId())
-                .stream()
-                .map(project -> MyPageProjectResponse.from(project, extractPositionEnums(project))) // 🎯 하드코딩 제거 완료
-                .toList();
+        Page<MyPageProjectResponse> responses = myPageProjectService.getMyAppliedProjects(userDetails.getMemberId(), pageable)
+                .map(project -> MyPageProjectResponse.from(project, extractPositionEnums(project)));
         return RsData.of("200", "내가 지원한 프로젝트 목록 조회가 완료되었습니다.", responses);
     }
 
@@ -72,13 +73,12 @@ public class MyPageProjectController {
      */
     @GetMapping("/completed")
     @PreAuthorize("isAuthenticated()")
-    public RsData<List<MyPageProjectResponse>> getMyCompletedProjects(
-            @AuthenticationPrincipal CustomMemberDetails userDetails
+    public RsData<Page<MyPageProjectResponse>> getMyCompletedProjects(
+            @AuthenticationPrincipal CustomMemberDetails userDetails,
+            @PageableDefault(size = 5, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        List<MyPageProjectResponse> responses = myPageProjectService.getMyCompletedProjects(userDetails.getMemberId())
-                .stream()
-                .map(project -> MyPageProjectResponse.from(project, extractPositionEnums(project))) // 🎯 하드코딩 제거 완료
-                .toList();
+        Page<MyPageProjectResponse> responses = myPageProjectService.getMyCompletedProjects(userDetails.getMemberId(), pageable)
+                .map(project -> MyPageProjectResponse.from(project, extractPositionEnums(project)));
         return RsData.of("200", "내가 완료/해산한 프로젝트 목록 조회가 완료되었습니다.", responses);
     }
 
@@ -87,13 +87,12 @@ public class MyPageProjectController {
      */
     @GetMapping("/recent-views")
     @PreAuthorize("isAuthenticated()")
-    public RsData<List<MyPageProjectResponse>> getMyRecentlyViewedProjects(
-            @AuthenticationPrincipal CustomMemberDetails userDetails
+    public RsData<Page<MyPageProjectResponse>> getMyRecentlyViewedProjects(
+            @AuthenticationPrincipal CustomMemberDetails userDetails,
+            @PageableDefault(size = 5, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        List<MyPageProjectResponse> responses = myPageProjectService.getMyRecentlyViewedProjects(userDetails.getMemberId())
-                .stream()
-                .map(project -> MyPageProjectResponse.from(project, extractPositionEnums(project))) // 🎯 빈 리스트 나가던 것 동적 변경 완료
-                .toList();
+        Page<MyPageProjectResponse> responses = myPageProjectService.getMyRecentlyViewedProjects(userDetails.getMemberId(), pageable)
+                .map(project -> MyPageProjectResponse.from(project, extractPositionEnums(project)));
         return RsData.of("200", "최근 본 프로젝트 목록 조회가 완료되었습니다.", responses);
     }
 
@@ -116,13 +115,12 @@ public class MyPageProjectController {
      */
     @GetMapping("/applications")
     @PreAuthorize("isAuthenticated()")
-    public RsData<List<MyPageApplicationResponse>> getMyProjectApplications(
-            @AuthenticationPrincipal CustomMemberDetails userDetails
+    public RsData<Page<MyPageApplicationResponse>> getMyProjectApplications(
+            @AuthenticationPrincipal CustomMemberDetails userDetails,
+            @PageableDefault(size = 5, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        List<MyPageApplicationResponse> responses = myPageProjectService.getMyProjectApplications(userDetails.getMemberId())
-                .stream()
-                .map(MyPageApplicationResponse::from)
-                .toList();
+        Page<MyPageApplicationResponse> responses = myPageProjectService.getMyProjectApplications(userDetails.getMemberId(), pageable)
+                .map(MyPageApplicationResponse::from);
         return RsData.of("200", "내 프로젝트에 들어온 지원 목록 조회가 완료되었습니다.", responses);
     }
 

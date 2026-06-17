@@ -26,6 +26,8 @@ import com.backend.common.domain.techstack.repository.TechStackRepository;
 import com.backend.common.global.exception.exception.PortfolioInputException;
 import com.backend.common.global.exception.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -122,11 +124,9 @@ public class PortfolioService {
         return PortfolioResponse.from(portfolio);
     }
 
-    public List<MyPageProposalResponse> getMyReceivedProposals(Long memberId) {
-        return projectProposalRepository.findMyReceivedProposals(memberId)
-                .stream()
-                .map(MyPageProposalResponse::from)
-                .toList();
+    public Page<MyPageProposalResponse> getMyReceivedProposals(Long memberId, Pageable pageable) {
+        return projectProposalRepository.findMyReceivedProposals(memberId, pageable)
+                .map(MyPageProposalResponse::from);
     }
 
     public List<ProposalProjectResponse> getProposalProjects(Long memberId) {

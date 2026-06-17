@@ -1,12 +1,32 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 
-import { useRouter } from 'next/navigation'
 
-import { Briefcase, Trash2 } from 'lucide-react'
 
-import { Badge, Button, Card } from '../../../components/ui'
+import { useRouter } from 'next/navigation';
+
+
+
+import { Briefcase, Trash2 } from 'lucide-react';
+
+
+
+import { PaginationControls } from '../../../components/PaginationControls';
+import { Badge, Button, Card } from '../../../components/ui';
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 type ProjectSubTab =
   | 'uploaded'
@@ -60,8 +80,12 @@ export default function ProjectTab({ user }: ProjectTabProps) {
   const router = useRouter()
   const [activeProjectSubTab, setActiveProjectSubTab] =
     useState<ProjectSubTab>('uploaded')
-  const [projects, setProjects] = useState<MyPageProjectResponse[]>()
+  const [projects, setProjects] = useState<MyPageProjectResponse[]>([])
   const [contentLoading, setContentLoading] = useState(false)
+
+  // 🎯 서버 페이징 관리를 위한 전용 상태 필드
+  const [page, setPage] = useState(0)
+  const [pageCount, setPageCount] = useState(0)
 
   useEffect(() => {
     if (!user) return
@@ -75,17 +99,34 @@ export default function ProjectTab({ user }: ProjectTabProps) {
     }
 
     setContentLoading(true)
-    fetch(endpointMap[activeProjectSubTab], {
+
+    // 🎯 백엔드 페이징 파라미터 매핑 추가
+    fetch(`${endpointMap[activeProjectSubTab]}?page=${page}&size=5`, {
       credentials: 'include',
     })
       .then((res) => res.json())
       .then((res) => {
-        if (res.code === '200') setProjects(res.data)
+        if (res.code === '200' && res.data) {
+          setProjects(res.data.content || [])
+          setPageCount(res.data.totalPages || 0)
+        } else {
+          setProjects([])
+          setPageCount(0)
+        }
       })
-      .catch(() => setProjects([]))
+      .catch(() => {
+        setProjects([])
+        setPageCount(0)
+      })
       .finally(() => setContentLoading(false))
-  }, [activeProjectSubTab, user])
+  }, [activeProjectSubTab, page, user])
 
+  // 서브 탭 변경 시 페이지 0번으로 리셋
+  useEffect(() => {
+    setPage(0)
+  }, [activeProjectSubTab])
+
+  // 🎯 누락되었던 최근 본 내역 삭제 함수 원본 복구
   const handleDeleteRecentView = async (
     projectId: number,
     e: React.MouseEvent,
@@ -93,10 +134,13 @@ export default function ProjectTab({ user }: ProjectTabProps) {
     e.stopPropagation()
     if (!confirm('최근 본 프로젝트 내역에서 삭제하시겠습니까?')) return
     try {
-      const res = await fetch(`${API_BASE}/mypage/projects/recent-views/${projectId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      })
+      const res = await fetch(
+        `${API_BASE}/mypage/projects/recent-views/${projectId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        },
+      )
       const result = await res.json()
       if (result.code === '200') {
         setProjects((prev) => prev?.filter((p) => p.id !== projectId))
@@ -106,6 +150,7 @@ export default function ProjectTab({ user }: ProjectTabProps) {
     }
   }
 
+  // 🎯 누락되었던 프로젝트 지원 신청 취소 함수 원본 복구
   const handleCancelApplication = async (
     applicationId: number,
     e: React.MouseEvent,
@@ -223,6 +268,15 @@ export default function ProjectTab({ user }: ProjectTabProps) {
               </div>
             )
           })}
+
+          {/* 하단 페이지네이션 컴포넌트 마운트 */}
+          <div className="mt-8 flex justify-center w-full">
+            <PaginationControls
+              page={page}
+              pageCount={pageCount}
+              onPageChange={setPage}
+            />
+          </div>
         </div>
       ) : (
         <Card className="p-12 text-center border-dashed">

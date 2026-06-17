@@ -192,4 +192,20 @@ public class Project {
         this.updatedAt = LocalDateTime.now();
     }
 
+    /*
+      더미데이터 만드는 용
+     */
+    public void changeStatus(ProjectStatus projectStatus) {
+        this.status = projectStatus;
+        if (projectStatus == ProjectStatus.COMPLETED) {
+            this.recruitmentOpen = false;
+        }
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // 더미 데이터 초기화용 강제 상태 전이 메서드
+    public void forceSetRecruitmentOpen(boolean recruitmentOpen) {
+        this.recruitmentOpen = recruitmentOpen;
+        this.updatedAt = LocalDateTime.now();
+    }
 }
