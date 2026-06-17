@@ -10,6 +10,7 @@ import { Clock, MapPin, Search, Sparkles } from 'lucide-react'
 import { PaginationControls } from '../../components/PaginationControls'
 import { SearchField } from '../../components/SearchField'
 import { Badge, Button, Card } from '../../components/ui'
+import { formatPositionLabel } from '../../constants/project'
 import { usePaginatedList } from '../../hooks/usePaginatedList'
 import { fetchMembers, fetchPopularTechStacks } from '../../lib/api'
 import type { User } from '../../types'
@@ -35,6 +36,11 @@ const roles = [
 
 // 간단한 직군 분류 헬퍼 함수
 const getRoleCategory = (role: string) => {
+  if (role === 'FRONTEND') return 'Frontend'
+  if (role === 'BACKEND') return 'Backend'
+  if (role === 'FULL_STACK') return 'Frontend'
+  if (role === 'DESIGNER') return 'Design'
+  if (role === 'PRODUCT_MANAGER') return 'Other'
   if (role.includes('프론트엔드') || role.includes('풀스택')) return 'Frontend'
   if (role.includes('백엔드') || role.includes('풀스택')) return 'Backend'
   if (
@@ -59,10 +65,12 @@ function matchesTalentFilters(
   { searchTerm, selectedRole, selectedTech }: TalentFilterOptions,
 ) {
   const normalizedSearchTerm = searchTerm.toLowerCase()
+  const roleLabel = formatPositionLabel(user.role)
   const matchesSearch =
     user.name.toLowerCase().includes(normalizedSearchTerm) ||
     Boolean(user.bio?.toLowerCase().includes(normalizedSearchTerm)) ||
-    user.role.toLowerCase().includes(normalizedSearchTerm)
+    user.role.toLowerCase().includes(normalizedSearchTerm) ||
+    roleLabel.toLowerCase().includes(normalizedSearchTerm)
   const userRoleCategory = getRoleCategory(user.role)
   const matchesRole =
     selectedRole === 'All' ||
@@ -218,7 +226,7 @@ export default function TalentListingPage() {
                     {user.name}
                   </h3>
                   <p className="text-sm text-blue-600 font-medium mb-3">
-                    {user.role}
+                    {formatPositionLabel(user.role)}
                   </p>
                   <p className="text-xs text-slate-500 line-clamp-2 mb-4 flex-1">
                     {user.bio || '소개글이 없습니다.'}
@@ -285,7 +293,7 @@ export default function TalentListingPage() {
                           </Badge>
                         </div>
                         <p className="text-sm text-blue-600 font-medium">
-                          {user.role}
+                          {formatPositionLabel(user.role)}
                         </p>
                         {user.location && (
                           <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">

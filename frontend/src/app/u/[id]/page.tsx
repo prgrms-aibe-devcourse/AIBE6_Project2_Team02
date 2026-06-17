@@ -19,6 +19,7 @@ import {
 import { LoginModal } from '../../../components/LoginModal'
 import { ReportModal } from '../../../components/ReportModal'
 import { Badge, Button, Card, Modal } from '../../../components/ui'
+import { formatPositionLabel } from '../../../constants/project'
 import {
   cancelProjectProposal,
   createProjectProposal,
@@ -283,7 +284,9 @@ export default function DeveloperProfilePage() {
               ></div>
             </div>
             <h1 className="text-2xl font-bold text-slate-900">{user.name}</h1>
-            <p className="text-blue-600 font-medium mb-4">{user.role}</p>
+            <p className="text-blue-600 font-medium mb-4">
+              {formatPositionLabel(user.role)}
+            </p>
 
             <div className="mb-6 space-y-2">
               {isMyProfile ? (
