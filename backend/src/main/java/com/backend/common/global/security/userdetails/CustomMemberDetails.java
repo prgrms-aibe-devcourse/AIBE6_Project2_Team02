@@ -1,5 +1,6 @@
 package com.backend.common.global.security.userdetails;
 
+import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.entity.OauthAccount;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,12 @@ public class CustomMemberDetails implements UserDetails {
         this.memberId = oauthAccount.getMember().getId();
         this.nickname = oauthAccount.getMember().getNickname();
         this.status = oauthAccount.getMember().getStatus();
+    }
+
+    public CustomMemberDetails(Member member){
+        this.memberId = member.getId();
+        this.nickname = member.getNickname();
+        this.status = member.getStatus();
     }
 
     @Override
