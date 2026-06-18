@@ -5,8 +5,10 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -17,16 +19,20 @@ public class CustomMemberDetails implements UserDetails {
     private final Long memberId;
     private final String nickname;
     private final String status;
+    private final String role;
 
     public CustomMemberDetails(OauthAccount oauthAccount){
         this.memberId = oauthAccount.getMember().getId();
         this.nickname = oauthAccount.getMember().getNickname();
         this.status = oauthAccount.getMember().getStatus();
+        this.role = oauthAccount.getMember().getRole().name();
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority(this.role));
+        return authorities;
     }
 
     @Override

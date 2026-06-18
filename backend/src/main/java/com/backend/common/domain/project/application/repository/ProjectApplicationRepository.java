@@ -2,6 +2,8 @@ package com.backend.common.domain.project.application.repository;
 
 import com.backend.common.domain.project.application.entity.ProjectApplication;
 import com.backend.common.domain.project.enums.SelectionStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,14 +17,13 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
      * 내가 올린 프로젝트 중 지원이 온 목록 조회
      * 조건: 프로젝트의 팀 리더가 '나(memberId)'이고, 대기(PENDING) 상태인 지원서들
      */
-    @Query("SELECT pa FROM ProjectApplication pa " +
-            "JOIN FETCH pa.project p " +
-            "JOIN FETCH pa.applicant m " +
-            "WHERE p.leader.id = :memberId " +
-            "AND pa.status = 'PENDING' " +
-            "AND p.deletedAt IS NULL " +
-            "ORDER BY pa.createdAt DESC")
-    List<ProjectApplication> findMyProjectApplications(@Param("memberId") Long memberId);
+    @Query(value = "SELECT pa FROM ProjectApplication pa " +
+            "JOIN pa.project p " +
+            "WHERE p.leader.id = :memberId AND p.deletedAt IS NULL",
+            countQuery = "SELECT count(pa) FROM ProjectApplication pa " +
+                    "JOIN pa.project p " +
+                    "WHERE p.leader.id = :memberId AND p.deletedAt IS NULL")
+    Page<ProjectApplication> findMyProjectApplications(@Param("memberId") Long memberId, Pageable pageable);
 
     @Query("SELECT pa FROM ProjectApplication pa " +
             "WHERE pa.project.id = :projectId " +

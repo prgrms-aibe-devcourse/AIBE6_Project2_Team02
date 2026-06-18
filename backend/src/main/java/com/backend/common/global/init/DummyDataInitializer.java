@@ -1,6 +1,7 @@
 package com.backend.common.global.init;
 
 import com.backend.common.domain.member.entity.Member;
+import com.backend.common.domain.member.entity.MemberRole; // 🎯 권한 이넘 임포트
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.member.repository.MemberTechStackRepository;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
@@ -12,6 +13,7 @@ import com.backend.common.domain.project.application.entity.ProjectApplication;
 import com.backend.common.domain.project.application.repository.ProjectApplicationRepository;
 import com.backend.common.domain.project.enums.PositionType;
 import com.backend.common.domain.project.enums.ProjectCategory;
+import com.backend.common.domain.project.enums.ProjectStatus;
 import com.backend.common.domain.project.project.entity.*;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.project.project.repository.ProjectRepository;
@@ -23,6 +25,7 @@ import com.backend.common.domain.report.repository.ReportRepository;
 import com.backend.common.domain.review.entity.Review;
 import com.backend.common.domain.review.repository.ReviewRepository;
 import com.backend.common.domain.techstack.entity.MemberTechStack;
+import com.backend.common.domain.techstack.entity.PortfolioTechStack;
 import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
@@ -64,6 +67,7 @@ public class DummyDataInitializer implements ApplicationRunner {
             backfillProjectTechStacks(techStacks);
             backfillProjectPositionRoles();
             backfillPortfolioDesiredPositions();
+            backfillMissingPortfolios();
             return;
         }
 
@@ -81,10 +85,10 @@ public class DummyDataInitializer implements ApplicationRunner {
     }
 
     /**
-     * 마이페이지 프론트엔드 연동 확인을 위한 테스트 데이터 빌딩
+     * 마이페이지 프론트엔드 페이징(Size=5) 통합 검증을 위한 6~8개 단위 테스트 데이터 벌크 빌딩
      */
     private void saveMyPageTestData(Map<String, Member> members) {
-        Member testUser = Member.create("아무개", "https://avatars.githubusercontent.com/u/12345678?v=4");
+        Member testUser = Member.createAdmin("아무개", "https://avatars.githubusercontent.com/u/12345678?v=4");
         memberRepository.save(testUser);
 
         members.put("testuser", testUser);
@@ -104,122 +108,142 @@ public class DummyDataInitializer implements ApplicationRunner {
         testPortfolio.changeDesiredPosition(PositionType.BACKEND.name());
         portfolioRepository.save(testPortfolio);
 
-        // ----------------------------------------------------
-        // [프로젝트 서브 탭 1번] 내가 올린 프로젝트 (OWNED)
-        // ----------------------------------------------------
-        Project ownedProject = Project.builder()
-                .leader(testUser)
-                .title("DevLink 리팩토링 및 고도화 스쿼드")
-                .description("기존 사이드 프로젝트 모집 플랫폼의 레거시 코드를 제거하고 스프링 부트 4.0으로 마이그레이션할 팀원을 찾습니다.")
-                .goal("Next.js App Router 릴리즈 및 모킹 통합 테스트 완공")
-                .deadline(LocalDate.now().plusMonths(1))
-                .build();
-        projectRepository.save(ownedProject);
-
-        ProjectMember ownedLeader = ProjectMember.builder()
-                .project(ownedProject)
-                .member(testUser)
-                .position(PositionType.BACKEND)
-                .role(ProjectRole.LEADER)
-                .build();
-        projectMemberRepository.save(ownedLeader);
-
-        // ----------------------------------------------------
-        // [프로젝트 서브 탭 2번] 내가 참여중인 프로젝트 (PARTICIPATING)
-        // ----------------------------------------------------
-        // 기존에 u1(Alex Chen)이 방장인 프로젝트 가져오기
         List<Project> allProjects = projectRepository.findAll();
-        Project participatingProject = allProjects.get(0); // DevLink - 사이드 프로젝트 플랫폼 공고
-
-        ProjectMember activeMember = ProjectMember.builder()
-                .project(participatingProject)
-                .member(testUser)
-                .position(PositionType.BACKEND)
-                .role(ProjectRole.MEMBER)
-                .build();
-        projectMemberRepository.save(activeMember);
 
         // ----------------------------------------------------
-        // [프로젝트 서브 탭 3번] 내가 지원한 프로젝트 (APPLIED)
+        // [프로젝트 서브 탭 1] 내가 올린 프로젝트 (OWNED) -> 총 6개 생성 (2페이지 검증)
         // ----------------------------------------------------
-        Project targetAppliedProject = allProjects.get(1); // 에코트랙 모바일 앱 공고
-        ProjectApplication myApplication = ProjectApplication.builder()
-                .project(targetAppliedProject)
-                .applicant(testUser)
-                .position(PositionType.BACKEND)
-                .message("이전에 대용량 트래픽 처리 백엔드 아키텍처를 테스트 코드로 검증한 경험이 있어 팀에 기여하고자 지원합니다!")
-                .build();
-        // 빌더 생성자 내부 캡슐화 로직에 의해 status는 자동으로 PENDING 상태로 세팅됨
-        projectApplicationRepository.save(myApplication);
+        for (int i = 1; i <= 6; i++) {
+            Project ownedProject = Project.builder()
+                    .leader(testUser)
+                    .title("내가 생성한 고도화 스쿼드 공고 " + i + "호")
+                    .description("레거시 청산을 위해 스프링 부트 4.0 환경에서 아키텍처 설계를 함께할 팀원을 모집합니다. " + i)
+                    .goal("Next.js App Router 릴리즈 및 모킹 통합 테스트 완공")
+                    .deadline(LocalDate.now().plusMonths(1))
+                    .build();
+
+            ownedProject.changeStatus(ProjectStatus.RECRUITING);
+            ownedProject.toggleRecruitment(true);
+
+            projectRepository.save(ownedProject);
+
+            ProjectMember ownedLeader = ProjectMember.builder()
+                    .project(ownedProject)
+                    .member(testUser)
+                    .position(PositionType.BACKEND)
+                    .role(ProjectRole.LEADER)
+                    .build();
+            projectMemberRepository.save(ownedLeader);
+
+            // [제안 필터 A 검증 연동] 유저가 생성한 1호 공고에 다른 더미 유저들이 벌크 지원 (총 6개 지원서 누적)
+            if (i == 1) {
+                String[] applicants = {"u2", "u6", "u1", "u3", "u4", "u15"};
+                PositionType[] positions = {PositionType.BACKEND, PositionType.FRONTEND, PositionType.FULL_STACK, PositionType.DESIGNER, PositionType.FRONTEND, PositionType.BACKEND};
+                for (int j = 0; j < applicants.length; j++) {
+                    ProjectApplication incomingApp = ProjectApplication.builder()
+                            .project(ownedProject)
+                            .applicant(members.get(applicants[j]))
+                            .position(positions[j])
+                            .message("안녕하세요! 제 보유 기술 스택을 바탕으로 공고 1호 팀에 합류하여 기여하고 싶습니다. 번호: " + (j + 1))
+                            .build();
+                    projectApplicationRepository.save(incomingApp);
+                }
+            }
+        }
 
         // ----------------------------------------------------
-        // [프로젝트 서브 탭 4번] 내가 수행한 프로젝트 (COMPLETED)
+        // [프로젝트 서브 탭 2] 내가 참여중인 프로젝트 (PARTICIPATING) -> 총 6개 할당 (2페이지 검증)
         // ----------------------------------------------------
-        Project completedProject = Project.builder()
-                .leader(testUser)
-                .title("AIBE 6기 영광의 백엔드 토이 프로젝트")
-                .description("MVC 패턴 및 파일 영속화Persistence 구조 설계를 위해 진행했던 11단계 콘솔 기반 명언 앱 서비스입니다.")
-                .goal("11단계 명언 파일 관리 시스템 영속화 성공")
-                .deadline(LocalDate.now().minusMonths(2))
-                .build();
-        completedProject.startProject();
-        // 엔티티 필드 직접 조작이 불가능하므로 리플렉션 혹은 상태 세팅 비즈니스 메서드가 없다면 강제 변환 명시
-        // 만약 엔티티에 완료 상태 변환 메서드가 없다면, 엔티티 필드가 변경 가능하게 리프레시되거나 강제 전이 구조 처리 필요
-        projectRepository.save(completedProject);
+        int participatingCount = Math.min(allProjects.size(), 6);
+        for (int i = 0; i < participatingCount; i++) {
+            Project targetProj = allProjects.get(i);
 
-        ProjectMember completedLeader = ProjectMember.builder()
-                .project(completedProject)
-                .member(testUser)
-                .position(PositionType.BACKEND)
-                .role(ProjectRole.LEADER)
-                .build();
-        projectMemberRepository.save(completedLeader);
+            targetProj.changeStatus(com.backend.common.domain.project.enums.ProjectStatus.RECRUITING);
+            targetProj.startProject();
+            projectRepository.save(targetProj);
+
+            ProjectMember activeMember = ProjectMember.builder()
+                    .project(targetProj)
+                    .member(testUser)
+                    .position(PositionType.BACKEND)
+                    .role(ProjectRole.MEMBER)
+                    .build();
+            projectMemberRepository.save(activeMember);
+        }
 
         // ----------------------------------------------------
-        // [프로젝트 서브 탭 5번] 조회 목록 (RECENT-VIEWS)
+        // [프로젝트 서브 탭 3] 내가 지원한 프로젝트 (APPLIED) -> 총 6개 생성 (2페이지 검증)
         // ----------------------------------------------------
-        Project recentViewProject1 = allProjects.get(2); // AI 코드 리뷰어
-        Project recentViewProject2 = allProjects.get(3); // 인디 게임: 네온 나이츠
-
-        projectViewRepository.save(ProjectView.builder().member(testUser).project(recentViewProject1).build());
-        projectViewRepository.save(ProjectView.builder().member(testUser).project(recentViewProject2).build());
-
-        // ----------------------------------------------------
-        // [제안 필터 A] 내 프로젝트에 들어온 지원 (APPLICATIONS)
-        // ----------------------------------------------------
-        // 내가 올린 프로젝트(ownedProject)에 u2(Sarah Jenkins)와 u6(Lisa Ray)가 각각 백엔드/프론트엔드로 지원
-        ProjectApplication incomingApp1 = ProjectApplication.builder()
-                .project(ownedProject)
-                .applicant(members.get("u2"))
-                .position(PositionType.BACKEND)
-                .message("파이썬 Django 위주로 개발했지만 이번 기회에 Java Spring Boot 스택을 찐하게 학습하며 참여하고 싶습니다.")
-                .build();
-        projectApplicationRepository.save(incomingApp1);
-
-        ProjectApplication incomingApp2 = ProjectApplication.builder()
-                .project(ownedProject)
-                .applicant(members.get("u6"))
-                .position(PositionType.FRONTEND)
-                .message("Next.js 프론트 레이아웃 및 탭 분리 리팩토링 컴포넌트 마스터입니다. 화면 연동 깔끔하게 처리해 드릴게요!")
-                .build();
-        projectApplicationRepository.save(incomingApp2);
+        int appliedCount = Math.min(allProjects.size(), 6);
+        for (int i = 0; i < appliedCount; i++) {
+            Project targetProj = allProjects.get(allProjects.size() - 1 - i);
+            ProjectApplication myApplication = ProjectApplication.builder()
+                    .project(targetProj)
+                    .applicant(testUser)
+                    .position(PositionType.BACKEND)
+                    .message("대용량 트래픽 처리 백엔드 아키텍처를 연동 검증해 본 경험이 있습니다. 지원 순번: " + (i + 1))
+                    .build();
+            projectApplicationRepository.save(myApplication);
+        }
 
         // ----------------------------------------------------
-        // [제안 필터 B] 내 포트폴리오에 온 제안 (PROPOSALS)
+        // [프로젝트 서브 탭 4] 내가 수행한 프로젝트 (COMPLETED) -> 총 7개 생성 (2페이지 검증)
         // ----------------------------------------------------
-        // u10(Nina Simone) 파운더가 정용현의 기가 막힌 벨로그 포폴을 보고 본인의 스타트업 팀 합류 스카우트 제안서 발송
-        Project scoutProject = allProjects.get(4); // 동네 음식 구조대 공고
-        ProjectProposal incomingProposal = ProjectProposal.builder()
-                .project(scoutProject)
-                .portfolio(testPortfolio)
-                .proposer(members.get("u10"))
-                .message("아무개 개발자님의 테스트 중심 백엔드 성장 여정 블로그를 인상 깊게 보았습니다. 저희 동네 음식 구조대 MVP 백엔드 총괄 아키텍터로 모시고 싶습니다!")
-                .build();
-        projectProposalRepository.save(incomingProposal);
+        for (int i = 1; i <= 7; i++) {
+            Project completedProject = Project.builder()
+                    .leader(testUser)
+                    .title("영광의 백엔드 토이 프로젝트 완공작 " + i + "호")
+                    .description("MVC 패턴 및 파일 영속화 구조 설계를 위해 진행했던 콘솔 기반 명언 앱 서비스 이력입니다. " + i)
+                    .goal("명언 파일 관리 시스템 영속화 완공")
+                    .deadline(LocalDate.now().minusMonths(2))
+                    .build();
+
+            completedProject.changeStatus(ProjectStatus.COMPLETED);
+            completedProject.forceSetRecruitmentOpen(false);
+
+            projectRepository.save(completedProject);
+
+            ProjectMember completedLeader = ProjectMember.builder()
+                    .project(completedProject)
+                    .member(testUser)
+                    .position(PositionType.BACKEND)
+                    .role(ProjectRole.LEADER)
+                    .build();
+            projectMemberRepository.save(completedLeader);
+        }
+
+        // ----------------------------------------------------
+        // [프로젝트 서브 탭 5] 조회 목록 (RECENT-VIEWS) -> 총 7개 생성 (2페이지 검증)
+        // ----------------------------------------------------
+        int viewCount = Math.min(allProjects.size(), 7);
+        for (int i = 0; i < viewCount; i++) {
+            Project targetProj = allProjects.get(i);
+            projectViewRepository.save(ProjectView.builder()
+                    .member(testUser)
+                    .project(targetProj)
+                    .build());
+        }
+
+        // ----------------------------------------------------
+        // [제안 필터 B] 내 포트폴리오에 온 제안 (PROPOSALS) -> 총 6개 제안서 누적 (2페이지 검증)
+        // ----------------------------------------------------
+        String[] proposers = {"u10", "u1", "u2", "u5", "u17", "u18"};
+        int proposalCount = Math.min(allProjects.size(), proposers.length);
+        for (int i = 0; i < proposalCount; i++) {
+            Project scoutProject = allProjects.get(i);
+            ProjectProposal incomingProposal = ProjectProposal.builder()
+                    .project(scoutProject)
+                    .portfolio(testPortfolio)
+                    .proposer(members.get(proposers[i]))
+                    .message("개발자님의 테스트 중심 백엔드 성장 여정 블로그를 인상 깊게 보았습니다. 저희 팀 아키텍터로 모시고 싶습니다! 순번: " + (i + 1))
+                    .build();
+            projectProposalRepository.save(incomingProposal);
+        }
     }
 
     private Map<String, Member> saveMembers(Map<String, MemberSeed> memberSeeds) {
         Map<String, Member> members = new LinkedHashMap<>();
+        // 🎯 변경 포인트: 시드 데이터 유저들은 Member.create를 타므로 내부적으로 전부 ROLE_USER로 들어감!
         memberSeeds.forEach((id, seed) -> members.put(id, memberRepository.save(Member.create(seed.name(), seed.avatar()))));
         return members;
     }
@@ -267,16 +291,62 @@ public class DummyDataInitializer implements ApplicationRunner {
     }
 
     private void savePortfolios(Map<String, MemberSeed> memberSeeds, Map<String, Member> members) {
-        memberSeeds.forEach((id, seed) -> portfolioRepository.save(
-                Portfolio.builder()
-                        .member(members.get(id))
-                        .title(seed.name() + " Portfolio")
-                        .introduction(seed.bio())
-                        .portfolioLinks(null)
-                        .desiredPosition(inferPosition(seed.role()).name())
-                        .isPublished(true)
-                        .build()
-        ));
+        Map<String, TechStack> techStacks = loadTechStacks();
+        memberSeeds.forEach((id, seed) -> {
+            Portfolio portfolio = Portfolio.builder()
+                    .member(members.get(id))
+                    .title(seed.name() + " Portfolio")
+                    .introduction(seed.bio())
+                    .portfolioLinks(null)
+                    .desiredPosition(inferPosition(seed.role()).name())
+                    .isPublished(true)
+                    .build();
+
+            portfolio.updateTechStacks(buildPortfolioTechStacks(portfolio, seed, techStacks));
+            portfolioRepository.save(portfolio);
+        });
+    }
+
+    private void backfillMissingPortfolios() {
+        Map<String, TechStack> techStacks = loadTechStacks();
+        memberSeeds().values().forEach(seed ->
+                memberRepository.findByNickname(seed.name())
+                        .ifPresent(member -> {
+                            Portfolio portfolio = portfolioRepository.findByMemberId(member.getId())
+                                    .orElseGet(() -> Portfolio.builder()
+                                            .member(member)
+                                            .title(seed.name() + " Portfolio")
+                                            .introduction(seed.bio())
+                                            .portfolioLinks(null)
+                                            .desiredPosition(inferPosition(seed.role()).name())
+                                            .isPublished(true)
+                                            .build());
+
+                            if (portfolio.getPortfolioTechStacks().isEmpty()) {
+                                portfolio.updateTechStacks(buildPortfolioTechStacks(portfolio, seed, techStacks));
+                            }
+
+                            portfolioRepository.save(portfolio);
+                        })
+        );
+    }
+
+    private List<PortfolioTechStack> buildPortfolioTechStacks(
+            Portfolio portfolio,
+            MemberSeed seed,
+            Map<String, TechStack> techStacks
+    ) {
+        return seed.techStacks().stream()
+                .map(String::trim)
+                .filter(name -> !name.isBlank())
+                .distinct()
+                .map(techStacks::get)
+                .filter(Objects::nonNull)
+                .map(techStack -> PortfolioTechStack.builder()
+                        .portfolio(portfolio)
+                        .techStack(techStack)
+                        .build())
+                .toList();
     }
 
     private void saveProjects(Map<String, Member> members, Map<String, TechStack> techStacks) {

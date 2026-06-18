@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import Link from 'next/link'
 
@@ -13,10 +13,8 @@ import { Badge, Button, Card } from '../../components/ui'
 import {
   formatPositionLabel,
   leaderPositionOptions,
-  toPositionValue,
 } from '../../constants/project'
-import { usePaginatedList } from '../../hooks/usePaginatedList'
-import { fetchMembers, fetchPopularTechStacks } from '../../lib/api'
+import { fetchPopularTechStacks, fetchPortfolios } from '../../lib/api'
 import type { User } from '../../types'
 
 const roleOptions = [
@@ -24,78 +22,70 @@ const roleOptions = [
   ...leaderPositionOptions,
 ]
 
-interface TalentFilterOptions {
-  searchTerm: string
-  selectedRole: string
-  selectedTech: string
-}
-
-function matchesTalentFilters(
-  user: User,
-  { searchTerm, selectedRole, selectedTech }: TalentFilterOptions,
-) {
-  const normalizedSearchTerm = searchTerm.toLowerCase()
-  const roleLabel = formatPositionLabel(user.role)
-  const searchableText = [
-    user.name,
-    user.bio ?? '',
-    user.role,
-    roleLabel,
-    ...(user.techStack ?? []),
-  ]
-    .join(' ')
-    .toLowerCase()
-  const matchesSearch = searchableText.includes(normalizedSearchTerm)
-  const userRole = toPositionValue(user.role)
-  const matchesRole =
-    selectedRole === 'All' ||
-    userRole === selectedRole
-  const matchesTech =
-    selectedTech === 'All' || Boolean(user.techStack?.includes(selectedTech))
-
-  return matchesSearch && matchesRole && matchesTech
-}
-
 export default function TalentListingPage() {
-  const [allUsers, setAllUsers] = useState<User[]>([])
+  const [paginatedTalents, setPaginatedTalents] = useState<User[]>([])
+  const [featuredTalents, setFeaturedTalents] = useState<User[]>([])
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
+  const [page, setPage] = useState(0)
+  const [pageCount, setPageCount] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const [contentLoading, setContentLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>('All')
 
   useEffect(() => {
-    Promise.all([fetchMembers(), fetchPopularTechStacks()])
-      .then(([members, techStacks]) => {
-        setAllUsers(members)
-        setPopularTechStacks(techStacks)
-      })
-      .catch(() => {
-        setAllUsers([])
-        setPopularTechStacks([])
-      })
+    fetchPopularTechStacks()
+      .then(setPopularTechStacks)
+      .catch(() => setPopularTechStacks([]))
   }, [])
 
-  const featuredTalents = allUsers.filter((u) => u.featured)
-  const filteredTalents = useMemo(() => {
-    return allUsers.filter((user) =>
-      matchesTalentFilters(user, {
-        searchTerm,
-        selectedRole,
-        selectedTech,
-      }),
-    )
-  }, [allUsers, searchTerm, selectedRole, selectedTech])
-  const portfoliosPerPage = 9
-  const {
-    page,
-    pageCount,
-    paginatedItems: paginatedTalents,
-    setPage,
-  } = usePaginatedList({
-    items: filteredTalents,
-    pageSize: portfoliosPerPage,
-    resetDeps: [searchTerm, selectedRole, selectedTech],
-  })
+  useEffect(() => {
+    setContentLoading(true)
+
+    fetchPortfolios({
+      page,
+      size: 9,
+      search: searchTerm,
+      role: selectedRole,
+      tech: selectedTech,
+    })
+      .then((pageData) => {
+        if (pageData && pageData.content) {
+          setPaginatedTalents(pageData.content)
+          setPageCount(pageData.totalPages)
+          setTotalElements(pageData.totalElements)
+          setFeaturedTalents(pageData.content.filter((user) => user.featured))
+        } else {
+          setPaginatedTalents([])
+          setPageCount(0)
+          setTotalElements(0)
+          setFeaturedTalents([])
+        }
+      })
+      .catch(() => {
+        setPaginatedTalents([])
+        setPageCount(0)
+        setTotalElements(0)
+        setFeaturedTalents([])
+      })
+      .finally(() => setContentLoading(false))
+  }, [page, searchTerm, selectedRole, selectedTech])
+
+  const changeSearchTerm = (value: string) => {
+    setPage(0)
+    setSearchTerm(value)
+  }
+
+  const changeRole = (value: string) => {
+    setPage(0)
+    setSelectedRole(value)
+  }
+
+  const changeTech = (value: string) => {
+    setPage(0)
+    setSelectedTech(value)
+  }
 
   const containerVariants = {
     hidden: {
@@ -142,7 +132,7 @@ export default function TalentListingPage() {
           <SearchField
             placeholder="이름 / 키워드 검색..."
             value={searchTerm}
-            onChange={setSearchTerm}
+            onChange={changeSearchTerm}
           />
 
           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
@@ -151,7 +141,7 @@ export default function TalentListingPage() {
               {roleOptions.map((role) => (
                 <button
                   key={role.value}
-                  onClick={() => setSelectedRole(role.value)}
+                  onClick={() => changeRole(role.value)}
                   className={`segment-option ${selectedRole === role.value ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
                   {role.label}
@@ -163,7 +153,7 @@ export default function TalentListingPage() {
             <select
               className="form-field md:w-auto"
               value={selectedTech}
-              onChange={(e) => setSelectedTech(e.target.value)}
+              onChange={(e) => changeTech(e.target.value)}
             >
               <option value="All">전체 기술 스택</option>
               {popularTechStacks.map((tech) => (
@@ -229,19 +219,24 @@ export default function TalentListingPage() {
           </h2>
           <p className="text-sm text-slate-500">
             <span className="font-medium text-slate-900">
-              {filteredTalents.length}
+              {totalElements}
             </span>
             명의 프로필
           </p>
         </div>
 
+        {contentLoading ? (
+          <div className="text-center py-24 text-slate-400 font-medium">
+            조건에 맞는 포트폴리오 로드 중...
+          </div>
+        ) : (
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {filteredTalents.length > 0 ? (
+          {paginatedTalents.length > 0 ? (
             paginatedTalents.map((user) => (
               <motion.div key={user.id} variants={itemVariants}>
                 <Link href={`/u/${user.id}`}>
@@ -316,6 +311,7 @@ export default function TalentListingPage() {
                 variant="outline"
                 className="mt-4"
                 onClick={() => {
+                  setPage(0)
                   setSearchTerm('')
                   setSelectedRole('All')
                   setSelectedTech('All')
@@ -326,6 +322,7 @@ export default function TalentListingPage() {
             </div>
           )}
         </motion.div>
+        )}
         <PaginationControls
           page={page}
           pageCount={pageCount}

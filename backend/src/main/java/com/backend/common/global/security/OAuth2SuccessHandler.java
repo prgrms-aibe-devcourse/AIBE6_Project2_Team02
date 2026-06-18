@@ -71,9 +71,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             return;
         }
 
-        String jwt = jwtTokenProvider.generateToken(member.getId(), member.getNickname());
+        String jwt = jwtTokenProvider.generateToken(member.getId(), member.getNickname(), member.getRole().name());
 
-        ResponseCookie cookie = ResponseCookie.from("access_token",jwt)
+        ResponseCookie cookie = ResponseCookie.from("access_token", jwt)
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .sameSite(cookieSameSite)

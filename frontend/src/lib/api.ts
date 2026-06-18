@@ -4,16 +4,6 @@ import type { ProjectApplicationCreateRequest, ProjectApplicationCreateResponse,
 import type { ProjectProposalCreateRequest, ProposalProject, SentProjectProposal } from '../types/dto/proposal';
 import type { TechStackItem } from '../types/tech-stack';
 
-
-
-
-
-
-
-
-
-
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
 async function fetchRsDataJson<T>(
@@ -60,6 +50,14 @@ export interface ProjectFilterParams {
   tech?: string
   status?: string
   sort?: string
+}
+
+export interface PortfolioFilterParams {
+  page?: number
+  size?: number
+  search?: string
+  role?: string
+  tech?: string
 }
 
 export function fetchProjects(params: ProjectFilterParams = {}) {
@@ -127,6 +125,20 @@ export function updateProject(id: string, payload: ProjectUpdateRequest) {
 
 export function fetchMembers() {
   return fetchRsDataJson<User[]>('/members')
+}
+
+export function fetchPortfolios(params: PortfolioFilterParams = {}) {
+  const { page = 0, size = 9, search, role, tech } = params
+
+  const query = new URLSearchParams()
+  query.append('page', page.toString())
+  query.append('size', size.toString())
+
+  if (search) query.append('search', search)
+  if (role && role !== 'All') query.append('role', role)
+  if (tech && tech !== 'All') query.append('tech', tech)
+
+  return fetchRsDataJson<SpringPage<User>>(`/portfolios?${query.toString()}`)
 }
 
 export function fetchMember(id: string) {
