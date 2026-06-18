@@ -1,4 +1,5 @@
 import type {
+  Applicant,
   CreateReportRequest,
   CreateReviewRequest,
   NotificationResponse,
@@ -6,6 +7,7 @@ import type {
   PortfolioUpdateRequest,
   Project,
   ProjectProposal,
+  Project_manage,
   ReportResponse,
   ReportStatus,
   ReportTargetType,
