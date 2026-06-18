@@ -1,6 +1,7 @@
 import type {
   CreateReportRequest,
   CreateReviewRequest,
+  NotificationResponse,
   Portfolio,
   PortfolioUpdateRequest,
   Project,
@@ -299,6 +300,20 @@ export function createReview(request: CreateReviewRequest) {
 
 export function fetchReviews(userId: string) {
   return fetchRsDataJson<ReviewResponse[]>(`/reviews/users/${userId}`)
+}
+
+export function fetchMyNotifications() {
+  return fetchRsDataJson<NotificationResponse[]>('/notifications/me')
+}
+
+export function fetchUnreadNotificationCount() {
+  return fetchRsDataJson<number>('/notifications/me/unread-count')
+}
+
+export function markNotificationAsRead(notificationId: number) {
+  return fetchRsDataJson<void>(`/notifications/${notificationId}/read`, {
+    method: 'PATCH',
+  })
 }
 
 export function checkReviewAccess(projectId: number, revieweeId: number) {

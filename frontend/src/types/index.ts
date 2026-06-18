@@ -119,3 +119,14 @@ export interface ReviewResponse {
   content: Record<string, string>
   createdAt: string
 }
+
+export interface NotificationResponse {
+  id: number
+  type: string
+  title: string
+  message: string
+  targetUrl: string | null
+  relatedId: number | null
+  isRead: boolean
+  createAt: string
+}

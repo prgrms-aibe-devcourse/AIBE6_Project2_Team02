@@ -41,6 +41,9 @@ dependencies {
     testCompileOnly("org.projectlombok:lombok")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testAnnotationProcessor("org.projectlombok:lombok")
+
+    // firebase 의존성
+    implementation("com.google.firebase:firebase-admin:9.+")
 }
 
 tasks.withType<Test> {

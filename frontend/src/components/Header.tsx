@@ -1,12 +1,13 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Code2, Menu, X } from 'lucide-react';
+import { Code2, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { useAuth } from '../app/providers';
 import { LoginModal } from './LoginModal';
+import { NotificationBell } from './NotificationBell';
 import { Button } from './ui';
 
 export function Header() {
@@ -59,9 +60,7 @@ export function Header() {
                 </Button>
               </Link>
               <div className="h-8 w-px bg-slate-200 mx-1" />
-              <button className="text-slate-500 hover:text-slate-900 transition-colors">
-                <Bell className="h-5 w-5" />
-              </button>
+              <NotificationBell />
               <Link
                 href="/mypage"
                 className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors border border-slate-200 overflow-hidden"

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
@@ -23,6 +24,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -76,5 +78,58 @@ public class MemberControllerTest {
         mvc.perform(delete("/members/me"))
                 .andDo(print())
                 .andExpect(status().isForbidden());
+    }
+
+    // ================= FCM 토큰 등록 테스트 =================
+
+    @Test
+    @DisplayName("FCM 토큰 등록 성공 - 인증된 회원의 fcmToken 필드가 갱신된다")
+    void updateFcmToken_success() throws Exception {
+        String body = """
+                { "fcmToken": "dummy-fcm-token-123" }
+                """;
+
+        mvc.perform(post("/members/me/fcm-token")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(testAuth))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("200"))
+                .andExpect(jsonPath("$.message").value("FCM 토큰 등록 성공"));
+
+        Member updated = memberRepository.findById(testMember.getId()).orElseThrow();
+        assertThat(updated.getFcmToken()).isEqualTo("dummy-fcm-token-123");
+    }
+
+    @Test
+    @DisplayName("FCM 토큰 등록 실패 - 인증되지 않은 요청은 403 반환")
+    void updateFcmToken_unauthenticated() throws Exception {
+        String body = """
+                { "fcmToken": "dummy-fcm-token-123" }
+                """;
+
+        mvc.perform(post("/members/me/fcm-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("FCM 토큰 등록 예외 - 존재하지 않는 회원 ID로 요청 시 예외 발생")
+    void updateFcmToken_memberNotFound() throws Exception {
+        memberRepository.deleteById(testMember.getId());
+
+        String body = """
+                { "fcmToken": "dummy-fcm-token-123" }
+                """;
+
+        mvc.perform(post("/members/me/fcm-token")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(testAuth))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andDo(print())
+                .andExpect(status().isInternalServerError());
     }
 }

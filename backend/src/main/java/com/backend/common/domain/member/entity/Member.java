@@ -21,6 +21,8 @@ public class Member {
 
     private String profileImageUrl;
 
+    private String fcmToken;
+
     @Column(length = 20)
     private String status = "ACTIVE"; // ACTIVE, SUSPENDED, BANNED
 
@@ -65,6 +67,11 @@ public class Member {
 
     public void updateNickName(String nickname){
         this.nickname = nickname;
+    }
+
+    public void updateFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
+        this.updatedAt = LocalDateTime.now();
     }
 
 }
