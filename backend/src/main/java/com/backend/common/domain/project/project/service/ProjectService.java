@@ -734,8 +734,16 @@ public class ProjectService {
     }
 
     public ProjectMember addMember(Long id, Long projectID) {
+
+
         Project project = projectRepository.findById(projectID).get();
+        if(project == null){
+            throw new RuntimeException("프로젝트 찾기가 실패하였습니다.");
+        }
         ProjectApplication projectApplication = projectApplicationRepository.findByProjectIdAndApplicantId(projectID, id).get();
+        if(projectApplication==null){
+            throw new RuntimeException("지원자 찾기가 실패하였습니다.");
+        }
 
         ProjectMember projectMember = new ProjectMember(project, projectApplication.getApplicant(), projectApplication.getPosition(), ProjectRole.MEMBER);
         try {
@@ -748,20 +756,33 @@ public class ProjectService {
 
     public ProjectApplication delMember(Long id, Long projectID) {
         ProjectApplication projectApplication = projectApplicationRepository.findByProjectIdAndApplicantId(projectID, id).get();
-        projectApplication = projectApplicationRepository.deleteProjectApplicationById(projectApplication.getId());
+        if(projectApplication==null){
+            throw new RuntimeException("지원자 찾기가 실패하였습니다.");
+        }
+        try {
+            projectApplication = projectApplicationRepository.deleteProjectApplicationById(projectApplication.getId());
+        } catch (Exception e) {
+            throw new RuntimeException("지원자 삭제가 실패하였습니다.");
+        }
         return projectApplication;
     }
 
     public Project updateProjectByStatus(Long id, ProjectStatus status) {
         Project project = projectRepository.findById(id).get();
-
+        if(project==null){
+            throw new RuntimeException("프로젝트 찾기가 실패하였습니다.");
+        }
         project.setStatus(status);
         if(status.equals(ProjectStatus.IN_PROGRESS)|| status.equals(ProjectStatus.RECRUITING)){
             project.setRecruitmentOpen(true);
         }else{
             project.setRecruitmentOpen(false);
         }
-        project = projectRepository.save(project);
+        try {
+            project = projectRepository.save(project);
+        } catch (RuntimeException e) {
+            throw new RuntimeException("프로젝트 수정이 실패하였습니다.");
+        }
         return project;
     }
 

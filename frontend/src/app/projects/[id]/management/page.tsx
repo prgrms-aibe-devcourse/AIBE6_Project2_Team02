@@ -293,12 +293,8 @@ export default function ProjectDetailPage() {
                           size="sm"
                           className={canEdit ? 'hidden' : undefined}
                           disabled={isMember}
-                          onClick={() => {
-                            setSelectedRole(pos.role)
-                            setIsApplyModalOpen(true)
-                          }}
                         >
-                          지원
+                          모집중
                         </Button>
                       ) : (
                         <Badge variant="secondary">모집 완료</Badge>
