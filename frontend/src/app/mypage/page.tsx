@@ -232,7 +232,7 @@ export default function MyPage() {
                     onClick={() => setActivePortfolioSubTab('portfolio')}
                     className={`tab-pill ${activePortfolioSubTab === 'portfolio' ? 'tab-pill-active' : 'tab-pill-inactive'}`}
                   >
-                    포폴
+                    포트폴리오
                   </button>
                   <button
                     onClick={() => setActivePortfolioSubTab('peerReview')}
