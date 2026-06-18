@@ -1,6 +1,7 @@
 package com.backend.common.domain.portfolio.portfolio.service;
 
 import com.backend.common.domain.member.entity.Member;
+import com.backend.common.domain.member.repository.MemberTechStackRepository;
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioCreateRequest;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioListResponse;
@@ -23,6 +24,7 @@ import com.backend.common.domain.project.project.entity.ProjectRole;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.techstack.entity.PortfolioTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
+import com.backend.common.domain.techstack.entity.MemberTechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import com.backend.common.global.exception.exception.PortfolioInputException;
 import com.backend.common.global.exception.exception.ResourceNotFoundException;
@@ -44,6 +46,7 @@ public class PortfolioService {
 
     private final PortfolioRepository portfolioRepository;
     private final MemberRepository memberRepository;
+    private final MemberTechStackRepository memberTechStackRepository;
     private final TechStackRepository techStackRepository;
     private final ProjectProposalRepository projectProposalRepository;
     private final ProjectMemberRepository projectMemberRepository;
@@ -67,9 +70,17 @@ public class PortfolioService {
         return portfolioPage.map(portfolio ->
                 PortfolioListResponse.from(
                         portfolio,
+                        getMemberTechStackNames(portfolio.getMember().getId()),
                         index.getAndIncrement() < 8
                 )
         );
+    }
+
+    private List<String> getMemberTechStackNames(Long memberId) {
+        return memberTechStackRepository.findByMemberId(memberId).stream()
+                .map(MemberTechStack::getTechStack)
+                .map(TechStack::getName)
+                .toList();
     }
 
     private String normalizeFilter(String value) {

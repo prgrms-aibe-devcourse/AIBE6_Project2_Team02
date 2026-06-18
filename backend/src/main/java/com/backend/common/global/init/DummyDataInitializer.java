@@ -65,6 +65,7 @@ public class DummyDataInitializer implements ApplicationRunner {
             backfillProjectTechStacks(techStacks);
             backfillProjectPositionRoles();
             backfillPortfolioDesiredPositions();
+            backfillMissingPortfolios();
             return;
         }
 
@@ -301,6 +302,23 @@ public class DummyDataInitializer implements ApplicationRunner {
                         .isPublished(true)
                         .build()
         ));
+    }
+
+    private void backfillMissingPortfolios() {
+        memberSeeds().values().forEach(seed ->
+                memberRepository.findByNickname(seed.name())
+                        .filter(member -> portfolioRepository.findByMemberId(member.getId()).isEmpty())
+                        .ifPresent(member -> portfolioRepository.save(
+                                Portfolio.builder()
+                                        .member(member)
+                                        .title(seed.name() + " Portfolio")
+                                        .introduction(seed.bio())
+                                        .portfolioLinks(null)
+                                        .desiredPosition(inferPosition(seed.role()).name())
+                                        .isPublished(true)
+                                        .build()
+                        ))
+        );
     }
 
     private void saveProjects(Map<String, Member> members, Map<String, TechStack> techStacks) {
