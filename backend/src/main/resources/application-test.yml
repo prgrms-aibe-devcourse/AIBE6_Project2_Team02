@@ -2,6 +2,9 @@ app:
   jwt:
     secret: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   frontend-url: "http://localhost:3000"
+  cookie:
+    secure: false
+    same-site: "Lax"
 spring:
   security:
     oauth2:
