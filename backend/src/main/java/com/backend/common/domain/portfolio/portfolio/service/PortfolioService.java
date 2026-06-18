@@ -35,7 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.IntStream;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Transactional(readOnly = true)
@@ -49,16 +49,34 @@ public class PortfolioService {
     private final ProjectMemberRepository projectMemberRepository;
 
     /**
-     * 포트폴리오 등록
+     * 포트폴리오 목록 조회
      */
-    public List<PortfolioListResponse> getPublishedPortfolios() {
-        List<Portfolio> portfolios = portfolioRepository.findLatestPublished();
-        return IntStream.range(0, portfolios.size())
-                .mapToObj(index -> PortfolioListResponse.from(
-                        portfolios.get(index),
-                        index < 8
-                ))
-                .toList();
+    public Page<PortfolioListResponse> getPublishedPortfolios(
+            String search,
+            String role,
+            String tech,
+            Pageable pageable
+    ) {
+        String qSearch = normalizeFilter(search);
+        String qRole = normalizeFilter(role);
+        String qTech = normalizeFilter(tech);
+
+        Page<Portfolio> portfolioPage = portfolioRepository.searchPortfolios(qSearch, qRole, qTech, pageable);
+        AtomicInteger index = new AtomicInteger((int) pageable.getOffset());
+
+        return portfolioPage.map(portfolio ->
+                PortfolioListResponse.from(
+                        portfolio,
+                        index.getAndIncrement() < 8
+                )
+        );
+    }
+
+    private String normalizeFilter(String value) {
+        if (value == null || value.isBlank() || "All".equalsIgnoreCase(value)) {
+            return null;
+        }
+        return value;
     }
 
     @Transactional

@@ -35,11 +35,16 @@ public class PortfolioController {
      * 내 포트폴리오 조회
      */
     @GetMapping
-    public RsData<List<PortfolioListResponse>> getPublishedPortfolios() {
+    public RsData<Page<PortfolioListResponse>> getPublishedPortfolios(
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "role", required = false) String role,
+            @RequestParam(value = "tech", required = false) String tech,
+            @PageableDefault(size = 9, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
         return RsData.of(
                 "200",
                 "포트폴리오 목록 조회 성공",
-                portfolioService.getPublishedPortfolios()
+                portfolioService.getPublishedPortfolios(search, role, tech, pageable)
         );
     }
 
