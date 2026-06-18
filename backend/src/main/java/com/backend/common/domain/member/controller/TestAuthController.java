@@ -35,14 +35,11 @@ public class TestAuthController {
             @PathVariable("memberId") Long memberId,
             HttpServletResponse response
     ) {
-        // 1. 더미 데이터 이니셜라이저가 생성한 유저 조회
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 테스트 회원이 DB에 존재하지 않습니다."));
 
-        // 2. 다른 팀원이 구현한 JwtTokenProvider를 이용하여 실제 유효한 JWT 토큰 생성
-        String jwtToken = jwtTokenProvider.generateToken(member.getId(), member.getNickname());
+        String jwtToken = jwtTokenProvider.generateToken(member.getId(), member.getNickname(),member.getRole().name());
 
-        // 3. OAuth2SuccessHandler에 구현된 쿠키 생성 스펙과 동일하게 서빙
         Cookie cookie = new Cookie("access_token", jwtToken);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
