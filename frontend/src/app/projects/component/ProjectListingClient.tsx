@@ -43,6 +43,26 @@ export default function ProjectListingClient() {
   const [selectedTech, setSelectedTech] = useState<string>(initialTech || 'All')
   const [selectedStatus, setSelectedStatus] = useState<string>('Open')
 
+  const changeSearchTerm = (value: string) => {
+    setPage(0)
+    setSearchTerm(value)
+  }
+
+  const changeCategory = (value: string) => {
+    setPage(0)
+    setSelectedCategory(value)
+  }
+
+  const changeTech = (value: string) => {
+    setPage(0)
+    setSelectedTech(value)
+  }
+
+  const changeStatus = (value: string) => {
+    setPage(0)
+    setSelectedStatus(value)
+  }
+
   // 인기 기술 스택 로드 (최초 1회만)
   useEffect(() => {
     fetchPopularTechStacks()
@@ -111,7 +131,7 @@ export default function ProjectListingClient() {
           <SearchField
             placeholder="키워드 입력..."
             value={searchTerm}
-            onChange={setSearchTerm}
+            onChange={changeSearchTerm}
           />
 
           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
@@ -120,7 +140,7 @@ export default function ProjectListingClient() {
               {categories.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => changeCategory(cat)}
                   className={`segment-option ${selectedCategory === cat ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
                   {categoryMap[cat]}
@@ -133,7 +153,7 @@ export default function ProjectListingClient() {
               {statuses.map((status) => (
                 <button
                   key={status}
-                  onClick={() => setSelectedStatus(status)}
+                  onClick={() => changeStatus(status)}
                   className={`segment-option ${selectedStatus === status ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
                   {statusMap[status]}
@@ -145,7 +165,7 @@ export default function ProjectListingClient() {
             <select
               className="form-field md:w-auto"
               value={selectedTech}
-              onChange={(e) => setSelectedTech(e.target.value)}
+              onChange={(e) => changeTech(e.target.value)}
             >
               <option value="All">전체 기술 스택</option>
               {popularTechStacks.map((tech) => (
@@ -267,7 +287,6 @@ export default function ProjectListingClient() {
                         <div className="flex items-center gap-2">
                           <Link href={`/u/${project.leader.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity" onClick={(e) => e.stopPropagation()}>
                             <img src={project.leader.avatar} alt={project.leader.name} className="w-6 h-6 rounded-full" />
-                            <img src={project.leader.avatar} alt={project.leader.name} className="w-6 h-6 rounded-full" />
                             <span className="text-sm font-medium text-slate-700 hover:text-blue-600">{project.leader.name}</span>
                           </Link>
                         </div>
@@ -291,6 +310,7 @@ export default function ProjectListingClient() {
                   variant="outline"
                   className="mt-4"
                   onClick={() => {
+                    setPage(0)
                     setSearchTerm('')
                     setSelectedCategory('All')
                     setSelectedTech('All')

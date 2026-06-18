@@ -14,6 +14,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     @Query("SELECT DISTINCT p FROM Project p " +
             "LEFT JOIN p.projectTechStacks pts " +
             "WHERE p.deletedAt IS NULL " +
+            "AND p.isHidden = false " +
             "AND (:search IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))) " +
             "AND (:category IS NULL OR p.category = :category) " +
             "AND (:status IS NULL OR cast(p.status as string) = :status) " +
