@@ -38,6 +38,7 @@ export default function ProjectEditPage() {
     techStacks: [],
     deadline: '',
     open: true,
+    leaderPosition: '',
     positions: [{ role: '', total: 1 }],
   })
   const [positionMinimums, setPositionMinimums] = useState([0])
@@ -65,6 +66,7 @@ export default function ProjectEditPage() {
           techStacks: project.techStack,
           deadline: project.deadline,
           open: project.recruitmentStatus === 'Open',
+          leaderPosition: toPositionValue(project.leader.role) as ProjectUpdateRequest['leaderPosition'],
           positions:
             project.positions.length > 0
               ? project.positions.map(({ role, total }) => ({
@@ -160,6 +162,7 @@ export default function ProjectEditPage() {
       !form.title.trim() ||
       !form.description.trim() ||
       !form.deadline ||
+      !form.leaderPosition ||
       form.positions.length === 0 ||
       form.positions.some((position) => !position.role.trim())
     ) {
@@ -314,6 +317,33 @@ export default function ProjectEditPage() {
           </p>
 
           <div className="space-y-4">
+            <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+              <span className="mb-2 block text-sm font-medium text-slate-700">
+                리더 포지션
+              </span>
+              <select
+                className="form-field bg-white"
+                value={form.leaderPosition}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    leaderPosition: event.target
+                      .value as ProjectUpdateRequest['leaderPosition'],
+                  })
+                }
+                required
+              >
+                <option value="" disabled>
+                  리더 포지션을 선택해주세요
+                </option>
+                {leaderPositionOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {form.positions.map((position, index) => {
               const minimum = positionMinimums[index] ?? 0
 

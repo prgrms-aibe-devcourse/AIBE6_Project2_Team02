@@ -336,10 +336,18 @@ public class ProjectService {
                 .orElseThrow(() -> new NoSuchElementException("Project not found"));
         LocalDate deadline = LocalDate.parse(req.deadline());
         validateDeadline(deadline);
+        if (req.leaderPosition() == null) {
+            throw new IllegalArgumentException("리더 포지션을 선택해주세요.");
+        }
         List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId).stream()
                 .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE)
                 .toList();
         List<ProjectPosition> positions = validateAndBuildPositions(req.positions(), members);
+        members.stream()
+                .filter(member -> member.getRole() == ProjectRole.LEADER)
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Project leader not found"))
+                .updatePosition(req.leaderPosition());
 
         project.update(
                 req.title().trim(),
@@ -384,6 +392,7 @@ public class ProjectService {
         }
 
         Map<String, Long> filledByRole = members.stream()
+                .filter(member -> member.getRole() != ProjectRole.LEADER)
                 .collect(Collectors.groupingBy(
                         member -> normalizeRole(member.getPosition().name()),
                         Collectors.counting()
@@ -459,9 +468,15 @@ public class ProjectService {
             boolean featured,
             Set<Long> featuredMemberIds
     ) {
+        String leaderRole = members.stream()
+                .filter(member -> member.getRole() == ProjectRole.LEADER)
+                .findFirst()
+                .map(member -> member.getPosition().name())
+                .orElse(null);
         UserResponse leader = toUserResponse(
                 project.getLeader(),
-                featuredMemberIds.contains(project.getLeader().getId())
+                featuredMemberIds.contains(project.getLeader().getId()),
+                leaderRole
         );
         List<UserResponse> teamMembers = members.stream()
                 .filter(member -> member.getRole() != ProjectRole.LEADER)
@@ -495,6 +510,10 @@ public class ProjectService {
             return RecruitmentStatus.COMPLETED;
         }
 
+        if (project.getStatus() == ProjectStatus.CLOSED) {
+            return RecruitmentStatus.CLOSED;
+        }
+
         if (project.getStatus() == ProjectStatus.DISBANDED || project.getStatus() == ProjectStatus.CANCELLED) {
             return RecruitmentStatus.STOPPED;
         }
@@ -510,6 +529,10 @@ public class ProjectService {
     }
 
     private UserResponse toUserResponse(Member member, boolean featured) {
+        return toUserResponse(member, featured, null);
+    }
+
+    private UserResponse toUserResponse(Member member, boolean featured, String roleOverride) {
         Portfolio portfolio = portfolioRepository.findByMemberId(member.getId()).orElse(null);
         List<String> techStack = memberTechStackRepository.findByMemberId(member.getId()).stream()
                 .map(MemberTechStack::getTechStack)
@@ -520,7 +543,7 @@ public class ProjectService {
                 String.valueOf(member.getId()),
                 member.getNickname(),
                 member.getProfileImageUrl(),
-                portfolio != null ? portfolio.getDesiredPosition() : "",
+                roleOverride != null ? roleOverride : portfolio != null ? portfolio.getDesiredPosition() : "",
                 portfolio != null ? portfolio.getIntroduction() : "",
                 techStack,
                 portfolio != null ? portfolio.getLinks().stream()
@@ -551,6 +574,7 @@ public class ProjectService {
 
     private List<PositionResponse> buildPositions(List<ProjectMember> members, boolean recruitmentOpen) {
         Map<PositionType, Long> counts = members.stream()
+                .filter(member -> member.getRole() != ProjectRole.LEADER)
                 .collect(Collectors.groupingBy(ProjectMember::getPosition, Collectors.counting()));
 
         if (counts.isEmpty()) {
@@ -570,6 +594,7 @@ public class ProjectService {
     private List<PositionResponse> buildPositions(Project project, List<ProjectMember> members) {
         Map<String, Long> filledByRole = members.stream()
                 .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE)
+                .filter(member -> member.getRole() != ProjectRole.LEADER)
                 .collect(Collectors.groupingBy(
                         member -> normalizeRole(member.getPosition().name()),
                         LinkedHashMap::new,
@@ -588,6 +613,7 @@ public class ProjectService {
 
         members.stream()
                 .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE)
+                .filter(member -> member.getRole() != ProjectRole.LEADER)
                 .map(ProjectMember::getPosition)
                 .distinct()
                 .forEach(position -> {

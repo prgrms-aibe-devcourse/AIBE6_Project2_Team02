@@ -132,6 +132,34 @@ export default function ProjectDetailPage() {
     )
   }
 
+  const displayPositions = (() => {
+    if (!project.leader.role) return project.positions
+
+    const leaderRole = toPositionValue(project.leader.role)
+    let includesLeaderRole = false
+    const positions = project.positions.map((position) => {
+      if (toPositionValue(position.role) !== leaderRole) return position
+
+      includesLeaderRole = true
+      return {
+        ...position,
+        filled: position.filled + 1,
+        total: position.total + 1,
+      }
+    })
+
+    if (includesLeaderRole) return positions
+
+    return [
+      {
+        role: leaderRole,
+        filled: 1,
+        total: 1,
+      },
+      ...positions,
+    ]
+  })()
+
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isApplying) return
@@ -338,7 +366,7 @@ export default function ProjectDetailPage() {
                 <Users className="h-5 w-5 text-blue-600" /> 모집 포지션
               </h2>
               <div className="space-y-4">
-                {project.positions.map((pos, i) => {
+                {displayPositions.map((pos, i) => {
                   const isOpen = pos.filled < pos.total
                   return (
                     <div
@@ -452,7 +480,7 @@ export default function ProjectDetailPage() {
                       {project.leader.name}
                     </Link>
                     <p className="text-sm text-slate-500">
-                      {project.leader.role}
+                      {formatPositionLabel(project.leader.role)}
                     </p>
                   </div>
                 </div>

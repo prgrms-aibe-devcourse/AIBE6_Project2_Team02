@@ -24,6 +24,7 @@ export interface ProjectUpdateRequest {
   techStacks: string[]
   deadline: string
   open: boolean
+  leaderPosition: PositionType | ''
   positions: Array<{
     role: string
     total: number
