@@ -14,12 +14,12 @@ export function Header() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   const pathname = usePathname();
-  const { user, logout } = useAuth();
-  
+  const { user, logout, loading } = useAuth();
+
   const navLinks = [
     { name: '프로젝트 찾기', path: '/projects' },
     { name: '포트폴리오 찾기', path: '/developers' },
-    ...(user ? [{ name: '마이페이지', path: '/mypage' }] : []),
+    ...(!loading && user ? [{ name: '마이페이지', path: '/mypage' }] : []),
   ];
 
   return (
@@ -34,12 +34,12 @@ export function Header() {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-4">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 href={link.path}
-                className={`text-sm font-medium transition-colors hover:text-blue-600 ${
+                className={`text-sm font-medium whitespace-nowrap transition-colors hover:text-blue-600 ${
                   pathname === link.path ? 'text-blue-600' : 'text-slate-600'
                 }`}
               >
@@ -50,16 +50,16 @@ export function Header() {
         </div>
 
         {/* Desktop Actions */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
             <input
               type="text"
               placeholder="프로젝트 검색..."
-              className="h-9 w-64 rounded-full border border-slate-200 bg-slate-50 pl-9 pr-4 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+              className="h-9 w-40 lg:w-56 rounded-full border border-slate-200 bg-slate-50 pl-9 pr-4 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
             />
           </div>
-          {user ? (
+          {!loading && user ? (
             <>
               <Link href="/projects/new">
                 <Button size="sm" variant="gradient">
@@ -109,7 +109,7 @@ export function Header() {
 
         {/* Mobile Menu Toggle */}
         <button
-          className="md:hidden p-2 text-slate-600"
+          className="lg:hidden p-2 text-slate-600"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
           {isMobileMenuOpen ? (
@@ -127,7 +127,7 @@ export function Header() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-slate-200 bg-white"
+            className="lg:hidden border-t border-slate-200 bg-white"
           >
             <div className="flex flex-col px-4 py-4 space-y-4">
               {navLinks.map((link) => (
@@ -141,7 +141,7 @@ export function Header() {
                 </Link>
               ))}
               <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
-                {user ? (
+                {!loading && user ? (
                   <Button
                     variant="outline"
                     className="w-full justify-center"

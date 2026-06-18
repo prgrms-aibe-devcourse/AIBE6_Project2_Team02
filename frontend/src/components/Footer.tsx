@@ -47,13 +47,13 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/projects/new" className="hover:text-blue-600">
-                  프로젝트 만들기
+                <Link href="/developers" className="hover:text-blue-600">
+                  포트폴리오
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-blue-600">
-                  개발자
+                <Link href="/projects/new" className="hover:text-blue-600">
+                  프로젝트 만들기
                 </Link>
               </li>
             </ul>
