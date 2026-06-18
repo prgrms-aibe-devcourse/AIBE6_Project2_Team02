@@ -24,6 +24,10 @@ public class Member {
     @Column(length = 20)
     private String status = "ACTIVE"; // ACTIVE, SUSPENDED, BANNED
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    private MemberRole role = MemberRole.ROLE_USER;
+
     private LocalDateTime suspensionUntil;
 
     private LocalDateTime createdAt;
@@ -35,8 +39,16 @@ public class Member {
         member.nickname = nickname;
         member.profileImageUrl = profileImageUrl;
         member.status = "ACTIVE";
+        member.role = MemberRole.ROLE_USER;
         member.createdAt = LocalDateTime.now();
         member.updatedAt = member.createdAt;
+        return member;
+    }
+
+    // 더미 데이터용 관리자 계정 생성 팩토리 메서드
+    public static Member createAdmin(String nickname, String profileImageUrl) {
+        Member member = create(nickname, profileImageUrl);
+        member.role = MemberRole.ROLE_ADMIN;
         return member;
     }
 
