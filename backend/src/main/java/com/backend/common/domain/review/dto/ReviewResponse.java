@@ -13,6 +13,8 @@ public class ReviewResponse {
 
     private Long reviewId;
 
+    private Long projectId;
+
     private String projectTitle;
 
     //private Long reviewerId;
@@ -28,6 +30,7 @@ public class ReviewResponse {
     public static ReviewResponse of(Review review, Map<String, String> parsedContent) {
         return ReviewResponse.builder()
                 .reviewId(review.getId())
+                .projectId(review.getProject().getId())
                 .projectTitle(review.getProject().getTitle())
                 //.reviewerId(review.getReviewer().getId())
                 //.reviewerNickname(review.getReviewer().getNickname())

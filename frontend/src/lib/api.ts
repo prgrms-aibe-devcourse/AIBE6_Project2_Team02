@@ -1,8 +1,32 @@
-import type { CreateReportRequest, CreateReviewRequest, NotificationResponse, Portfolio, PortfolioUpdateRequest, Project, ProjectProposal, ReportResponse, ReportStatus, ReportTargetType, ReviewResponse, RsData, User } from '../types';
-import type { PortfolioCreateRequest } from '../types/dto/portfolio';
-import type { ProjectApplicationCreateRequest, ProjectApplicationCreateResponse, ProjectCreateRequest, ProjectPermissionResponse, ProjectUpdateRequest } from '../types/dto/project';
-import type { ProjectProposalCreateRequest, ProposalProject, SentProjectProposal } from '../types/dto/proposal';
-import type { TechStackItem } from '../types/tech-stack';
+import type {
+  CreateReportRequest,
+  CreateReviewRequest,
+  NotificationResponse,
+  Portfolio,
+  PortfolioUpdateRequest,
+  Project,
+  ProjectProposal,
+  ReportResponse,
+  ReportStatus,
+  ReportTargetType,
+  ReviewResponse,
+  RsData,
+  User,
+} from '../types'
+import type { PortfolioCreateRequest } from '../types/dto/portfolio'
+import type {
+  ProjectApplicationCreateRequest,
+  ProjectApplicationCreateResponse,
+  ProjectCreateRequest,
+  ProjectPermissionResponse,
+  ProjectUpdateRequest,
+} from '../types/dto/project'
+import type {
+  ProjectProposalCreateRequest,
+  ProposalProject,
+  SentProjectProposal,
+} from '../types/dto/proposal'
+import type { TechStackItem } from '../types/tech-stack'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -35,11 +59,11 @@ async function fetchRsDataJson<T>(
 
 // 스프링의 Page 공통 규격을 받아줄 인터페이스 정의
 interface SpringPage<T> {
-  content: T[]          // 실제 데이터 리스트 (6개)
-  totalPages: number    // 전체 페이지 개수
+  content: T[] // 실제 데이터 리스트 (6개)
+  totalPages: number // 전체 페이지 개수
   totalElements: number // 전체 데이터 개수
-  number: number        // 현재 페이지 번호 (0부터 시작)
-  size: number          // 한 페이지당 데이터 개수
+  number: number // 현재 페이지 번호 (0부터 시작)
+  size: number // 한 페이지당 데이터 개수
 }
 
 export interface ProjectFilterParams {
@@ -72,7 +96,7 @@ export function fetchProjects(params: ProjectFilterParams = {}) {
   if (tech && tech !== 'All') query.append('tech', tech)
   if (status && status !== 'All') query.append('status', status)
   if (sort) query.append('sort', sort)
-  
+
   return fetchRsDataJson<SpringPage<Project>>(`/projects?${query.toString()}`)
 }
 
@@ -290,4 +314,10 @@ export function markNotificationAsRead(notificationId: number) {
   return fetchRsDataJson<void>(`/notifications/${notificationId}/read`, {
     method: 'PATCH',
   })
+}
+
+export function checkReviewAccess(projectId: number, revieweeId: number) {
+  return fetchRsDataJson<void>(
+    `/reviews/check-access?projectId=${projectId}&revieweeId=${revieweeId}`,
+  )
 }
