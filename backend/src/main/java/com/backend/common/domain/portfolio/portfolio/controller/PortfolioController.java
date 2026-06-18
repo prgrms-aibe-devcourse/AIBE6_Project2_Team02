@@ -169,4 +169,12 @@ public class PortfolioController {
         return RsData.of("200", "프로젝트 제안을 취소했습니다.", null);
     }
 
+    @GetMapping("/{memberId}")
+    public RsData<PortfolioResponse> getPortfolioDetails(
+            @PathVariable("memberId") Long memberId
+    ) {
+        PortfolioResponse response = portfolioService.getMyPortfolio(memberId);
+        return RsData.of("200", "포트폴리오 상세 조회가 완료되었습니다.", response);
+    }
+
 }
