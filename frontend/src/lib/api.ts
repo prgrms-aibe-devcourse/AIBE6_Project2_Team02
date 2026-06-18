@@ -4,16 +4,6 @@ import type { ProjectApplicationCreateRequest, ProjectApplicationCreateResponse,
 import type { ProjectProposalCreateRequest, ProposalProject, SentProjectProposal } from '../types/dto/proposal';
 import type { TechStackItem } from '../types/tech-stack';
 
-
-
-
-
-
-
-
-
-
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
 async function fetchRsDataJson<T>(
@@ -127,6 +117,10 @@ export function updateProject(id: string, payload: ProjectUpdateRequest) {
 
 export function fetchMembers() {
   return fetchRsDataJson<User[]>('/members')
+}
+
+export function fetchPortfolios() {
+  return fetchRsDataJson<User[]>('/portfolios')
 }
 
 export function fetchMember(id: string) {

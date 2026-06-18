@@ -1,6 +1,7 @@
 package com.backend.common.domain.portfolio.portfolio.controller;
 
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioCreateRequest;
+import com.backend.common.domain.portfolio.portfolio.dto.PortfolioListResponse;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioResponse;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioUpdateRequest;
 import com.backend.common.domain.portfolio.portfolio.service.PortfolioService;
@@ -33,6 +34,15 @@ public class PortfolioController {
     /**
      * 내 포트폴리오 조회
      */
+    @GetMapping
+    public RsData<List<PortfolioListResponse>> getPublishedPortfolios() {
+        return RsData.of(
+                "200",
+                "포트폴리오 목록 조회 성공",
+                portfolioService.getPublishedPortfolios()
+        );
+    }
+
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public RsData<PortfolioResponse> getMyPortfolio(
