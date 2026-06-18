@@ -4,6 +4,8 @@ import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.exception.MemberNotFoundException;
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.member.repository.MemberTechStackRepository;
+import com.backend.common.domain.notification.entity.NotificationType;
+import com.backend.common.domain.notification.service.NotificationService;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
 import com.backend.common.domain.portfolio.portfolio.repository.PortfolioRepository;
 import com.backend.common.domain.project.application.dto.ProjectApplicationCreateRequest;
@@ -61,6 +63,8 @@ public class ProjectService {
     private final TechStackRepository techStackRepository;
     private final ProjectViewRepository projectViewRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
+    private final NotificationService notificationService;
+
 
     public Page<ProjectResponse> getProjects(
             String search,
@@ -297,7 +301,19 @@ public class ProjectService {
                 .message(message)
                 .build();
 
-        return projectApplicationRepository.save(application).getId();
+        ProjectApplication saveApplication = projectApplicationRepository.save(application);
+
+        Member leader = project.getLeader();
+        notificationService.notify(
+                leader,
+                NotificationType.APPLICATION_RECEIVED,
+                "새로운 지원서가 도착했습니다.",
+                applicant.getNickname() + "님이 " + project.getTitle() + " 프로젝트에 지원했습니다.",
+                "/mypage?tab=proposal",
+                saveApplication.getId()
+        );
+
+        return saveApplication.getId();
     }
 
     private Optional<ProjectMember> findActiveProjectMember(Long projectId, Long memberId) {

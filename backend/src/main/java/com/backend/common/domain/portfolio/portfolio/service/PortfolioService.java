@@ -2,6 +2,8 @@ package com.backend.common.domain.portfolio.portfolio.service;
 
 import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.repository.MemberRepository;
+import com.backend.common.domain.notification.entity.NotificationType;
+import com.backend.common.domain.notification.service.NotificationService;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioCreateRequest;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioListResponse;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioResponse;
@@ -47,6 +49,7 @@ public class PortfolioService {
     private final TechStackRepository techStackRepository;
     private final ProjectProposalRepository projectProposalRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final NotificationService notificationService;
 
     /**
      * 포트폴리오 목록 조회
@@ -240,12 +243,21 @@ public class PortfolioService {
                         "404",
                         "제안자를 찾을 수 없습니다."
                 ));
-        projectProposalRepository.save(ProjectProposal.builder()
+        ProjectProposal savedProposal = projectProposalRepository.save(ProjectProposal.builder()
                 .project(proposerMembership.getProject())
                 .portfolio(portfolio)
                 .proposer(proposer)
                 .message(message)
                 .build());
+
+        notificationService.notify(
+                portfolio.getMember(),
+                NotificationType.PROPOSAL_RECEIVED,
+                "새로운 프로젝트 제안",
+                proposer.getNickname() + "님이 프로젝트 참여를 제안했습니다.",
+                "/mypage?tab=proposal",
+                savedProposal.getId()
+        );
     }
 
     @Transactional
@@ -287,8 +299,26 @@ public class PortfolioService {
                     .role(ProjectRole.MEMBER)
                     .build();
             projectMemberRepository.save(projectMember);
+
+            notificationService.notify(
+                    proposal.getProposer(),
+                    NotificationType.PROPOSAL_ACCEPTED,
+                    "제안이 수락되었습니다.",
+                    proposal.getPortfolio().getMember().getNickname() + "님이 제안을 수락했습니다.",
+                    "/projects/" + proposal.getProject().getId(),
+                    proposal.getId()
+            );
         } else {
             proposal.reject();
+
+            notificationService.notify(
+                    proposal.getProposer(),
+                    NotificationType.PROPOSAL_REJECTED,
+                    "제안이 거절되었습니다.",
+                    proposal.getPortfolio().getMember().getNickname() + "님이 제안을 거절했습니다.",
+                    null,
+                    proposal.getId()
+            );
         }
     }
 

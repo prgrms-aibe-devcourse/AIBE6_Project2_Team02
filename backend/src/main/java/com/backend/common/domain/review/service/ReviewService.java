@@ -2,6 +2,8 @@ package com.backend.common.domain.review.service;
 
 import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.repository.MemberRepository;
+import com.backend.common.domain.notification.entity.NotificationType;
+import com.backend.common.domain.notification.service.NotificationService;
 import com.backend.common.domain.project.enums.ProjectStatus;
 import com.backend.common.domain.project.project.entity.Project;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
@@ -31,6 +33,7 @@ public class ReviewService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ObjectMapper objectMapper;
+    private final NotificationService notificationService;
 
     @Transactional
     public Long createReview(Long reviewerId, CreateReviewRequest request) {
@@ -78,7 +81,18 @@ public class ReviewService {
                 .content(contentJson)
                 .build();
 
-        return reviewRepository.save(review).getId();
+        Review savedReview = reviewRepository.save(review);
+
+        notificationService.notify(
+                reviewee,
+                NotificationType.REVIEW_RECEIVED,
+                "새로운 리뷰가 도착했습니다.",
+                reviewer.getNickname() + "님이 리뷰를 남겼습니다.",
+                "/mypage?tab=review",
+                savedReview.getId()
+        );
+
+        return savedReview.getId();
     }
 
     public List<ReviewResponse> findByRevieweeId(Long revieweeId) {
