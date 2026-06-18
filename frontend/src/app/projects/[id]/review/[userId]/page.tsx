@@ -9,7 +9,12 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Send } from 'lucide-react'
 
 import { Button, Card } from '../../../../../components/ui'
-import { createReview, fetchMember, fetchProject } from '../../../../../lib/api'
+import {
+  checkReviewAccess,
+  createReview,
+  fetchMember,
+  fetchProject,
+} from '../../../../../lib/api'
 import type { Project, User } from '../../../../../types'
 
 export default function ReviewWritePage() {
@@ -30,20 +35,31 @@ export default function ReviewWritePage() {
   useEffect(() => {
     if (!projectId || !userId) return
 
-    setLoading(true)
-    Promise.all([fetchProject(projectId), fetchMember(userId)])
-      .then(([projectData, userData]) => {
+    const validateAccess = async () => {
+      setLoading(true)
+      try {
+        // 1. 권한 체크 API 호출
+        await checkReviewAccess(Number(projectId), Number(userId))
+
+        // 2. 데이터 로딩 (권한이 있을 때만 실행됨)
+        const [projectData, userData] = await Promise.all([
+          fetchProject(projectId),
+          fetchMember(userId),
+        ])
         setProject(projectData)
         setTargetUser(userData)
-      })
-      .catch((err) => {
-        console.error('Error fetching data:', err)
-        toast.error('데이터를 불러오는 중 오류가 발생했습니다.')
-      })
-      .finally(() => {
         setLoading(false)
-      })
-  }, [projectId, userId])
+      } catch (err: any) {
+        // 권한 거부 등 의도된 에러인 경우 alert 후 리다이렉트
+        alert(err.message || '리뷰 작성 권한이 없거나 오류가 발생했습니다.')
+        router.push('/')
+        // 에러 시에는 setLoading(false)를 하지 않거나,
+        // 페이지가 이동될 때까지 계속 로딩 상태(혹은 비어있는 상태)를 유지하여 추가 fetch 시도를 막음
+      }
+    }
+
+    validateAccess()
+  }, [projectId, userId, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

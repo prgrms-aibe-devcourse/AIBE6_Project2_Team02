@@ -35,6 +35,20 @@ public class ReviewController {
                 .body(RsData.of("201", "리뷰가 성공적으로 생성되었습니다.", reviewId));
     }
 
+    @GetMapping("/check-access")
+    public ResponseEntity<RsData<Void>> checkReviewAccess(
+            @AuthenticationPrincipal CustomMemberDetails userDetails,
+            @RequestParam Long projectId,
+            @RequestParam Long revieweeId
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(RsData.of("401", "로그인이 필요합니다."));
+        }
+        reviewService.validateReviewAccess(userDetails.getMemberId(), projectId, revieweeId);
+        return ResponseEntity.ok(RsData.of("200", "리뷰 작성이 가능합니다."));
+    }
+
     @GetMapping("/users/{userId}")
     public ResponseEntity<RsData<List<ReviewResponse>>> getReviews(
             @PathVariable Long userId
