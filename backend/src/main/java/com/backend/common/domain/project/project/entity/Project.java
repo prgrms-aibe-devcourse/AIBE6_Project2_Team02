@@ -5,10 +5,7 @@ import com.backend.common.domain.project.enums.ProjectCategory;
 import com.backend.common.domain.project.enums.ProjectStatus;
 import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,6 +15,7 @@ import java.util.List;
 @Entity
 @Table(name = "projects")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Project {
 

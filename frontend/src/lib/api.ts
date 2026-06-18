@@ -1,4 +1,4 @@
-import type { CreateReportRequest, CreateReviewRequest, Portfolio, PortfolioUpdateRequest, Project, ProjectProposal, ReportResponse, ReportStatus, ReportTargetType, ReviewResponse, RsData, User } from '../types';
+import type { Applicant, CreateReportRequest, CreateReviewRequest, Portfolio, PortfolioUpdateRequest, Project, Project_manage, ProjectProposal, ReportResponse, ReportStatus, ReportTargetType, ReviewResponse, RsData, User } from '../types';
 import type { PortfolioCreateRequest } from '../types/dto/portfolio';
 import type { ProjectApplicationCreateRequest, ProjectApplicationCreateResponse, ProjectCreateRequest, ProjectPermissionResponse, ProjectUpdateRequest } from '../types/dto/project';
 import type { ProjectProposalCreateRequest, ProposalProject, SentProjectProposal } from '../types/dto/proposal';
@@ -58,6 +58,25 @@ export interface PortfolioFilterParams {
   search?: string
   role?: string
   tech?: string
+}
+export function fetchChangeStatus(status: string, id: string) {
+  return fetchRsDataJson<Project_manage>(`/projects/${id}/change`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  })
+}
+
+export function fetchApplicantTOteam(id: string, ProjectID: string) {
+  return fetchRsDataJson<Applicant[]>(`/projects/manageToTeam/${id}`, {
+    method: 'POST',
+    body: JSON.stringify({ ProjectID }),
+  })
+}
+export function fetchProject_manage(id: string) {
+  return fetchRsDataJson<Project_manage>(`/projects/man/${id}`)
+}
+export function fetchApplicant(id: string) {
+  return fetchRsDataJson<Applicant[]>(`/projects/manage/${id}`)
 }
 
 export function fetchProjects(params: ProjectFilterParams = {}) {
