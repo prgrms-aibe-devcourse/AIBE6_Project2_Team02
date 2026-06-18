@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -19,14 +21,29 @@ public class FcmConfig {
     public void init() throws IOException{
         if(!FirebaseApp.getApps().isEmpty()) return;
 
-        try(InputStream serviceAccount =
-                new ClassPathResource("google/aibe6-fcm-notifications-firebase.json").getInputStream()){
+        File secretFile = new File("/etc/secrets/aibe6-fcm-notifications-firebase.json");
 
-            FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .build();
+        if(secretFile.exists())
+        {
+            try(InputStream serviceAccount = new FileInputStream(secretFile)){
 
-            FirebaseApp.initializeApp(options);
+                FirebaseOptions options = FirebaseOptions.builder()
+                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                        .build();
+
+                FirebaseApp.initializeApp(options);
+            }
+
+        }else{
+            try(InputStream serviceAccount =
+                        new ClassPathResource("google/aibe6-fcm-notifications-firebase.json").getInputStream()){
+
+                FirebaseOptions options = FirebaseOptions.builder()
+                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                        .build();
+
+                FirebaseApp.initializeApp(options);
+            }
         }
     }
 }
