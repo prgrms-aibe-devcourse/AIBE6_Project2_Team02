@@ -20,7 +20,7 @@ public class FcmConfig {
         if(!FirebaseApp.getApps().isEmpty()) return;
 
         try(InputStream serviceAccount =
-                new ClassPathResource("google/aibe6-fcm-notifications-firebase-adminsdk-fbsvc-44d281eb6a.json").getInputStream()){
+                new ClassPathResource("google/aibe6-fcm-notifications-firebase.json").getInputStream()){
 
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
