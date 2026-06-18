@@ -31,6 +31,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String nickname = jwtTokenProvider.getNickname(token);
             String role = jwtTokenProvider.getRole(token);
 
+            if (role == null || role.isBlank()) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             CustomMemberDetails principal = new CustomMemberDetails(memberId, nickname, "ACTIVE", role);
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
