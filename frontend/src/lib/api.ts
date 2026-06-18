@@ -4,16 +4,6 @@ import type { ProjectApplicationCreateRequest, ProjectApplicationCreateResponse,
 import type { ProjectProposalCreateRequest, ProposalProject, SentProjectProposal } from '../types/dto/proposal';
 import type { TechStackItem } from '../types/tech-stack';
 
-
-
-
-
-
-
-
-
-
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
 async function fetchRsDataJson<T>(
