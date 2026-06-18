@@ -1,7 +1,10 @@
 import type {
   CreateReportRequest,
   CreateReviewRequest,
+<<<<<<< HEAD
+=======
   NotificationResponse,
+>>>>>>> develop
   Portfolio,
   PortfolioUpdateRequest,
   Project,
@@ -82,6 +85,25 @@ export interface PortfolioFilterParams {
   search?: string
   role?: string
   tech?: string
+}
+export function fetchChangeStatus(status: string, id: string) {
+  return fetchRsDataJson<Project_manage>(`/projects/${id}/change`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  })
+}
+
+export function fetchApplicantTOteam(id: string, ProjectID: string) {
+  return fetchRsDataJson<Applicant[]>(`/projects/manageToTeam/${id}`, {
+    method: 'POST',
+    body: JSON.stringify({ ProjectID }),
+  })
+}
+export function fetchProject_manage(id: string) {
+  return fetchRsDataJson<Project_manage>(`/projects/man/${id}`)
+}
+export function fetchApplicant(id: string) {
+  return fetchRsDataJson<Applicant[]>(`/projects/manage/${id}`)
 }
 
 export function fetchProjects(params: ProjectFilterParams = {}) {

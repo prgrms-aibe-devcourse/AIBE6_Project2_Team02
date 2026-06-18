@@ -17,11 +17,7 @@ import com.backend.common.domain.project.enums.ProjectCategory;
 import com.backend.common.domain.project.enums.ProjectStatus;
 import com.backend.common.domain.project.enums.RecruitmentStatus;
 import com.backend.common.domain.project.exception.ProjectNotFoundException;
-import com.backend.common.domain.project.project.dto.PositionResponse;
-import com.backend.common.domain.project.project.dto.PositionUpdateRequest;
-import com.backend.common.domain.project.project.dto.ProjectCreateRequest;
-import com.backend.common.domain.project.project.dto.ProjectResponse;
-import com.backend.common.domain.project.project.dto.ProjectUpdateRequest;
+import com.backend.common.domain.project.project.dto.*;
 import com.backend.common.domain.project.project.entity.*;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.project.project.repository.ProjectRepository;
@@ -693,6 +689,161 @@ public class ProjectService {
                         featuredMemberIds
                 ))
                 .toList();
+    }
+
+    public ProjectResponse_manage getProject_manage(Long id) {
+        Project project = projectRepository.findById(id)
+                .filter(p -> p.getDeletedAt() == null)
+                .orElseThrow(() -> new NoSuchElementException("Project not found"));
+
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(project.getId());
+        Set<Long> featuredProjectIds = featuredProjectIds(
+                projectRepository.findByDeletedAtIsNullOrderByCreatedAtDesc()
+        );
+        List<ProjectMember> projectMember = projectMemberRepository.findByProjectId(id);
+        return toProjectResponse_manage(
+                project,
+                members,
+                featuredProjectIds.contains(project.getId()),
+                featuredMemberIds()
+        );
+    }
+    private ProjectResponse_manage toProjectResponse_manage(
+            Project project,
+            List<ProjectMember> members,
+            boolean featured,
+            Set<Long> featuredMemberIds
+    ) {
+        UserResponse leader = toUserResponse(
+                project.getLeader(),
+                featuredMemberIds.contains(project.getLeader().getId())
+        );
+
+
+        List<UserResponse> teamMembers = members.stream()
+                .filter(member -> member.getRole() != ProjectRole.LEADER)
+                .map(member -> toUserResponse(
+                        member.getMember(),
+                        featuredMemberIds.contains(member.getMember().getId())
+                ))
+                .toList();
+        List<PMResponse> pmResponses = members.stream()
+                .filter(member -> member.getRole() != ProjectRole.LEADER)
+                .map(member -> toPMResponse(
+                        project.getId(),
+                        member.getMember(),
+                        featuredMemberIds.contains(member.getMember().getId())
+                ))
+                .toList();
+        return new ProjectResponse_manage(
+                String.valueOf(project.getId()),
+                project.getTitle(),
+                project.getDescription(),
+                splitGoals(project.getGoal()),
+                projectTechStackNames(project),
+                buildPositions(project, members),
+                project.isRecruitmentOpen() ? RecruitmentStatus.OPEN : RecruitmentStatus.CLOSED,
+                project.getCategory() == null ? inferCategory(project) : project.getCategory(),
+                leader,
+                teamMembers,
+                project.getDeadline().toString(),
+                project.getCreatedAt().toLocalDate().toString(),
+                Math.max(members.size() * 10, 1),
+                featured,
+                pmResponses
+        );
+    }
+    private PMResponse toPMResponse(Long id, Member member, boolean featured) {
+        Portfolio portfolio = portfolioRepository.findByMemberId(member.getId()).orElse(null);
+        List<String> techStack = memberTechStackRepository.findByMemberId(member.getId()).stream()
+                .map(MemberTechStack::getTechStack)
+                .map(TechStack::getName)
+                .toList();
+        PositionType position = null;
+        ProjectRole role = null;
+        List<ProjectMember> projectMember = projectMemberRepository.findByProjectId(id);
+        for (int i = 0; i < projectMember.size(); i++) {
+            if (member.getId() == projectMember.get(i).getMember().getId()) {
+                position = projectMember.get(i).getPosition();
+                role = projectMember.get(i).getRole();
+            }
+        }
+        return new PMResponse(
+                String.valueOf(member.getId()),
+                member.getNickname(),
+                member.getProfileImageUrl(),
+                role,
+                portfolio != null ? portfolio.getIntroduction() : "",
+                techStack,
+                null,
+                featured,
+                position);
+    }
+
+    public List<Member> getProjectApplication(Long projectId) {
+        List<ProjectApplication> applications = projectApplicationRepository.getProjectApplicationByProject_Id(projectId);
+        List<Member> memberListm = new ArrayList<>();
+        for (int i = 0; i < applications.size(); i++) {
+            memberListm.add(applications.get(i).getApplicant());
+        }
+        return memberListm;
+    }
+
+    public Project findByID(Long id) {
+        return projectRepository.findById(id).get();
+    }
+
+    public ProjectMember addMember(Long id, Long projectID) {
+
+
+        Project project = projectRepository.findById(projectID).get();
+        if(project == null){
+            throw new RuntimeException("프로젝트 찾기가 실패하였습니다.");
+        }
+        ProjectApplication projectApplication = projectApplicationRepository.findByProjectIdAndApplicantId(projectID, id).get();
+        if(projectApplication==null){
+            throw new RuntimeException("지원자 찾기가 실패하였습니다.");
+        }
+
+        ProjectMember projectMember = new ProjectMember(project, projectApplication.getApplicant(), projectApplication.getPosition(), ProjectRole.MEMBER);
+        try {
+            projectMemberRepository.save(projectMember);
+            return projectMember;
+        } catch (RuntimeException e) {
+            throw new RuntimeException("등록되지 못했습니다.");
+        }
+    }
+
+    public ProjectApplication delMember(Long id, Long projectID) {
+        ProjectApplication projectApplication = projectApplicationRepository.findByProjectIdAndApplicantId(projectID, id).get();
+        if(projectApplication==null){
+            throw new RuntimeException("지원자 찾기가 실패하였습니다.");
+        }
+        try {
+            projectApplication = projectApplicationRepository.deleteProjectApplicationById(projectApplication.getId());
+        } catch (Exception e) {
+            throw new RuntimeException("지원자 삭제가 실패하였습니다.");
+        }
+        return projectApplication;
+    }
+
+    public Project updateProjectByStatus(Long id, ProjectStatus status) {
+        Project project = projectRepository.findById(id).get();
+        if(project==null){
+            throw new RuntimeException("프로젝트 찾기가 실패하였습니다.");
+        }
+        project.setStatus(status);
+        if(status.equals(ProjectStatus.IN_PROGRESS)|| status.equals(ProjectStatus.RECRUITING)){
+            project.setRecruitmentOpen(true);
+        }else{
+            project.setRecruitmentOpen(false);
+        }
+        try {
+            project = projectRepository.save(project);
+        } catch (RuntimeException e) {
+            throw new RuntimeException("프로젝트 수정이 실패하였습니다.");
+        }
+        return project;
     }
 
 }

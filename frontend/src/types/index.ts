@@ -32,6 +32,48 @@ export type Project = {
   createdAt: string
   featured?: boolean
 }
+export type PM = {
+  id: string
+  name: string
+  avatar: string
+  role: string
+  bio?: string
+  techStack?: string[]
+  location?: string
+  featured?: boolean
+  position: string
+}
+
+export type Applicant = {
+  createdAt: string
+  deletedAt: string
+  hibernateLazyInitializer: object
+  id: string
+  nickname: string
+  profileImageUrl: string
+  status: string
+  suspensionUntil: string
+  updatedAt: string
+}
+
+
+export type Project_manage = {
+  id: string
+  title: string
+  description: string
+  goals: string[]
+  techStack: string[]
+  positions: Position[]
+  recruitmentStatus: 'Open' | 'Closed' | 'Completed' | 'Stopped'
+  category: 'Web' | 'Mobile' | 'AI' | 'Game' | 'Other'
+  leader: User
+  teamMembers: User[]
+  deadline: string
+  createdAt: string
+  popularity: number
+  featured?: boolean
+  pmResponses: PM[]
+}
 
 export interface RsData<T> {
   code: string
