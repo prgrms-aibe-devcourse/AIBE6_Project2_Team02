@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Briefcase, Check, MessageSquare, User, X } from 'lucide-react'
 
-import { PaginationControls } from '../../../components/PaginationControls' // 🎯 페이지네이션 컴포넌트 연동
+import { PaginationControls } from '../../../components/PaginationControls'
 import { Badge, Card } from '../../../components/ui'
 
 type ProposalFilter = 'applications' | 'proposals'
@@ -205,7 +205,7 @@ export default function ProposalTab({ user }: ProposalTabProps) {
                 </div>
                 <div
                   onClick={() =>
-                    router.push(`/portfolios/${app.applicationId}`)
+                    router.push(`/u/${app.applicationId}`)
                   }
                   className="bg-slate-50 hover:bg-slate-100 transition-colors p-3 rounded-lg cursor-pointer flex items-start gap-2.5"
                 >

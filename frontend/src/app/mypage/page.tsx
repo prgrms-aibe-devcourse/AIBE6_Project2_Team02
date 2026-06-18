@@ -209,7 +209,7 @@ export default function MyPage() {
                 className={`flex-1 md:w-full text-left px-6 py-4 font-medium flex items-center justify-between ${activeTab === 'proposal' ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}
               >
                 <span className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4" /> 제안
+                  <MessageSquare className="w-4 h-4" /> 제안/지원
                 </span>
                 <ChevronRight className="w-4 h-4 hidden md:block opacity-50" />
               </button>
