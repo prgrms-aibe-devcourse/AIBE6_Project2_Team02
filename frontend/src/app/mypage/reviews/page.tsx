@@ -121,12 +121,14 @@ export default function MyReviewsPage() {
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center gap-3">
-                      <Badge
-                        variant="outline"
-                        className="bg-slate-50 text-slate-600 border-slate-200"
-                      >
-                        {review.projectTitle}
-                      </Badge>
+                      <Link href={`/projects/${review.projectId}`}>
+                        <Badge
+                          variant="outline"
+                          className="bg-slate-50 text-slate-600 border-slate-200 cursor-pointer hover:bg-slate-100 hover:text-blue-600 transition-colors"
+                        >
+                          {review.projectTitle}
+                        </Badge>
+                      </Link>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-slate-400">
