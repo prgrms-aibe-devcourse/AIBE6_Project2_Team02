@@ -3,27 +3,30 @@
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { 
-  UserX, 
-  Search, 
-  X, 
-  AlertCircle, 
-  ShieldAlert, 
+
+import {
+  AlertCircle,
   Calendar,
   CheckCircle2,
-  User as UserIcon
+  Search,
+  ShieldAlert,
+  User as UserIcon,
+  X,
 } from 'lucide-react'
 
 import { Badge, Button, Card } from '../../../components/ui'
-import { searchMembers, suspendMember, activateMember } from '../../../lib/api'
+import { activateMember, searchMembers, suspendMember } from '../../../lib/api'
 import { formatDate } from '../../../lib/date'
 import type { User } from '../../../types'
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'all' | 'suspended'>('all')
   const [searchKeyword, setSearchKeyword] = useState('')
-  const [suspensionDays, setSuspensionDays] = useState<Record<string, number>>({})
+  const [suspensionDays, setSuspensionDays] = useState<Record<string, number>>(
+    {},
+  )
 
   const loadData = async (keyword?: string) => {
     setLoading(true)
@@ -36,7 +39,7 @@ export default function AdminUsersPage() {
         avatar: m.profileImageUrl,
         status: m.status,
         suspensionUntil: m.suspensionUntil,
-        role: 'USER' // Default role as it's not explicitly in Member entity yet
+        role: 'USER', // Default role as it's not explicitly in Member entity yet
       }))
       setUsers(mappedUsers)
     } catch (err) {
@@ -83,10 +86,12 @@ export default function AdminUsersPage() {
     }
   }
 
-  const isSuspended = (suspensionUntil?: string | null) => {
-    if (!suspensionUntil) return false
-    return new Date(suspensionUntil) > new Date()
-  }
+  const filteredUsers = users.filter((user) => {
+    if (activeTab === 'all') return true
+    return user.status === 'SUSPENDED'
+  })
+
+  const suspendedCount = users.filter((u) => u.status === 'SUSPENDED').length
 
   if (loading && users.length === 0) {
     return (
@@ -111,7 +116,33 @@ export default function AdminUsersPage() {
       </div>
 
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <form onSubmit={handleSearch} className="relative flex items-center w-full max-w-md">
+        <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'all'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            전체 유저 ({users.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('suspended')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'suspended'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            정지된 유저 ({suspendedCount})
+          </button>
+        </div>
+
+        <form
+          onSubmit={handleSearch}
+          className="relative flex items-center w-full max-w-md"
+        >
           <div className="absolute left-3 text-slate-400">
             <Search size={18} />
           </div>
@@ -135,36 +166,49 @@ export default function AdminUsersPage() {
             </button>
           )}
         </form>
-        <div className="text-sm font-medium text-slate-500">
-          검색 결과: <span className="text-slate-900 font-bold">{users.length}</span>명
-        </div>
       </div>
 
-      {users.length === 0 ? (
+      <div className="text-sm font-medium text-slate-500 mb-6">
+        {activeTab === 'all' ? '전체' : '정지 유저'} 검색 결과:{' '}
+        <span className="text-slate-900 font-bold">{filteredUsers.length}</span>
+        명
+      </div>
+
+      {filteredUsers.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 border-dashed">
           <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle size={32} />
           </div>
           <p className="text-slate-500 font-medium">
-            {searchKeyword ? '검색 결과와 일치하는 유저가 없습니다.' : '등록된 유저가 없습니다.'}
+            {searchKeyword
+              ? '검색 결과와 일치하는 유저가 없습니다.'
+              : activeTab === 'suspended'
+                ? '정지된 유저가 없습니다.'
+                : '등록된 유저가 없습니다.'}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {users.map((user) => {
-            const suspended = isSuspended(user.suspensionUntil)
+          {filteredUsers.map((user) => {
+            const suspended = user.status === 'SUSPENDED'
             return (
               <motion.div
                 key={user.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <Card className={`overflow-hidden border-slate-200 hover:shadow-md transition-all h-full flex flex-col ${suspended ? 'border-red-200 bg-red-50/30' : ''}`}>
+                <Card
+                  className={`overflow-hidden border-slate-200 hover:shadow-md transition-all h-full flex flex-col ${suspended ? 'border-red-200 bg-red-50/30' : ''}`}
+                >
                   <div className="p-5 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-4">
-                      <Badge 
-                        variant={suspended ? 'outline' : 'secondary'} 
-                        className={suspended ? 'bg-red-50 text-red-700 border-red-100' : 'bg-slate-100 text-slate-600'}
+                      <Badge
+                        variant={suspended ? 'outline' : 'secondary'}
+                        className={
+                          suspended
+                            ? 'bg-red-50 text-red-700 border-red-100'
+                            : 'bg-slate-100 text-slate-600'
+                        }
                       >
                         {suspended ? '활동 제한 중' : '정상 활동'}
                       </Badge>
@@ -176,7 +220,11 @@ export default function AdminUsersPage() {
                     <div className="flex items-center gap-4 mb-6">
                       <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm bg-slate-100 flex-shrink-0">
                         {user.avatar ? (
-                          <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                          <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-slate-400">
                             <UserIcon size={24} />
@@ -197,7 +245,9 @@ export default function AdminUsersPage() {
                       <div className="mb-6 p-3 bg-red-50 rounded-xl border border-red-100 flex items-center gap-3">
                         <Calendar className="w-4 h-4 text-red-500 flex-shrink-0" />
                         <div className="min-w-0">
-                          <div className="text-[10px] text-red-600 font-bold uppercase tracking-wider">제한 기한</div>
+                          <div className="text-[10px] text-red-600 font-bold uppercase tracking-wider">
+                            제한 기한
+                          </div>
                           <div className="text-xs text-red-700 font-semibold truncate">
                             {formatDate(user.suspensionUntil)}까지
                           </div>
@@ -210,10 +260,12 @@ export default function AdminUsersPage() {
                         <select
                           className="flex-1 h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                           value={suspensionDays[user.id] || 7}
-                          onChange={(e) => setSuspensionDays({
-                            ...suspensionDays,
-                            [user.id]: parseInt(e.target.value)
-                          })}
+                          onChange={(e) =>
+                            setSuspensionDays({
+                              ...suspensionDays,
+                              [user.id]: parseInt(e.target.value),
+                            })
+                          }
                         >
                           <option value={1}>1일 정지</option>
                           <option value={3}>3일 정지</option>
@@ -232,7 +284,7 @@ export default function AdminUsersPage() {
                           {suspended ? '기한 연장' : '활동 제한'}
                         </Button>
                       </div>
-                      
+
                       {suspended && (
                         <Button
                           variant="ghost"

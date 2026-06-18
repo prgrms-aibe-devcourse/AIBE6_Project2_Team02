@@ -102,4 +102,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     Page<Project> findMyRecentlyViewedProjects(@Param("memberId") Long memberId, Pageable pageable);
 
     List<Project> findByIsHiddenTrueOrderByUpdatedAtDesc();
+
+    List<Long> findIdsByTitle(String searchPattern);
 }
