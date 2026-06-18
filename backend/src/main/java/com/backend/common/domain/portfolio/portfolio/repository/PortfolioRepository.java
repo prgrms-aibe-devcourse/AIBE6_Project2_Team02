@@ -16,15 +16,15 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
 
     @Query("SELECT DISTINCT p FROM Portfolio p " +
             "JOIN p.member m " +
-            "LEFT JOIN MemberTechStack mts ON mts.member.id = m.id " +
+            "LEFT JOIN p.portfolioTechStacks pts " +
             "WHERE p.isPublished = true " +
             "AND (:search IS NULL OR LOWER(m.nickname) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "OR LOWER(p.introduction) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "OR LOWER(p.desiredPosition) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(mts.techStack.name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "OR LOWER(pts.techStack.name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
             "AND (:role IS NULL OR p.desiredPosition = :role) " +
-            "AND (:tech IS NULL OR mts.techStack.name = :tech)")
+            "AND (:tech IS NULL OR pts.techStack.name = :tech)")
     Page<Portfolio> searchPortfolios(
             @Param("search") String search,
             @Param("role") String role,

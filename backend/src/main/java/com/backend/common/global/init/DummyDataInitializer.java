@@ -24,6 +24,7 @@ import com.backend.common.domain.report.repository.ReportRepository;
 import com.backend.common.domain.review.entity.Review;
 import com.backend.common.domain.review.repository.ReviewRepository;
 import com.backend.common.domain.techstack.entity.MemberTechStack;
+import com.backend.common.domain.techstack.entity.PortfolioTechStack;
 import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
@@ -292,33 +293,62 @@ public class DummyDataInitializer implements ApplicationRunner {
     }
 
     private void savePortfolios(Map<String, MemberSeed> memberSeeds, Map<String, Member> members) {
-        memberSeeds.forEach((id, seed) -> portfolioRepository.save(
-                Portfolio.builder()
+        Map<String, TechStack> techStacks = loadTechStacks();
+        memberSeeds.forEach((id, seed) -> {
+            Portfolio portfolio = Portfolio.builder()
                         .member(members.get(id))
                         .title(seed.name() + " Portfolio")
                         .introduction(seed.bio())
                         .portfolioLinks(null)
                         .desiredPosition(inferPosition(seed.role()).name())
                         .isPublished(true)
-                        .build()
-        ));
+                        .build();
+
+            portfolio.updateTechStacks(buildPortfolioTechStacks(portfolio, seed, techStacks));
+            portfolioRepository.save(portfolio);
+        });
     }
 
     private void backfillMissingPortfolios() {
+        Map<String, TechStack> techStacks = loadTechStacks();
         memberSeeds().values().forEach(seed ->
                 memberRepository.findByNickname(seed.name())
-                        .filter(member -> portfolioRepository.findByMemberId(member.getId()).isEmpty())
-                        .ifPresent(member -> portfolioRepository.save(
-                                Portfolio.builder()
+                        .ifPresent(member -> {
+                            Portfolio portfolio = portfolioRepository.findByMemberId(member.getId())
+                                    .orElseGet(() -> Portfolio.builder()
                                         .member(member)
                                         .title(seed.name() + " Portfolio")
                                         .introduction(seed.bio())
                                         .portfolioLinks(null)
                                         .desiredPosition(inferPosition(seed.role()).name())
                                         .isPublished(true)
-                                        .build()
-                        ))
+                                        .build());
+
+                            if (portfolio.getPortfolioTechStacks().isEmpty()) {
+                                portfolio.updateTechStacks(buildPortfolioTechStacks(portfolio, seed, techStacks));
+                            }
+
+                            portfolioRepository.save(portfolio);
+                        })
         );
+    }
+
+    private List<PortfolioTechStack> buildPortfolioTechStacks(
+            Portfolio portfolio,
+            MemberSeed seed,
+            Map<String, TechStack> techStacks
+    ) {
+        return seed.techStacks().stream()
+                .map(String::trim)
+                .filter(name -> !name.isBlank())
+                .distinct()
+                .map(techStacks::get)
+                .filter(Objects::nonNull)
+                .map(techStack -> PortfolioTechStack.builder()
+                        .portfolio(portfolio)
+                        .techStack(techStack)
+                        .build())
+                .toList();
     }
 
     private void saveProjects(Map<String, Member> members, Map<String, TechStack> techStacks) {

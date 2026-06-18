@@ -17,14 +17,16 @@ public record PortfolioListResponse(
         String location,
         boolean featured
 ) {
-    public static PortfolioListResponse from(Portfolio portfolio, List<String> techStack, boolean featured) {
+    public static PortfolioListResponse from(Portfolio portfolio, boolean featured) {
         return new PortfolioListResponse(
                 String.valueOf(portfolio.getMember().getId()),
                 portfolio.getMember().getNickname(),
                 portfolio.getMember().getProfileImageUrl(),
                 portfolio.getDesiredPosition(),
                 portfolio.getIntroduction(),
-                techStack,
+                portfolio.getPortfolioTechStacks().stream()
+                        .map(portfolioTechStack -> portfolioTechStack.getTechStack().getName())
+                        .toList(),
                 findLink(portfolio, "GITHUB"),
                 findLink(portfolio, "DEPLOY"),
                 null,
