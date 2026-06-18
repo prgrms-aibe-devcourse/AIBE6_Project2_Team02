@@ -338,7 +338,10 @@ public class ProjectService {
                 req.open(),
                 positions
         );
-        project.updateProjectTechStacks(buildProjectTechStacks(project, req.techStacks()));
+        List<ProjectTechStack> projectTechStacks = buildProjectTechStacks(project, req.techStacks());
+        project.updateProjectTechStacks(List.of());
+        projectRepository.flush();
+        project.updateProjectTechStacks(projectTechStacks);
 
         return toProjectResponse(project, members, false, featuredMemberIds());
     }
