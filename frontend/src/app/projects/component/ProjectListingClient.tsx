@@ -2,18 +2,9 @@
 
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-
-
-
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-
-
 import { Clock, Search, Sparkles, Users } from 'lucide-react';
-
-
-
 import { PaginationControls } from '../../../components/PaginationControls';
 import { SearchField } from '../../../components/SearchField';
 import { Badge, Button, Card } from '../../../components/ui';
@@ -21,50 +12,6 @@ import { fetchPopularTechStacks, fetchProjects } from '../../../lib/api';
 import { formatDate } from '../../../lib/date';
 import { formatProjectMemberCount } from '../../../lib/project';
 import type { Project } from '../../../types';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 const categoryMap: Record<string, string> = {
   All: '전체', Web: '웹', Mobile: '모바일', AI: 'AI', Game: '게임', Other: '기타',
@@ -95,7 +42,6 @@ export default function ProjectListingClient() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>(initialTech || 'All')
   const [selectedStatus, setSelectedStatus] = useState<string>('Open')
-  const [sortBy, setSortBy] = useState<'newest' | 'popularity'>('newest')
 
   // 인기 기술 스택 로드 (최초 1회만)
   useEffect(() => {
@@ -121,7 +67,6 @@ export default function ProjectListingClient() {
       category: selectedCategory,
       tech: selectedTech,
       status: backendStatus,
-      sort: sortBy === 'newest' ? 'createdAt,desc' : 'popularity,desc',
     })
       .then((pageData) => {
         if (pageData && pageData.content) {
@@ -149,7 +94,7 @@ export default function ProjectListingClient() {
         setFeaturedProjects([])
       })
       .finally(() => setContentLoading(false))
-  }, [page, searchTerm, selectedCategory, selectedTech, selectedStatus, sortBy])
+  }, [page, searchTerm, selectedCategory, selectedTech, selectedStatus])
 
 
   return (
@@ -208,15 +153,6 @@ export default function ProjectListingClient() {
               ))}
             </select>
 
-            {/* Sort Select */}
-            <select
-              className="form-field md:w-auto"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-            >
-              <option value="newest">최신순</option>
-              <option value="popularity">인기순</option>
-            </select>
           </div>
         </div>
       </div>
