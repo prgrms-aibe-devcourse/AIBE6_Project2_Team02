@@ -77,7 +77,7 @@ export default function ProjectListingClient() {
       selectedStatus === 'Open'
         ? 'RECRUITING'
         : selectedStatus === 'Closed'
-          ? 'IN_PROGRESS'
+          ? 'CLOSED'
           : selectedStatus
 
     fetchProjects({

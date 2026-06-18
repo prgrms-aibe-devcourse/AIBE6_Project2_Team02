@@ -56,6 +56,10 @@ const statusConfig: Record<string, { text: string; className: string }> = {
     text: '모집 중',
     className: 'bg-green-100 text-green-700 border-green-200',
   },
+  CLOSED: {
+    text: '마감',
+    className: 'bg-slate-100 text-slate-600 border-slate-200',
+  },
   IN_PROGRESS: {
     text: '진행 중',
     className: 'bg-blue-100 text-blue-700 border-blue-200',
