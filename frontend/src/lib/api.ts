@@ -75,6 +75,14 @@ export interface ProjectFilterParams {
   sort?: string
 }
 
+export interface PortfolioFilterParams {
+  page?: number
+  size?: number
+  search?: string
+  role?: string
+  tech?: string
+}
+
 export function fetchProjects(params: ProjectFilterParams = {}) {
   const { page = 0, size = 6, search, category, tech, status, sort } = params
 
@@ -142,8 +150,18 @@ export function fetchMembers() {
   return fetchRsDataJson<User[]>('/members')
 }
 
-export function fetchPortfolios() {
-  return fetchRsDataJson<User[]>('/portfolios')
+export function fetchPortfolios(params: PortfolioFilterParams = {}) {
+  const { page = 0, size = 9, search, role, tech } = params
+
+  const query = new URLSearchParams()
+  query.append('page', page.toString())
+  query.append('size', size.toString())
+
+  if (search) query.append('search', search)
+  if (role && role !== 'All') query.append('role', role)
+  if (tech && tech !== 'All') query.append('tech', tech)
+
+  return fetchRsDataJson<SpringPage<User>>(`/portfolios?${query.toString()}`)
 }
 
 export function fetchMember(id: string) {

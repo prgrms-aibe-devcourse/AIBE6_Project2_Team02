@@ -63,12 +63,17 @@ public class AuthController {
     public ResponseEntity<Void> testLogin(HttpServletResponse response) {
         Member testMember = memberRepository.findByNickname("아무개")
                 .orElseGet(() -> memberRepository.save(
-                        Member.create("아무개", "https://avatars.githubusercontent.com/u/12345678?v=4")
+                        Member.createAdmin("아무개", "https://avatars.githubusercontent.com/u/12345678?v=4")
                 ));
 
-        String jwt = jwtTokenProvider.generateToken(testMember.getId(), testMember.getNickname());
 
-        ResponseCookie cookie = ResponseCookie.from("access_token",jwt)
+        String jwt = jwtTokenProvider.generateToken(
+                testMember.getId(),
+                testMember.getNickname(),
+                testMember.getRole().name()
+        );
+
+        ResponseCookie cookie = ResponseCookie.from("access_token", jwt)
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .sameSite(cookieSameSite)

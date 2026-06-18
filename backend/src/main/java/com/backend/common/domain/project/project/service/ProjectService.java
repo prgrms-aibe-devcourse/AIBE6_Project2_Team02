@@ -74,11 +74,14 @@ public class ProjectService {
             Pageable pageable
     ) {
         String qSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
-        String qCategory = (category != null && !"All".equalsIgnoreCase(category)) ? category.trim() : null;
+        ProjectCategory qCategory = toCategoryFilter(category);
         String qTech = (tech != null && !"All".equalsIgnoreCase(tech)) ? tech.trim() : null;
         String qStatus = (status != null && !"All".equalsIgnoreCase(status)) ? status.trim() : null;
+        String qSearchPosition = toPositionSearchCode(qSearch);
 
-        Page<Project> projectPage = projectRepository.searchProjects(qSearch, qCategory, qTech, qStatus, pageable);
+        Page<Project> projectPage = qSearch == null
+                ? projectRepository.findProjects(qCategory, qTech, qStatus, pageable)
+                : projectRepository.searchProjects(qSearch, qSearchPosition, qCategory, qTech, qStatus, pageable);
 
         List<Project> projects = projectPage.getContent();
         Set<Long> featuredProjectIds = featuredProjectIds(projects);
@@ -91,6 +94,18 @@ public class ProjectService {
                 featuredProjectIds.contains(project.getId()),
                 featuredMemberIds
         ));
+    }
+
+    private String toPositionSearchCode(String search) {
+        PositionType positionType = PositionType.fromDescriptionOrCode(search);
+        return positionType == PositionType.ERROR ? null : positionType.name();
+    }
+
+    private ProjectCategory toCategoryFilter(String category) {
+        if (category == null || category.isBlank() || "All".equalsIgnoreCase(category)) {
+            return null;
+        }
+        return ProjectCategory.from(category.trim());
     }
 
     public ProjectResponse getProject(Long id) {
@@ -323,7 +338,10 @@ public class ProjectService {
                 req.open(),
                 positions
         );
-        project.updateProjectTechStacks(buildProjectTechStacks(project, req.techStacks()));
+        List<ProjectTechStack> projectTechStacks = buildProjectTechStacks(project, req.techStacks());
+        project.updateProjectTechStacks(List.of());
+        projectRepository.flush();
+        project.updateProjectTechStacks(projectTechStacks);
 
         return toProjectResponse(project, members, false, featuredMemberIds());
     }

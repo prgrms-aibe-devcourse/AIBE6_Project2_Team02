@@ -2,18 +2,9 @@
 
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-
-
-
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-
-
 import { Clock, Search, Sparkles, Users } from 'lucide-react';
-
-
-
 import { PaginationControls } from '../../../components/PaginationControls';
 import { SearchField } from '../../../components/SearchField';
 import { Badge, Button, Card } from '../../../components/ui';
@@ -21,50 +12,6 @@ import { fetchPopularTechStacks, fetchProjects } from '../../../lib/api';
 import { formatDate } from '../../../lib/date';
 import { formatProjectMemberCount } from '../../../lib/project';
 import type { Project } from '../../../types';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 const categoryMap: Record<string, string> = {
   All: '전체', Web: '웹', Mobile: '모바일', AI: 'AI', Game: '게임', Other: '기타',
@@ -95,7 +42,26 @@ export default function ProjectListingClient() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>(initialTech || 'All')
   const [selectedStatus, setSelectedStatus] = useState<string>('Open')
-  const [sortBy, setSortBy] = useState<'newest' | 'popularity'>('newest')
+
+  const changeSearchTerm = (value: string) => {
+    setPage(0)
+    setSearchTerm(value)
+  }
+
+  const changeCategory = (value: string) => {
+    setPage(0)
+    setSelectedCategory(value)
+  }
+
+  const changeTech = (value: string) => {
+    setPage(0)
+    setSelectedTech(value)
+  }
+
+  const changeStatus = (value: string) => {
+    setPage(0)
+    setSelectedStatus(value)
+  }
 
   // 인기 기술 스택 로드 (최초 1회만)
   useEffect(() => {
@@ -121,7 +87,6 @@ export default function ProjectListingClient() {
       category: selectedCategory,
       tech: selectedTech,
       status: backendStatus,
-      sort: sortBy === 'newest' ? 'createdAt,desc' : 'popularity,desc',
     })
       .then((pageData) => {
         if (pageData && pageData.content) {
@@ -149,7 +114,7 @@ export default function ProjectListingClient() {
         setFeaturedProjects([])
       })
       .finally(() => setContentLoading(false))
-  }, [page, searchTerm, selectedCategory, selectedTech, selectedStatus, sortBy])
+  }, [page, searchTerm, selectedCategory, selectedTech, selectedStatus])
 
 
   return (
@@ -166,7 +131,7 @@ export default function ProjectListingClient() {
           <SearchField
             placeholder="키워드 입력..."
             value={searchTerm}
-            onChange={setSearchTerm}
+            onChange={changeSearchTerm}
           />
 
           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
@@ -175,7 +140,7 @@ export default function ProjectListingClient() {
               {categories.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => changeCategory(cat)}
                   className={`segment-option ${selectedCategory === cat ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
                   {categoryMap[cat]}
@@ -188,7 +153,7 @@ export default function ProjectListingClient() {
               {statuses.map((status) => (
                 <button
                   key={status}
-                  onClick={() => setSelectedStatus(status)}
+                  onClick={() => changeStatus(status)}
                   className={`segment-option ${selectedStatus === status ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
                   {statusMap[status]}
@@ -200,7 +165,7 @@ export default function ProjectListingClient() {
             <select
               className="form-field md:w-auto"
               value={selectedTech}
-              onChange={(e) => setSelectedTech(e.target.value)}
+              onChange={(e) => changeTech(e.target.value)}
             >
               <option value="All">전체 기술 스택</option>
               {popularTechStacks.map((tech) => (
@@ -208,15 +173,6 @@ export default function ProjectListingClient() {
               ))}
             </select>
 
-            {/* Sort Select */}
-            <select
-              className="form-field md:w-auto"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-            >
-              <option value="newest">최신순</option>
-              <option value="popularity">인기순</option>
-            </select>
           </div>
         </div>
       </div>
@@ -331,7 +287,6 @@ export default function ProjectListingClient() {
                         <div className="flex items-center gap-2">
                           <Link href={`/u/${project.leader.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity" onClick={(e) => e.stopPropagation()}>
                             <img src={project.leader.avatar} alt={project.leader.name} className="w-6 h-6 rounded-full" />
-                            <img src={project.leader.avatar} alt={project.leader.name} className="w-6 h-6 rounded-full" />
                             <span className="text-sm font-medium text-slate-700 hover:text-blue-600">{project.leader.name}</span>
                           </Link>
                         </div>
@@ -355,6 +310,7 @@ export default function ProjectListingClient() {
                   variant="outline"
                   className="mt-4"
                   onClick={() => {
+                    setPage(0)
                     setSearchTerm('')
                     setSelectedCategory('All')
                     setSelectedTech('All')
