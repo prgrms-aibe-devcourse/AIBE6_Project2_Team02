@@ -156,6 +156,7 @@ export interface ReportResponse {
 
 export interface ReviewResponse {
   reviewId: number
+  projectId: number
   projectTitle: string
   content: Record<string, string>
   createdAt: string

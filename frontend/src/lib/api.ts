@@ -1,6 +1,10 @@
 import type {
   CreateReportRequest,
   CreateReviewRequest,
+<<<<<<< HEAD
+=======
+  NotificationResponse,
+>>>>>>> develop
   Portfolio,
   PortfolioUpdateRequest,
   Project,
@@ -332,4 +336,10 @@ export function markNotificationAsRead(notificationId: number) {
   return fetchRsDataJson<void>(`/notifications/${notificationId}/read`, {
     method: 'PATCH',
   })
+}
+
+export function checkReviewAccess(projectId: number, revieweeId: number) {
+  return fetchRsDataJson<void>(
+    `/reviews/check-access?projectId=${projectId}&revieweeId=${revieweeId}`,
+  )
 }

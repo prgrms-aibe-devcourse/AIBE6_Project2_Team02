@@ -115,6 +115,12 @@ public class GlobalExceptionHandler {
         return RsData.of("400", e.getMessage());
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public RsData<?> handleIllegalStateException(IllegalStateException e) {
+        return RsData.of("400", e.getMessage());
+    }
+
     /**
      * 인가 실패 (권한 없음)
      */
