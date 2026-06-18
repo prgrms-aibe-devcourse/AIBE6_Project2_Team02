@@ -103,5 +103,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     List<Project> findByIsHiddenTrueOrderByUpdatedAtDesc();
 
-    List<Long> findIdsByTitle(String searchPattern);
+    @Query("SELECT p.id FROM Project p WHERE LOWER(p.title) LIKE :searchPattern")
+    List<Long> findIdsByTitle(@Param("searchPattern") String searchPattern);
 }

@@ -11,7 +11,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     Optional<Member> findByNickname(String nickname);
 
-    List<Member> findByNicknameContaining(String nickname);
+    List<Member> findByNicknameContainingIgnoreCase(String nickname);
 
     List<Member> findAllByStatusAndSuspensionUntilBefore(String status, LocalDateTime now);
 

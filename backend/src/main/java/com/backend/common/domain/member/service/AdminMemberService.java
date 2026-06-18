@@ -20,7 +20,7 @@ public class AdminMemberService {
         if (nickname == null || nickname.trim().isEmpty()) {
             return memberRepository.findAll();
         }
-        return memberRepository.findByNicknameContaining(nickname.trim());
+        return memberRepository.findByNicknameContainingIgnoreCase(nickname.trim());
     }
 
     @Transactional
