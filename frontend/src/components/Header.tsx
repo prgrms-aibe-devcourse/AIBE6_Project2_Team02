@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Code2, Menu, Search, X } from 'lucide-react';
+import { Bell, Code2, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -50,15 +50,7 @@ export function Header() {
         </div>
 
         {/* Desktop Actions */}
-        <div className="hidden lg:flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="프로젝트 검색..."
-              className="h-9 w-40 lg:w-56 rounded-full border border-slate-200 bg-slate-50 pl-9 pr-4 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-            />
-          </div>
+        <div className="hidden lg:flex items-center gap-4">
           {!loading && user ? (
             <>
               <Link href="/projects/new">
