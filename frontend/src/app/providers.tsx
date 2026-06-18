@@ -1,9 +1,11 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Toaster } from 'sonner'
+
+import { type AuthUser, fetchMe, logout as logoutApi } from '../lib/auth'
 import { useScreenInit } from '../useScreenInit'
-import { fetchMe, logout as logoutApi, type AuthUser } from '../lib/auth'
 
 interface AuthContextValue {
   user: AuthUser | null
@@ -24,6 +26,7 @@ export function useAuth() {
 export function Providers({ children }: { children: React.ReactNode }) {
   useScreenInit()
 
+  const router = useRouter()
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -37,6 +40,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await logoutApi()
     setUser(null)
+    router.push('/')
   }
 
   return (
