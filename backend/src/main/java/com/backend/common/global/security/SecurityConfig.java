@@ -1,7 +1,7 @@
 package com.backend.common.global.security;
 
+import com.backend.common.global.rsdata.RsData;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -36,25 +36,35 @@ public class SecurityConfig {
                         .anyRequest().permitAll()
                 )
 
-                // 🎯 401 및 403 예외 핸들러 설정 연동
                 .exceptionHandling(exception -> exception
 
                         /**
                          * [401 Unauthorized - AuthenticationEntryPoint]
-                         * 비로그인(인증 자격 증명이 없는) 상태에서 보호된 자원(/admin, /mypage 등)에 접근할 때 발생하는 예외를 핸들링합니다.
-                         * 발생 시 메인 페이지('/')로 리다이렉트합니다.
+                         * 비로그인 상태에서 보호된 자원에 접근할 때 401 상태 코드와 RsData JSON을 반환합니다.
                          */
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendRedirect("/");
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED); // 401
+                            response.setContentType("application/json;charset=UTF-8");
+
+                            RsData<Void> rsData = RsData.of("F-1", "로그인이 필요한 서비스입니다.");
+
+                            // 풀 패키지명을 사용하여 빈 주입 오류 및 라이브러리 파편화 문제를  차단
+                            tools.jackson.databind.ObjectMapper mapper = new tools.jackson.databind.ObjectMapper();
+                            response.getWriter().write(mapper.writeValueAsString(rsData));
                         })
 
                         /**
                          * [403 Forbidden - AccessDeniedHandler]
-                         * 로그인은 완료되어 인증은 되었으나, 해당 자원에 접근할 수 있는 권한(예: 일반 유저가 /admin 접근)이 없을 때 발생하는 예외를 핸들링합니다.
-                         * 발생 시 메인 페이지('/')로 리다이렉트합니다.
+                         * 권한이 없는 유저가 관리자 자원에 접근할 때 403 상태 코드와 RsData JSON을 반환합니다.
                          */
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.sendRedirect("/");
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN); // 403
+                            response.setContentType("application/json;charset=UTF-8");
+
+                            RsData<Void> rsData = RsData.of("F-2", "해당 기능에 대한 접근 권한이 없습니다.");
+
+                            tools.jackson.databind.ObjectMapper mapper = new tools.jackson.databind.ObjectMapper();
+                            response.getWriter().write(mapper.writeValueAsString(rsData));
                         })
                 )
 
@@ -66,11 +76,4 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-//    @Bean
-//    public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(JwtAuthenticationFilter filter) {
-//        FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
-//        registration.setEnabled(false);
-//        return registration;
-//    }
 }
