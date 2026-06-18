@@ -1,14 +1,13 @@
 import type {
+  Applicant,
   CreateReportRequest,
   CreateReviewRequest,
-<<<<<<< HEAD
-=======
   NotificationResponse,
->>>>>>> develop
   Portfolio,
   PortfolioUpdateRequest,
   Project,
   ProjectProposal,
+  Project_manage,
   ReportResponse,
   ReportStatus,
   ReportTargetType,
