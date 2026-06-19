@@ -73,6 +73,18 @@ public class ProjectMember {
         this.leftAt = LocalDateTime.now();
     }
 
+    public void leaveTeam() {
+        if (this.role == ProjectRole.LEADER) {
+            throw new IllegalStateException("프로젝트 리더는 탈퇴할 수 없습니다.");
+        }
+        if (this.memberStatus == ProjectMemberStatus.REMOVED || this.memberStatus == ProjectMemberStatus.LEFT) {
+            throw new IllegalStateException("이미 프로젝트를 나갔거나 방출된 회원입니다.");
+        }
+
+        this.memberStatus = ProjectMemberStatus.LEFT;
+        this.leftAt = LocalDateTime.now();
+    }
+
     /**
      *  프로젝트 멤버 권한 수정 도메인 로직
      */

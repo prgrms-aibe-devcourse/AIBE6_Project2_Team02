@@ -151,8 +151,8 @@ public class ProjectController {
             throw new ProjectNotFoundException("404", "Project not found");
         }
         try {
-            List<Member> members = projectService.getProjectApplication(id);
-            return RsData.of("200", "프로젝트 지원자조회 성공", new MyApplicant(members));
+            List<ApplicantResponse> applicants = projectService.getProjectApplication(id);
+            return RsData.of("200", "프로젝트 지원자조회 성공", new MyApplicant(applicants));
         } catch (Exception e) {
             throw new RuntimeException("지원자 맴버찾기가 실패하였습니다.");
         }
@@ -201,7 +201,7 @@ public class ProjectController {
         }
 
 
-        List<Member> members;
+        List<ApplicantResponse> members;
         try {
             members = projectService.getProjectApplication(request.ProjectID());
 
@@ -283,6 +283,22 @@ public class ProjectController {
         projectService.kickProjectMember(projectId, targetMemberId);
 
         return RsData.of("200", "해당 팀원이 프로젝트에서 방출되었습니다.");
+    }
+
+    @DeleteMapping("/{projectId}")
+    public RsData<Void> deleteProject(@PathVariable Long projectId) {
+        projectService.deleteProject(projectId);
+        return RsData.of("200", "프로젝트가 삭제되었습니다.");
+    }
+
+    @DeleteMapping("/{projectId}/members/me")
+    public RsData<Void> leaveProject(
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal CustomMemberDetails principal) {
+
+        projectService.leaveProject(projectId, principal.getMemberId());
+
+        return RsData.of("200", "프로젝트에서 탈퇴했습니다.");
     }
 
     @PatchMapping("/{projectId}/members/{memberId}/role")
