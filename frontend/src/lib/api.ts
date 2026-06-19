@@ -414,6 +414,12 @@ export function leaveProject(projectId: string) {
   })
 }
 
+export function deleteProject(projectId: string) {
+  return fetchRsDataJson<void>(`/projects/${projectId}`, {
+    method: 'DELETE',
+  })
+}
+
 export function updateMemberRole(projectId: string, memberId: string, role: string) {
   return fetchRsDataJson<void>(`/projects/${projectId}/members/${memberId}/role`, {
     method: 'PATCH',

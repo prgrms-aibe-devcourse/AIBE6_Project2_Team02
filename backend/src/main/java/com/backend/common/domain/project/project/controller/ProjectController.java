@@ -285,6 +285,12 @@ public class ProjectController {
         return RsData.of("200", "해당 팀원이 프로젝트에서 방출되었습니다.");
     }
 
+    @DeleteMapping("/{projectId}")
+    public RsData<Void> deleteProject(@PathVariable Long projectId) {
+        projectService.deleteProject(projectId);
+        return RsData.of("200", "프로젝트가 삭제되었습니다.");
+    }
+
     @DeleteMapping("/{projectId}/members/me")
     public RsData<Void> leaveProject(
             @PathVariable Long projectId,

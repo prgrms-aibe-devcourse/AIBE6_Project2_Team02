@@ -13,12 +13,14 @@ import {
   Pencil,
   RefreshCw,
   Star,
+  Trash2,
   UserX,
   Users,
 } from 'lucide-react'
 
 import { Badge, Button, Card } from '../../../../components/ui'
 import {
+  deleteProject,
   fetchApplicant,
   fetchApplicantTOteam,
   fetchProjectPermissions,
@@ -32,14 +34,35 @@ import {
 import type { Applicant, Project_manage } from '../../../../types'
 import { useAuth } from '../../../providers'
 
-const statusOptions = [
-  { value: 'RECRUITING', label: '모집중', variant: 'success' as const },
-  { value: 'CLOSED', label: '모집 마감', variant: 'secondary' as const },
-  { value: 'IN_PROGRESS', label: '진행중', variant: 'purple' as const },
-  { value: 'COMPLETED', label: '진행완료', variant: 'secondary' as const },
-  { value: 'DISBANDED', label: '프로젝트 해산', variant: 'secondary' as const },
-  { value: 'CANCELLED', label: '프로젝트 취소', variant: 'secondary' as const },
+const recruitmentOptions = [
+  { value: 'RECRUITING', label: '모집 중' },
+  { value: 'CLOSED', label: '인원 모집 마감' },
 ]
+
+const progressOptions = [
+  { value: 'IN_PROGRESS', label: '프로젝트 진행 중' },
+  { value: 'COMPLETED', label: '프로젝트 완료' },
+  { value: 'DISBANDED', label: '프로젝트 중단' },
+  { value: 'CANCELLED', label: '프로젝트 취소' },
+]
+
+const statusLabelMap: Record<string, string> = {
+  RECRUITING: '모집 중',
+  CLOSED: '인원 모집 마감',
+  IN_PROGRESS: '프로젝트 진행 중',
+  COMPLETED: '프로젝트 완료',
+  DISBANDED: '프로젝트 중단',
+  CANCELLED: '프로젝트 취소',
+}
+
+const statusVariantMap: Record<string, 'success' | 'purple' | 'secondary'> = {
+  RECRUITING: 'success',
+  CLOSED: 'secondary',
+  IN_PROGRESS: 'purple',
+  COMPLETED: 'secondary',
+  DISBANDED: 'secondary',
+  CANCELLED: 'secondary',
+}
 
 const categoryMap: Record<string, string> = {
   Web: '웹',
@@ -83,6 +106,7 @@ export default function ProjectManagementPage() {
   const [applicantsRefreshing, setApplicantsRefreshing] = useState(false)
   const [pageRefreshing, setPageRefreshing] = useState(false)
   const [leaving, setLeaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const refreshAll = () => {
     setPageRefreshing(true)
@@ -187,6 +211,18 @@ export default function ProjectManagementPage() {
       .finally(() => setKickingId(null))
   }
 
+  const handleDelete = () => {
+    if (!confirm('프로젝트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return
+    setDeleting(true)
+    deleteProject(id)
+      .then(() => {
+        toast.success('프로젝트가 삭제되었습니다.')
+        router.push('/projects')
+      })
+      .catch(() => toast.error('삭제에 실패했습니다.'))
+      .finally(() => setDeleting(false))
+  }
+
   const handleLeave = () => {
     if (!confirm('프로젝트에서 탈퇴하시겠습니까?')) return
     setLeaving(true)
@@ -248,8 +284,8 @@ export default function ProjectManagementPage() {
   ]
   const isRecruiting = currentStatus === 'RECRUITING'
   const isCompleted = currentStatus === 'COMPLETED'
-  const currentStatusOption =
-    statusOptions.find((s) => s.value === currentStatus) ?? statusOptions[0]
+  const isProjectPhase = ['IN_PROGRESS', 'COMPLETED', 'DISBANDED', 'CANCELLED'].includes(currentStatus)
+  const showProgressSelect = currentStatus === 'CLOSED' || isProjectPhase
 
   return (
     <div className="bg-slate-50 min-h-screen pb-20">
@@ -276,8 +312,8 @@ export default function ProjectManagementPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Badge variant={currentStatusOption.variant}>
-                  {currentStatusOption.label}
+                <Badge variant={statusVariantMap[currentStatus] ?? 'secondary'}>
+                  {statusLabelMap[currentStatus] ?? currentStatus}
                 </Badge>
                 <Badge variant="purple">
                   {categoryMap[project.category] ?? project.category}
@@ -311,6 +347,18 @@ export default function ProjectManagementPage() {
                   {leaving ? '처리중...' : '팀 탈퇴'}
                 </Button>
               )}
+              {isLeader && currentStatus === 'CANCELLED' && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2 text-red-600 border-red-300 hover:bg-red-50 hover:text-red-800"
+                  disabled={deleting}
+                  onClick={handleDelete}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {deleting ? '삭제 중...' : '프로젝트 삭제'}
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -323,29 +371,51 @@ export default function ProjectManagementPage() {
             <h2 className="text-base font-semibold text-slate-900 mb-4">
               프로젝트 상태 변경
             </h2>
-            <form
-              onSubmit={handleStatusChange}
-              className="flex items-center gap-3"
-            >
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="flex-1 max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                {statusOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <Button
-                type="submit"
-                size="sm"
-                variant="gradient"
-                disabled={statusLoading}
-              >
-                {statusLoading ? '변경 중...' : '변경 적용'}
-              </Button>
+            <form onSubmit={handleStatusChange} className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 max-w-xs">
+                  <label className="block text-xs text-slate-500 mb-1">모집 상태</label>
+                  <select
+                    value={recruitmentOptions.some((o) => o.value === selectedStatus) ? selectedStatus : 'CLOSED'}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    disabled={['IN_PROGRESS', 'COMPLETED', 'CANCELLED'].includes(currentStatus)}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                  >
+                    {recruitmentOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {showProgressSelect && (
+                  <div className="flex-1 max-w-xs">
+                    <label className="block text-xs text-slate-500 mb-1">진행 상태</label>
+                    <select
+                      value={progressOptions.some((o) => o.value === selectedStatus) ? selectedStatus : ''}
+                      onChange={(e) => setSelectedStatus(e.target.value)}
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="" disabled>선택하세요</option>
+                      {progressOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className="self-end">
+                  <Button
+                    type="submit"
+                    size="sm"
+                    variant="gradient"
+                    disabled={statusLoading || !selectedStatus}
+                  >
+                    {statusLoading ? '변경 중...' : '변경 적용'}
+                  </Button>
+                </div>
+              </div>
             </form>
           </Card>
         )}

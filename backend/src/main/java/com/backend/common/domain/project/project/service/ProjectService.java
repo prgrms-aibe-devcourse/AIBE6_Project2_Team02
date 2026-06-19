@@ -836,14 +836,16 @@ public class ProjectService {
                 position);
     }
 
+    @Transactional(readOnly = true)
     public List<ApplicantResponse> getProjectApplication(Long projectId) {
         List<ProjectApplication> applications = projectApplicationRepository.getProjectApplicationByProject_Id(projectId);
         return applications.stream().map(app -> {
             Member applicant = app.getApplicant();
-            List<String> techStacks = memberTechStackRepository.findByMemberId(applicant.getId())
-                    .stream()
-                    .map(mts -> mts.getTechStack().getName())
-                    .toList();
+            List<String> techStacks = portfolioRepository.findByMemberId(applicant.getId())
+                    .map(p -> p.getPortfolioTechStacks().stream()
+                            .map(pts -> pts.getTechStack().getName())
+                            .toList())
+                    .orElse(List.of());
             return new ApplicantResponse(
                     String.valueOf(applicant.getId()),
                     applicant.getNickname(),
@@ -972,6 +974,17 @@ public class ProjectService {
                 null,
                 null
         );
+    }
+
+    @Transactional
+    @PreAuthorize("@projectAuthorizer.isProjectLeaderOf(#projectId, authentication.principal.memberId)")
+    public void deleteProject(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("404", "프로젝트를 찾을 수 없습니다."));
+        if (project.getStatus() != ProjectStatus.CANCELLED) {
+            throw new AccessDeniedException("취소된 프로젝트만 삭제할 수 있습니다.");
+        }
+        project.setDeletedAt(java.time.LocalDateTime.now());
     }
 
     @Transactional
