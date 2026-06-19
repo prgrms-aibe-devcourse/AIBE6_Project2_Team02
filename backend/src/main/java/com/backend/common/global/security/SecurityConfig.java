@@ -4,6 +4,7 @@ import com.backend.common.global.rsdata.RsData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -32,6 +33,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/admin", "/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/oauth2/**", "/login/**", "/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/projects", "/projects/*").permitAll()
                         .requestMatchers("/projects/**").authenticated()
                         .anyRequest().permitAll()
                 )
