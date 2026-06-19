@@ -548,14 +548,15 @@ public class ProjectService {
             return RecruitmentStatus.STOPPED;
         }
 
+        if (project.getStatus() == ProjectStatus.RECRUITING) {
+            return RecruitmentStatus.RECRUITING;
+        }
+
         if (!project.isRecruitmentOpen()) {
             return RecruitmentStatus.CLOSED;
         }
 
-        boolean hasAvailablePosition = positions.stream()
-                .anyMatch(position -> position.filled() < position.total());
-
-        return hasAvailablePosition ? RecruitmentStatus.RECRUITING : RecruitmentStatus.CLOSED;
+        return RecruitmentStatus.RECRUITING;
     }
 
     private UserResponse toUserResponse(Member member, boolean featured) {
