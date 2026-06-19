@@ -386,6 +386,33 @@ export function markNotificationAsRead(notificationId: number) {
   })
 }
 
+export function updateProjectStatus(projectId: string, status: string) {
+  return fetchRsDataJson<void>(`/projects/${projectId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  })
+}
+
+export function rejectApplicant(projectId: string, memberId: string) {
+  return fetchRsDataJson<void>(
+    `/projects/${projectId}/applications/${memberId}/reject`,
+    { method: 'POST' },
+  )
+}
+
+export function kickProjectMember(projectId: string, memberId: string) {
+  return fetchRsDataJson<void>(`/projects/${projectId}/members/${memberId}`, {
+    method: 'DELETE',
+  })
+}
+
+export function updateMemberRole(projectId: string, memberId: string, role: string) {
+  return fetchRsDataJson<void>(`/projects/${projectId}/members/${memberId}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  })
+}
+
 export function checkReviewAccess(projectId: number, revieweeId: number) {
   return fetchRsDataJson<void>(
     `/reviews/check-access?projectId=${projectId}&revieweeId=${revieweeId}`,

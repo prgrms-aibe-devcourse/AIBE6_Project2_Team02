@@ -389,6 +389,14 @@ public class ProjectService {
         return memberId != null && findActiveProjectMember(projectId, memberId).isPresent();
     }
 
+    public boolean isProjectLeader(Long projectId, Long memberId) {
+        if (memberId == null) return false;
+        return findActiveProjectMember(projectId, memberId)
+                .map(ProjectMember::getRole)
+                .filter(role -> role == ProjectRole.LEADER)
+                .isPresent();
+    }
+
     public Optional<Long> findPendingApplicationId(Long projectId, Long memberId) {
         if (memberId == null) {
             return Optional.empty();
@@ -905,14 +913,15 @@ public class ProjectService {
                         featuredMemberIds.contains(member.getMember().getId())
                 ))
                 .toList();
+        List<PositionResponse> positions = buildPositions(project, members);
         return new ProjectResponse_manage(
                 String.valueOf(project.getId()),
                 project.getTitle(),
                 project.getDescription(),
                 splitGoals(project.getGoal()),
                 projectTechStackNames(project),
-                buildPositions(project, members),
-                project.isRecruitmentOpen() ? RecruitmentStatus.RECRUITING : RecruitmentStatus.CLOSED,
+                positions,
+                project.getStatus(),
                 project.getCategory() == null ? inferCategory(project) : project.getCategory(),
                 leader,
                 teamMembers,
@@ -978,6 +987,14 @@ public class ProjectService {
         ProjectMember projectMember = new ProjectMember(project, projectApplication.getApplicant(), projectApplication.getPosition(), ProjectRole.MEMBER);
         try {
             projectMemberRepository.save(projectMember);
+            notificationService.notify(
+                    projectApplication.getApplicant(),
+                    NotificationType.APPLICATION_ACCEPTED,
+                    "프로젝트 지원이 수락되었습니다.",
+                    "[" + project.getTitle() + "] 프로젝트 팀원으로 합류했습니다!",
+                    "/projects/" + project.getId(),
+                    project.getId()
+            );
             return projectMember;
         } catch (RuntimeException e) {
             throw new RuntimeException("등록되지 못했습니다.");
@@ -995,6 +1012,26 @@ public class ProjectService {
             throw new RuntimeException("지원자 삭제가 실패하였습니다.");
         }
         return projectApplication;
+    }
+
+    @Transactional
+    public void rejectApplicant(Long projectId, Long applicantMemberId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("프로젝트 찾기가 실패하였습니다."));
+        ProjectApplication application = projectApplicationRepository
+                .findByProjectIdAndApplicantId(projectId, applicantMemberId)
+                .orElseThrow(() -> new RuntimeException("지원자 찾기가 실패하였습니다."));
+
+        application.reject();
+
+        notificationService.notify(
+                application.getApplicant(),
+                NotificationType.APPLICATION_REJECTED,
+                "프로젝트 지원이 거절되었습니다.",
+                "[" + project.getTitle() + "] 프로젝트 지원이 아쉽게도 거절되었습니다.",
+                "/projects/" + project.getId(),
+                project.getId()
+        );
     }
 
     public Project updateProjectByStatus(Long id, ProjectStatus status) {

@@ -34,6 +34,7 @@ export interface ProjectUpdateRequest {
 export interface ProjectPermissionResponse {
   canEdit: boolean
   isMember: boolean
+  isLeader: boolean
   pendingApplicationId: number | null
 }
 

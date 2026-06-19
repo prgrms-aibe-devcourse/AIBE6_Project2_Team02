@@ -8,5 +8,6 @@ public enum NotificationType {
     APPLICATION_ACCEPTED,// 지원 수락됨 (대상: applicant)
     APPLICATION_REJECTED,// 지원 거절됨 (대상: applicant)
     REVIEW_RECEIVED,     // 리뷰 받음 (대상: reviewee)
-    WELCOME              // 첫 가입 환영 (대상: 신규 가입자)
+    WELCOME,              // 첫 가입 환영 (대상: 신규 가입자)
+    SYSTEM,              // 프로젝트 권한 변경
 }
