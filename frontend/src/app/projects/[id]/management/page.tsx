@@ -24,6 +24,7 @@ import {
   fetchProjectPermissions,
   fetchProject_manage,
   kickProjectMember,
+  leaveProject,
   rejectApplicant,
   updateMemberRole,
   updateProjectStatus,
@@ -81,6 +82,7 @@ export default function ProjectManagementPage() {
   const [roleChangingId, setRoleChangingId] = useState<string | null>(null)
   const [applicantsRefreshing, setApplicantsRefreshing] = useState(false)
   const [pageRefreshing, setPageRefreshing] = useState(false)
+  const [leaving, setLeaving] = useState(false)
 
   const refreshAll = () => {
     setPageRefreshing(true)
@@ -185,6 +187,18 @@ export default function ProjectManagementPage() {
       .finally(() => setKickingId(null))
   }
 
+  const handleLeave = () => {
+    if (!confirm('프로젝트에서 탈퇴하시겠습니까?')) return
+    setLeaving(true)
+    leaveProject(id)
+      .then(() => {
+        toast.success('프로젝트에서 탈퇴했습니다.')
+        router.push('/projects')
+      })
+      .catch(() => toast.error('탈퇴에 실패했습니다.'))
+      .finally(() => setLeaving(false))
+  }
+
   const handleRoleChange = (
     memberId: string,
     memberName: string,
@@ -273,17 +287,31 @@ export default function ProjectManagementPage() {
                 {project.title}
               </h1>
             </div>
-            {canEdit && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-2 shrink-0"
-                onClick={() => router.push(`/projects/${id}/edit`)}
-              >
-                <Pencil className="h-4 w-4" />
-                프로젝트 수정
-              </Button>
-            )}
+            <div className="flex flex-col gap-2 shrink-0">
+              {canEdit && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => router.push(`/projects/${id}/edit`)}
+                >
+                  <Pencil className="h-4 w-4" />
+                  프로젝트 수정
+                </Button>
+              )}
+              {!isLeader && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700"
+                  disabled={leaving}
+                  onClick={handleLeave}
+                >
+                  <UserX className="h-4 w-4" />
+                  {leaving ? '처리중...' : '팀 탈퇴'}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -496,7 +524,29 @@ export default function ProjectManagementPage() {
                           <span className="font-semibold text-slate-900">
                             {applicant.nickname}
                           </span>
+                          {applicant.position && (
+                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                              {positionMap[applicant.position] ?? applicant.position}
+                            </span>
+                          )}
                         </div>
+                        {applicant.techStacks?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {applicant.techStacks.map((tech) => (
+                              <span
+                                key={tech}
+                                className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-medium"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {applicant.message && (
+                          <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">
+                            {applicant.message}
+                          </p>
+                        )}
                       </div>
                       <div className="flex flex-col gap-2 shrink-0">
                         <Link

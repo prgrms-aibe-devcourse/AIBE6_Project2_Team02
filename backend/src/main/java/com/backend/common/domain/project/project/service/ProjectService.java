@@ -135,7 +135,7 @@ public class ProjectService {
                 .filter(p -> p.getDeletedAt() == null)
                 .orElseThrow(() -> new NoSuchElementException("Project not found"));
 
-        List<ProjectMember> members = projectMemberRepository.findByProjectId(project.getId());
+        List<ProjectMember> members = projectMemberRepository.findByProjectIdAndMemberStatus(project.getId(), ProjectMemberStatus.ACTIVE);
         Set<Long> featuredProjectIds = featuredProjectIds(
                 projectRepository.findByDeletedAtIsNullOrderByCreatedAtDesc()
         );
@@ -752,11 +752,10 @@ public class ProjectService {
                 .filter(p -> p.getDeletedAt() == null)
                 .orElseThrow(() -> new NoSuchElementException("Project not found"));
 
-        List<ProjectMember> members = projectMemberRepository.findByProjectId(project.getId());
+        List<ProjectMember> members = projectMemberRepository.findByProjectIdAndMemberStatus(project.getId(), ProjectMemberStatus.ACTIVE);
         Set<Long> featuredProjectIds = featuredProjectIds(
                 projectRepository.findByDeletedAtIsNullOrderByCreatedAtDesc()
         );
-        List<ProjectMember> projectMember = projectMemberRepository.findByProjectId(id);
         return toProjectResponse_manage(
                 project,
                 members,
@@ -837,13 +836,23 @@ public class ProjectService {
                 position);
     }
 
-    public List<Member> getProjectApplication(Long projectId) {
+    public List<ApplicantResponse> getProjectApplication(Long projectId) {
         List<ProjectApplication> applications = projectApplicationRepository.getProjectApplicationByProject_Id(projectId);
-        List<Member> memberListm = new ArrayList<>();
-        for (int i = 0; i < applications.size(); i++) {
-            memberListm.add(applications.get(i).getApplicant());
-        }
-        return memberListm;
+        return applications.stream().map(app -> {
+            Member applicant = app.getApplicant();
+            List<String> techStacks = memberTechStackRepository.findByMemberId(applicant.getId())
+                    .stream()
+                    .map(mts -> mts.getTechStack().getName())
+                    .toList();
+            return new ApplicantResponse(
+                    String.valueOf(applicant.getId()),
+                    applicant.getNickname(),
+                    applicant.getProfileImageUrl(),
+                    app.getPosition() != null ? app.getPosition().name() : null,
+                    app.getMessage(),
+                    techStacks
+            );
+        }).toList();
     }
 
     public Project findByID(Long id) {
@@ -963,6 +972,18 @@ public class ProjectService {
                 null,
                 null
         );
+    }
+
+    @Transactional
+    public void leaveProject(Long projectId, Long memberId) {
+        ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberIdAndMemberStatus(
+                        projectId,
+                        memberId,
+                        ProjectMemberStatus.ACTIVE
+                )
+                .orElseThrow(() -> new ResourceNotFoundException("404", "해당 프로젝트에 참여 중인 활성화된 멤버를 찾을 수 없습니다."));
+
+        projectMember.leaveTeam();
     }
 
     @Transactional

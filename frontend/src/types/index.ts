@@ -47,15 +47,12 @@ export type PM = {
 }
 
 export type Applicant = {
-  createdAt: string
-  deletedAt: string
-  hibernateLazyInitializer: object
   id: string
   nickname: string
   profileImageUrl: string
-  status: string
-  suspensionUntil: string
-  updatedAt: string
+  position: string | null
+  message: string | null
+  techStacks: string[]
 }
 
 
