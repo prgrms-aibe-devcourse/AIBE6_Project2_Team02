@@ -93,14 +93,14 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             "WHERE pm.member.id = :memberId " +
             "AND pm.memberStatus = 'ACTIVE' " +
             "AND pm.isHidden = false " +
-            "AND p.status = 'IN_PROGRESS' " +
+            "AND p.status IN ('IN_PROGRESS', 'RECRUITING', 'CLOSED') " +
             "AND p.deletedAt IS NULL",
             countQuery = "SELECT count(p) FROM Project p " +
                     "JOIN ProjectMember pm ON p.id = pm.project.id " +
                     "WHERE pm.member.id = :memberId " +
                     "AND pm.memberStatus = 'ACTIVE' " +
                     "AND pm.isHidden = false " +
-                    "AND p.status = 'IN_PROGRESS' " +
+                    "AND p.status IN ('IN_PROGRESS', 'RECRUITING', 'CLOSED') " +
                     "AND p.deletedAt IS NULL")
     Page<Project> findMyParticipatingProjects(@Param("memberId") Long memberId, Pageable pageable);
 
