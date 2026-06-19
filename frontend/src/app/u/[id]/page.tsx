@@ -303,6 +303,21 @@ export default function DeveloperProfilePage() {
                 className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 border-2 border-white rounded-full"
                 title="프로젝트 참여 가능"
               ></div>
+              {!isMyProfile && (
+                <button
+                  type="button"
+                  className={`absolute top-1 right-1 rounded-md border bg-white p-2 shadow-sm transition-colors ${
+                    isBookmarked
+                      ? 'border-blue-200 text-blue-600'
+                      : 'border-slate-200 text-slate-400 hover:text-blue-600'
+                  }`}
+                  onClick={handleToggleBookmark}
+                  disabled={authLoading || isBookmarking}
+                  aria-label={isBookmarked ? '북마크 해제' : '북마크 추가'}
+                >
+                  <BookmarkPlus className="h-4 w-4" />
+                </button>
+              )}
             </div>
             <h1 className="text-2xl font-bold text-slate-900">{user.name}</h1>
             <p className="text-blue-600 font-medium mb-4">
@@ -334,21 +349,6 @@ export default function DeveloperProfilePage() {
                   disabled={authLoading}
                 >
                   제안 취소하기
-                </Button>
-              )}
-              {!isMyProfile && (
-                <Button
-                  variant="outline"
-                  className={`w-full ${
-                    isBookmarked
-                      ? 'border-blue-200 bg-blue-50 text-blue-600'
-                      : ''
-                  }`}
-                  onClick={handleToggleBookmark}
-                  disabled={authLoading || isBookmarking}
-                >
-                  <BookmarkPlus className="h-4 w-4" />
-                  {isBookmarked ? '북마크 해제' : '북마크 추가'}
                 </Button>
               )}
             </div>

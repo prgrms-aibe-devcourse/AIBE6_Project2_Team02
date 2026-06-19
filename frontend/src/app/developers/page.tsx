@@ -331,11 +331,26 @@ export default function TalentListingPage() {
                 <Link href={`/u/${user.id}`}>
                   <Card className="listing-card group flex">
                     <div className="flex items-start gap-4 mb-4">
-                      <img
-                        src={user.avatar}
-                        alt={user.name}
-                        className="w-14 h-14 rounded-full object-cover border border-slate-100"
-                      />
+                      <div className="relative shrink-0">
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          className="w-14 h-14 rounded-full object-cover border border-slate-100"
+                        />
+                        <button
+                          type="button"
+                          className={`absolute -top-1 -right-1 rounded-md border bg-white p-1.5 transition-colors ${
+                            bookmarkedPortfolioIds.has(user.id)
+                              ? 'border-blue-200 text-blue-600'
+                              : 'border-slate-200 text-slate-400 hover:text-blue-600'
+                          }`}
+                          disabled={bookmarkingPortfolioIds.has(user.id)}
+                          onClick={(event) => handleToggleBookmark(event, user.id)}
+                          aria-label={bookmarkedPortfolioIds.has(user.id) ? '북마크 해제' : '북마크 추가'}
+                        >
+                          <BookmarkPlus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
 
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
@@ -348,19 +363,6 @@ export default function TalentListingPage() {
                           >
                             참여 가능
                           </Badge>
-                          <button
-                            type="button"
-                            className={`ml-2 rounded-md border p-1.5 transition-colors ${
-                              bookmarkedPortfolioIds.has(user.id)
-                                ? 'border-blue-200 bg-blue-50 text-blue-600'
-                                : 'border-slate-200 text-slate-400 hover:text-blue-600'
-                            }`}
-                            disabled={bookmarkingPortfolioIds.has(user.id)}
-                            onClick={(event) => handleToggleBookmark(event, user.id)}
-                            aria-label={bookmarkedPortfolioIds.has(user.id) ? '북마크 해제' : '북마크 추가'}
-                          >
-                            <BookmarkPlus className="h-3.5 w-3.5" />
-                          </button>
                         </div>
                         <p className="text-sm text-blue-600 font-medium">
                           {formatPositionLabel(user.role)}
