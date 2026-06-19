@@ -28,11 +28,17 @@ import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -76,12 +82,13 @@ public class ProjectService {
         String qSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
         ProjectCategory qCategory = toCategoryFilter(category);
         String qTech = (tech != null && !"All".equalsIgnoreCase(tech)) ? tech.trim() : null;
-        String qStatus = (status != null && !"All".equalsIgnoreCase(status)) ? status.trim() : null;
+        ProjectStatus qStatus = toStatusFilter(status);
         String qSearchPosition = toPositionSearchCode(qSearch);
 
-        Page<Project> projectPage = qSearch == null
-                ? projectRepository.findProjects(qCategory, qTech, qStatus, pageable)
-                : projectRepository.searchProjects(qSearch, qSearchPosition, qCategory, qTech, qStatus, pageable);
+        Page<Project> projectPage = projectRepository.findAll(
+                projectFilter(qSearch, qSearchPosition, qCategory, qTech, qStatus),
+                latestFirst(pageable)
+        );
 
         List<Project> projects = projectPage.getContent();
         Set<Long> featuredProjectIds = featuredProjectIds(projects);
@@ -106,6 +113,68 @@ public class ProjectService {
             return null;
         }
         return ProjectCategory.from(category.trim());
+    }
+
+    private ProjectStatus toStatusFilter(String status) {
+        if (status == null || status.isBlank() || "All".equalsIgnoreCase(status)) {
+            return null;
+        }
+        return ProjectStatus.valueOf(status.trim());
+    }
+
+    private Pageable latestFirst(Pageable pageable) {
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt")
+                .and(Sort.by(Sort.Direction.DESC, "id"));
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+    }
+
+    private Specification<Project> projectFilter(
+            String search,
+            String searchPosition,
+            ProjectCategory category,
+            String tech,
+            ProjectStatus status
+    ) {
+        return (root, query, cb) -> {
+            query.distinct(true);
+
+            List<Predicate> conditions = new ArrayList<>();
+            conditions.add(cb.isNull(root.get("deletedAt")));
+            conditions.add(cb.isFalse(root.get("isHidden")));
+
+            if (category != null) {
+                conditions.add(cb.equal(root.get("category"), category));
+            }
+            if (status != null) {
+                conditions.add(cb.equal(root.get("status"), status));
+            }
+            if (tech != null) {
+                Join<Object, Object> techStacks = root.join("projectTechStacks", JoinType.LEFT);
+                conditions.add(cb.equal(techStacks.get("techStack").get("name"), tech));
+            }
+
+            if (search != null) {
+                Join<Object, Object> leader = root.join("leader", JoinType.INNER);
+                Join<Object, Object> techStacks = root.join("projectTechStacks", JoinType.LEFT);
+                Join<Object, Object> positions = root.join("positions", JoinType.LEFT);
+                String pattern = "%" + search.toLowerCase(Locale.ROOT) + "%";
+
+                List<Predicate> searchConditions = new ArrayList<>();
+                searchConditions.add(cb.like(cb.lower(root.get("title")), pattern));
+                searchConditions.add(cb.like(cb.lower(root.get("description")), pattern));
+                searchConditions.add(cb.like(cb.lower(root.get("goal")), pattern));
+                searchConditions.add(cb.like(cb.lower(root.get("category").as(String.class)), pattern));
+                searchConditions.add(cb.like(cb.lower(leader.get("nickname")), pattern));
+                searchConditions.add(cb.like(cb.lower(techStacks.get("techStack").get("name")), pattern));
+                searchConditions.add(cb.like(cb.lower(positions.get("role")), pattern));
+                if (searchPosition != null) {
+                    searchConditions.add(cb.equal(positions.get("role"), searchPosition));
+                }
+                conditions.add(cb.or(searchConditions.toArray(Predicate[]::new)));
+            }
+
+            return cb.and(conditions.toArray(Predicate[]::new));
+        };
     }
 
     public ProjectResponse getProject(Long id) {
