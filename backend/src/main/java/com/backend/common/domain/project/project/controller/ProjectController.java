@@ -12,6 +12,7 @@ import com.backend.common.domain.project.project.entity.ProjectMember;
 import com.backend.common.domain.project.project.service.ProjectService;
 import com.backend.common.global.rsdata.RsData;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -247,6 +248,40 @@ public class ProjectController {
         } catch (NoSuchElementException ex) {
             throw new ProjectNotFoundException("404", "Project not found");
         }
+    }
+
+
+    @PatchMapping("/{projectId}/status")
+    public RsData<Void> updateProjectStatus(
+            @PathVariable Long projectId,
+            @Valid @RequestBody ProjectStatusUpdateRequest request) {
+
+        projectService.updateStatus(projectId, request.status());
+
+        return RsData.of("200", "프로젝트 상태가 성공적으로 변경되었습니다.");
+    }
+
+    @DeleteMapping("/{projectId}/members/{memberId}")
+    public RsData<Void> kickMember(
+            @PathVariable Long projectId,
+            @PathVariable("memberId") Long targetMemberId) {
+
+        projectService.kickProjectMember(projectId, targetMemberId);
+
+        return RsData.of("200", "해당 팀원이 프로젝트에서 방출되었습니다.");
+    }
+
+    @PatchMapping("/{projectId}/members/{memberId}/role")
+    public ResponseEntity<RsData<Void>> updateMemberRole(
+            @PathVariable Long projectId,
+            @PathVariable("memberId") Long targetMemberId,
+            @Valid @RequestBody ProjectRoleUpdateRequest request) {
+
+        projectService.updateMemberRole(projectId, targetMemberId, request.role());
+
+        return ResponseEntity.ok(
+                RsData.of("200", "팀원의 권한 등급이 성공적으로 수정되었습니다.")
+        );
     }
 
 }

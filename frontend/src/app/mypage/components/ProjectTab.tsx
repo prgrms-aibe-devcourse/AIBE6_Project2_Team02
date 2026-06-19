@@ -1,32 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-
-
-
 import { useRouter } from 'next/navigation';
-
-
-
 import { Briefcase, Trash2 } from 'lucide-react';
-
-
-
 import { PaginationControls } from '../../../components/PaginationControls';
 import { Badge, Button, Card } from '../../../components/ui';
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 type ProjectSubTab =
   | 'uploaded'

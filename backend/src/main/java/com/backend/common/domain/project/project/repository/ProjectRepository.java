@@ -1,80 +1,15 @@
 package com.backend.common.domain.project.project.repository;
 
 import com.backend.common.domain.project.project.entity.Project;
-import com.backend.common.domain.project.enums.ProjectCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
 
-public interface ProjectRepository extends JpaRepository<Project, Long> {
-
-
-    @Query(value = "SELECT DISTINCT p FROM Project p " +
-            "LEFT JOIN p.projectTechStacks pts " +
-            "WHERE p.deletedAt IS NULL " +
-            "AND p.isHidden = false " +
-            "AND (:category IS NULL OR p.category = :category) " +
-            "AND (:status IS NULL OR cast(p.status as string) = :status) " +
-            "AND (:tech IS NULL OR pts.techStack.name = :tech)",
-            countQuery = "SELECT COUNT(DISTINCT p) FROM Project p " +
-                    "LEFT JOIN p.projectTechStacks pts " +
-                    "WHERE p.deletedAt IS NULL " +
-                    "AND p.isHidden = false " +
-                    "AND (:category IS NULL OR p.category = :category) " +
-                    "AND (:status IS NULL OR cast(p.status as string) = :status) " +
-                    "AND (:tech IS NULL OR pts.techStack.name = :tech)")
-    Page<Project> findProjects(
-            @Param("category") ProjectCategory category,
-            @Param("tech") String tech,
-            @Param("status") String status,
-            Pageable pageable
-    );
-
-    @Query(value = "SELECT DISTINCT p FROM Project p " +
-            "JOIN p.leader leader " +
-            "LEFT JOIN p.projectTechStacks pts " +
-            "LEFT JOIN p.positions pos " +
-            "WHERE p.deletedAt IS NULL " +
-            "AND p.isHidden = false " +
-            "AND (LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(p.goal) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(cast(p.category as string)) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(leader.nickname) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(pts.techStack.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(pos.role) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR (:searchPosition IS NOT NULL AND pos.role = :searchPosition)) " +
-            "AND (:category IS NULL OR p.category = :category) " +
-            "AND (:status IS NULL OR cast(p.status as string) = :status) " +
-            "AND (:tech IS NULL OR pts.techStack.name = :tech)",
-            countQuery = "SELECT COUNT(DISTINCT p) FROM Project p " +
-                    "JOIN p.leader leader " +
-                    "LEFT JOIN p.projectTechStacks pts " +
-                    "LEFT JOIN p.positions pos " +
-                    "WHERE p.deletedAt IS NULL " +
-                    "AND p.isHidden = false " +
-                    "AND (LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) " +
-                    "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')) " +
-                    "OR LOWER(p.goal) LIKE LOWER(CONCAT('%', :search, '%')) " +
-                    "OR LOWER(cast(p.category as string)) LIKE LOWER(CONCAT('%', :search, '%')) " +
-                    "OR LOWER(leader.nickname) LIKE LOWER(CONCAT('%', :search, '%')) " +
-                    "OR LOWER(pts.techStack.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-                    "OR LOWER(pos.role) LIKE LOWER(CONCAT('%', :search, '%')) " +
-                    "OR (:searchPosition IS NOT NULL AND pos.role = :searchPosition)) " +
-                    "AND (:category IS NULL OR p.category = :category) " +
-                    "AND (:status IS NULL OR cast(p.status as string) = :status) " +
-                    "AND (:tech IS NULL OR pts.techStack.name = :tech)")
-    Page<Project> searchProjects(
-            @Param("search") String search,
-            @Param("searchPosition") String searchPosition,
-            @Param("category") ProjectCategory category,
-            @Param("tech") String tech,
-            @Param("status") String status,
-            Pageable pageable
-    );
+public interface ProjectRepository extends JpaRepository<Project, Long>, JpaSpecificationExecutor<Project> {
 
     List<Project> findByDeletedAtIsNullOrderByCreatedAtDesc();
 

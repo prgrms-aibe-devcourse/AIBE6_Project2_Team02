@@ -2,11 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-
 import { useParams, useRouter } from 'next/navigation'
-
 import { ArrowLeft, Plus, X } from 'lucide-react'
-
 import { Button, Card, Input } from '../../../../components/ui'
 import {
   fetchProject,
@@ -65,7 +62,7 @@ export default function ProjectEditPage() {
           goals: project.goals.length > 0 ? project.goals : [''],
           techStacks: project.techStack,
           deadline: project.deadline,
-          open: project.recruitmentStatus === 'Open',
+          open: project.recruitmentStatus === 'RECRUITING',
           leaderPosition: toPositionValue(project.leader.role) as ProjectUpdateRequest['leaderPosition'],
           positions:
             project.positions.length > 0

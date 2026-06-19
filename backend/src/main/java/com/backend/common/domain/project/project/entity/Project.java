@@ -179,7 +179,7 @@ public class Project {
     }
 
     /**
-     * 5. 모집 일시 중지 및 재개 (Recruitment Open/Close 관련 보조 메서드)
+     * 5. 모집 일시 중지 및 재개 관련 보조 메서드
      * 프로젝트 상태가 RECRUITING 일 때만 수동으로 켜고 끌 수 있음
      */
     public void toggleRecruitment(boolean open) {
@@ -190,8 +190,9 @@ public class Project {
         this.updatedAt = LocalDateTime.now();
     }
 
-    /*
-      더미데이터 만드는 용
+    /**
+     *
+     * 6. 프로젝트 상태 변경
      */
     public void changeStatus(ProjectStatus projectStatus) {
         this.status = projectStatus;

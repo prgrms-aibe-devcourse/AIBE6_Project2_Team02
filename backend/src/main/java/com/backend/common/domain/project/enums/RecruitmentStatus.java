@@ -3,10 +3,10 @@ package com.backend.common.domain.project.enums;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum RecruitmentStatus {
-    OPEN("Open"),
-    CLOSED("Closed"),
-    COMPLETED("Completed"),
-    STOPPED("Stopped");
+    RECRUITING("RECRUITING"),
+    CLOSED("CLOSED"),
+    COMPLETED("COMPLETED"),
+    STOPPED("STOPPED");
 
     private final String value;
 
