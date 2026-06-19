@@ -37,8 +37,8 @@ const categoryMap: Record<string, string> = {
 }
 
 const statusMap: Record<string, string> = {
-  Open: '모집중',
-  Closed: '마감',
+  RECRUITING: '모집중',
+  CLOSED: '인원 마감',
 }
 
 export default function ProjectDetailPage() {
@@ -158,7 +158,7 @@ export default function ProjectDetailPage() {
               <div className="flex flex-wrap gap-2 mb-4">
                 <Badge
                   variant={
-                    project.recruitmentStatus === 'Open'
+                    project.recruitmentStatus === 'RECRUITING'
                       ? 'success'
                       : 'secondary'
                   }
@@ -191,7 +191,7 @@ export default function ProjectDetailPage() {
                 size="lg"
                 variant="gradient"
                 className={`w-full md:w-48 ${canEdit ? 'hidden' : ''}`}
-                disabled={isMember || project.recruitmentStatus === 'Closed'}
+                disabled={isMember || project.recruitmentStatus === 'CLOSED'}
                 onClick={() => setIsApplyModalOpen(true)}
               >
                 지원하기

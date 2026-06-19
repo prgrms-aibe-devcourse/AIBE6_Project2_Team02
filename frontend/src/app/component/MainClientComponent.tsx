@@ -2,18 +2,9 @@
 
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-
-
-
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-
-
 import { ArrowRight, Ban, Clock, Code, Rocket, Users } from 'lucide-react';
-
-
-
 import { PaginationControls } from '../../components/PaginationControls';
 import { Badge, Button, Card } from '../../components/ui';
 import { fetchPopularTechStacks, fetchProjects } from '../../lib/api';
@@ -21,106 +12,12 @@ import { formatDate } from '../../lib/date';
 import { formatProjectMemberCount } from '../../lib/project';
 import type { Project } from '../../types';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const statusMap: Record<string, string> = {
   All: '전체',
-  Open: '모집중',
-  Closed: '마감',
-  Completed: '완료',
-  Stopped: '중단',
+  RECRUITING: '모집중',
+  CLOSED: '인원 마감',
+  COMPLETED: '완료',
+  STOPPED: '중단',
 }
 const categoryMap: Record<string, string> = {
   Web: '웹',
@@ -300,7 +197,7 @@ export default function MainClientComponent() {
                       <div className="flex gap-2">
                         <Badge
                           variant={
-                            project.recruitmentStatus === 'Open'
+                            project.recruitmentStatus === 'RECRUITING'
                               ? 'success'
                               : 'secondary'
                           }

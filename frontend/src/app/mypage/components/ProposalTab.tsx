@@ -1,32 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-
-
-
 import { useRouter } from 'next/navigation';
-
-
-
 import { Briefcase, Check, MessageSquare, User, X } from 'lucide-react';
-
-
-
 import { PaginationControls } from '../../../components/PaginationControls';
 import { Badge, Card } from '../../../components/ui';
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 type ProposalFilter = 'applications' | 'proposals'
 

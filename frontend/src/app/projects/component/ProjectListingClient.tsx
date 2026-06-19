@@ -26,10 +26,14 @@ const categoryMap: Record<string, string> = {
   All: '전체', Web: '웹', Mobile: '모바일', AI: 'AI', Game: '게임', Other: '기타',
 }
 const statusMap: Record<string, string> = {
-  All: '전체', Open: '모집중', Closed: '마감', Completed: '완료', Stopped: '중단',
+  All: '전체',
+  RECRUITING: '모집중',
+  CLOSED: '인원 마감',
+  COMPLETED: '완료',
+  STOPPED: '중단',
 }
 const categories = ['All', 'Web', 'Mobile', 'AI', 'Game', 'Other']
-const statuses = ['All', 'Open', 'Closed']
+const statuses = ['All', 'RECRUITING', 'CLOSED']
 
 export default function ProjectListingClient() {
   const searchParams = useSearchParams()
@@ -54,7 +58,7 @@ export default function ProjectListingClient() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>(initialTech || 'All')
-  const [selectedStatus, setSelectedStatus] = useState<string>('Open')
+  const [selectedStatus, setSelectedStatus] = useState<string>('RECRUITING')
 
   const changeSearchTerm = (value: string) => {
     setPage(0)
@@ -120,13 +124,7 @@ export default function ProjectListingClient() {
 
   useEffect(() => {
     setContentLoading(true)
-
-    const backendStatus =
-      selectedStatus === 'Open'
-        ? 'RECRUITING'
-        : selectedStatus === 'Closed'
-          ? 'CLOSED'
-          : selectedStatus
+    const requestStatus = selectedStatus === 'All' ? 'VISIBLE' : selectedStatus
 
     fetchProjects({
       page,
@@ -134,7 +132,7 @@ export default function ProjectListingClient() {
       search: searchTerm,
       category: selectedCategory,
       tech: selectedTech,
-      status: backendStatus,
+      status: requestStatus,
     })
       .then((pageData) => {
         if (pageData && pageData.content) {
@@ -143,10 +141,13 @@ export default function ProjectListingClient() {
           setTotalElements(pageData.totalElements)
 
 
-          const featured = pageData.content.filter(
-            (p) => p.featured && p.recruitmentStatus === 'Open',
+          setFeaturedProjects(
+            selectedStatus === 'RECRUITING'
+              ? pageData.content.filter(
+                  (p) => p.featured && p.recruitmentStatus === 'RECRUITING',
+                )
+              : [],
           )
-          setFeaturedProjects(featured)
         } else {
           setPaginatedProjects([])
           setPageCount(0)
@@ -265,7 +266,7 @@ export default function ProjectListingClient() {
                 <Card className="listing-card group flex hover:border-blue-300 hover:shadow-md h-full">
                   <div className="flex justify-between items-start gap-3 mb-4">
                     <div className="flex items-center gap-2">
-                      <Badge variant={project.recruitmentStatus === 'Open' ? 'success' : 'secondary'}>{statusMap[project.recruitmentStatus] || project.recruitmentStatus}</Badge>
+                      <Badge variant={project.recruitmentStatus === 'RECRUITING' ? 'success' : 'secondary'}>{statusMap[project.recruitmentStatus] || project.recruitmentStatus}</Badge>
                       <Badge variant="outline">{categoryMap[project.category] || project.category}</Badge>
                       <button
                         type="button"
@@ -358,7 +359,7 @@ export default function ProjectListingClient() {
                   >
                     <div className="flex justify-between items-start gap-3 mb-4">
                       <div className="flex items-center gap-2">
-                        <Badge variant={project.recruitmentStatus === 'Open' ? 'success' : 'secondary'}>{statusMap[project.recruitmentStatus] || project.recruitmentStatus}</Badge>
+                        <Badge variant={project.recruitmentStatus === 'RECRUITING' ? 'success' : 'secondary'}>{statusMap[project.recruitmentStatus] || project.recruitmentStatus}</Badge>
                         <Badge variant="outline">{categoryMap[project.category] || project.category}</Badge>
                         <button
                           type="button"

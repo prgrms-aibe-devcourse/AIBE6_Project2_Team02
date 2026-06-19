@@ -16,10 +16,10 @@ import type { ProposalProject, SentProjectProposal } from '../../../types/dto/pr
 import { useAuth } from '../../providers';
 
 const statusMap: Record<string, string> = {
-  Open: '모집중',
-  Closed: '마감',
-  Completed: '완료',
-  Stopped: '중단',
+  RECRUITING: '모집중',
+  CLOSED: '인원 마감',
+  COMPLETED: '완료',
+  STOPPED: '중단',
 }
 
 const categoryMap: Record<string, string> = {
@@ -472,7 +472,7 @@ export default function DeveloperProfilePage() {
                               </h3>
                               <Badge
                                 variant={
-                                  project.recruitmentStatus === 'Open'
+                                  project.recruitmentStatus === 'RECRUITING'
                                     ? 'default'
                                     : 'secondary'
                                 }

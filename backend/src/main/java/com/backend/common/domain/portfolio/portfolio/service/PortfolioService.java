@@ -22,6 +22,7 @@ import com.backend.common.domain.project.enums.SelectionStatus;
 import com.backend.common.domain.project.project.entity.ProjectMember;
 import com.backend.common.domain.project.project.entity.ProjectMemberStatus;
 import com.backend.common.domain.project.project.entity.ProjectRole;
+import com.backend.common.domain.project.project.entity.Project;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.techstack.entity.PortfolioTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
@@ -31,13 +32,21 @@ import com.backend.common.global.exception.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -64,7 +73,10 @@ public class PortfolioService {
         String qRole = normalizeFilter(role);
         String qTech = normalizeFilter(tech);
 
-        Page<Portfolio> portfolioPage = portfolioRepository.searchPortfolios(qSearch, qRole, qTech, pageable);
+        Page<Portfolio> portfolioPage = portfolioRepository.findAll(
+                portfolioFilter(qSearch, qRole, qTech),
+                pageable
+        );
         AtomicInteger index = new AtomicInteger((int) pageable.getOffset());
 
         return portfolioPage.map(portfolio ->
@@ -80,6 +92,40 @@ public class PortfolioService {
             return null;
         }
         return value;
+    }
+
+    private Specification<Portfolio> portfolioFilter(String search, String role, String tech) {
+        return (root, query, cb) -> {
+            query.distinct(true);
+
+            List<Predicate> conditions = new ArrayList<>();
+            conditions.add(cb.isTrue(root.get("isPublished")));
+
+            if (role != null) {
+                conditions.add(cb.equal(root.get("desiredPosition"), role));
+            }
+
+            if (tech != null) {
+                Join<Object, Object> techStacks = root.join("portfolioTechStacks", JoinType.LEFT);
+                conditions.add(cb.equal(techStacks.get("techStack").get("name"), tech));
+            }
+
+            if (search != null) {
+                Join<Object, Object> member = root.join("member", JoinType.INNER);
+                Join<Object, Object> techStacks = root.join("portfolioTechStacks", JoinType.LEFT);
+                String pattern = "%" + search.toLowerCase(Locale.ROOT) + "%";
+
+                conditions.add(cb.or(
+                        cb.like(cb.lower(member.get("nickname")), pattern),
+                        cb.like(cb.lower(root.get("title")), pattern),
+                        cb.like(cb.lower(root.get("introduction")), pattern),
+                        cb.like(cb.lower(root.get("desiredPosition")), pattern),
+                        cb.like(cb.lower(techStacks.get("techStack").get("name")), pattern)
+                ));
+            }
+
+            return cb.and(conditions.toArray(Predicate[]::new));
+        };
     }
 
     @Transactional
@@ -302,6 +348,7 @@ public class PortfolioService {
                         .build();
                 projectMemberRepository.save(projectMember);
             }
+            closeRecruitmentIfNoVacancy(proposal.getProject());
 
             notificationService.notify(
                     proposal.getProposer(),
@@ -324,6 +371,34 @@ public class PortfolioService {
                     proposal.getId()
             );
             projectProposalRepository.delete(proposal);
+        }
+    }
+
+    private void closeRecruitmentIfNoVacancy(Project project) {
+        if (project.getStatus() != ProjectStatus.RECRUITING || !project.isRecruitmentOpen()) {
+            return;
+        }
+
+        if (project.getPositions().isEmpty()) {
+            project.updateRecruitmentOpen(false);
+            return;
+        }
+
+        Map<String, Long> activeMemberCountByPosition = projectMemberRepository.findByProjectId(project.getId())
+                .stream()
+                .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE)
+                .collect(Collectors.groupingBy(
+                        member -> member.getPosition().name(),
+                        Collectors.counting()
+                ));
+
+        boolean hasVacancy = project.getPositions().stream()
+                .anyMatch(position ->
+                        activeMemberCountByPosition.getOrDefault(position.getRole(), 0L) < position.getTotal()
+                );
+
+        if (!hasVacancy) {
+            project.updateRecruitmentOpen(false);
         }
     }
 

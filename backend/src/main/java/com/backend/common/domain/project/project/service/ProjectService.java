@@ -28,11 +28,21 @@ import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -76,12 +86,13 @@ public class ProjectService {
         String qSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
         ProjectCategory qCategory = toCategoryFilter(category);
         String qTech = (tech != null && !"All".equalsIgnoreCase(tech)) ? tech.trim() : null;
-        String qStatus = (status != null && !"All".equalsIgnoreCase(status)) ? status.trim() : null;
+        Set<ProjectStatus> qStatuses = toStatusFilters(status);
         String qSearchPosition = toPositionSearchCode(qSearch);
 
-        Page<Project> projectPage = qSearch == null
-                ? projectRepository.findProjects(qCategory, qTech, qStatus, pageable)
-                : projectRepository.searchProjects(qSearch, qSearchPosition, qCategory, qTech, qStatus, pageable);
+        Page<Project> projectPage = projectRepository.findAll(
+                projectFilter(qSearch, qSearchPosition, qCategory, qTech, qStatuses),
+                latestFirst(pageable)
+        );
 
         List<Project> projects = projectPage.getContent();
         Set<Long> featuredProjectIds = featuredProjectIds(projects);
@@ -106,6 +117,137 @@ public class ProjectService {
             return null;
         }
         return ProjectCategory.from(category.trim());
+    }
+
+    private Set<ProjectStatus> toStatusFilters(String status) {
+        if (status == null || status.isBlank() || "All".equalsIgnoreCase(status)) {
+            return null;
+        }
+        if ("VISIBLE".equalsIgnoreCase(status.trim())) {
+            return EnumSet.of(ProjectStatus.RECRUITING, ProjectStatus.CLOSED);
+        }
+        return EnumSet.of(ProjectStatus.valueOf(status.trim()));
+    }
+
+    private Pageable latestFirst(Pageable pageable) {
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), latestFirstSort());
+    }
+
+    private Sort latestFirstSort() {
+        return Sort.by(Sort.Direction.DESC, "createdAt")
+                .and(Sort.by(Sort.Direction.DESC, "id"));
+    }
+
+    private Specification<Project> projectFilter(
+            String search,
+            String searchPosition,
+            ProjectCategory category,
+            String tech,
+            Set<ProjectStatus> statuses
+    ) {
+        return (root, query, cb) -> {
+            query.distinct(true);
+
+            List<Predicate> conditions = new ArrayList<>();
+            conditions.add(cb.isNull(root.get("deletedAt")));
+            conditions.add(cb.isFalse(root.get("isHidden")));
+
+            if (category != null) {
+                conditions.add(cb.equal(root.get("category"), category));
+            }
+            if (statuses != null && !statuses.isEmpty()) {
+                conditions.add(projectStatusFilter(root, query, cb, statuses));
+            }
+            if (tech != null) {
+                Join<Object, Object> techStacks = root.join("projectTechStacks", JoinType.LEFT);
+                conditions.add(cb.equal(techStacks.get("techStack").get("name"), tech));
+            }
+
+            if (search != null) {
+                Join<Object, Object> leader = root.join("leader", JoinType.INNER);
+                Join<Object, Object> techStacks = root.join("projectTechStacks", JoinType.LEFT);
+                Join<Object, Object> positions = root.join("positions", JoinType.LEFT);
+                String pattern = "%" + search.toLowerCase(Locale.ROOT) + "%";
+
+                List<Predicate> searchConditions = new ArrayList<>();
+                searchConditions.add(cb.like(cb.lower(root.get("title")), pattern));
+                searchConditions.add(cb.like(cb.lower(root.get("description")), pattern));
+                searchConditions.add(cb.like(cb.lower(root.get("goal")), pattern));
+                searchConditions.add(cb.like(cb.lower(root.get("category").as(String.class)), pattern));
+                searchConditions.add(cb.like(cb.lower(leader.get("nickname")), pattern));
+                searchConditions.add(cb.like(cb.lower(techStacks.get("techStack").get("name")), pattern));
+                searchConditions.add(cb.like(cb.lower(positions.get("role")), pattern));
+                if (searchPosition != null) {
+                    searchConditions.add(cb.equal(positions.get("role"), searchPosition));
+                }
+                conditions.add(cb.or(searchConditions.toArray(Predicate[]::new)));
+            }
+
+            return cb.and(conditions.toArray(Predicate[]::new));
+        };
+    }
+
+    private Predicate projectStatusFilter(
+            Root<Project> root,
+            CriteriaQuery<?> query,
+            CriteriaBuilder cb,
+            Set<ProjectStatus> statuses
+    ) {
+        List<Predicate> statusConditions = new ArrayList<>();
+
+        if (statuses.contains(ProjectStatus.RECRUITING)) {
+            statusConditions.add(cb.and(
+                    cb.equal(root.get("status"), ProjectStatus.RECRUITING),
+                    cb.isTrue(root.get("recruitmentOpen")),
+                    hasAvailablePosition(root, query, cb)
+            ));
+        }
+
+        if (statuses.contains(ProjectStatus.CLOSED)) {
+            statusConditions.add(cb.or(
+                    cb.equal(root.get("status"), ProjectStatus.CLOSED),
+                    cb.and(
+                            cb.equal(root.get("status"), ProjectStatus.RECRUITING),
+                            cb.or(
+                                    cb.isFalse(root.get("recruitmentOpen")),
+                                    cb.not(hasAvailablePosition(root, query, cb))
+                            )
+                    )
+            ));
+        }
+
+        List<ProjectStatus> directStatuses = statuses.stream()
+                .filter(status -> status != ProjectStatus.RECRUITING && status != ProjectStatus.CLOSED)
+                .toList();
+        if (!directStatuses.isEmpty()) {
+            statusConditions.add(root.get("status").in(directStatuses));
+        }
+
+        return cb.or(statusConditions.toArray(Predicate[]::new));
+    }
+
+    private Predicate hasAvailablePosition(Root<Project> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+        Subquery<Long> availablePosition = query.subquery(Long.class);
+        Root<Project> projectRoot = availablePosition.from(Project.class);
+        Join<Project, ProjectPosition> position = projectRoot.join("positions", JoinType.INNER);
+
+        Subquery<Long> filledCount = query.subquery(Long.class);
+        Root<ProjectMember> memberRoot = filledCount.from(ProjectMember.class);
+        filledCount.select(cb.count(memberRoot));
+        filledCount.where(
+                cb.equal(memberRoot.get("project"), projectRoot),
+                cb.equal(memberRoot.get("memberStatus"), ProjectMemberStatus.ACTIVE),
+                cb.notEqual(memberRoot.get("role"), ProjectRole.LEADER),
+                cb.equal(memberRoot.get("position").as(String.class), position.get("role"))
+        );
+
+        availablePosition.select(projectRoot.get("id"));
+        availablePosition.where(
+                cb.equal(projectRoot, root),
+                cb.greaterThan(position.get("total").as(Long.class), filledCount)
+        );
+
+        return cb.exists(availablePosition);
     }
 
     public ProjectResponse getProject(Long id) {
@@ -525,7 +667,7 @@ public class ProjectService {
         boolean hasAvailablePosition = positions.stream()
                 .anyMatch(position -> position.filled() < position.total());
 
-        return hasAvailablePosition ? RecruitmentStatus.OPEN : RecruitmentStatus.CLOSED;
+        return hasAvailablePosition ? RecruitmentStatus.RECRUITING : RecruitmentStatus.CLOSED;
     }
 
     private UserResponse toUserResponse(Member member, boolean featured) {
@@ -768,7 +910,7 @@ public class ProjectService {
                 splitGoals(project.getGoal()),
                 projectTechStackNames(project),
                 buildPositions(project, members),
-                project.isRecruitmentOpen() ? RecruitmentStatus.OPEN : RecruitmentStatus.CLOSED,
+                project.isRecruitmentOpen() ? RecruitmentStatus.RECRUITING : RecruitmentStatus.CLOSED,
                 project.getCategory() == null ? inferCategory(project) : project.getCategory(),
                 leader,
                 teamMembers,
