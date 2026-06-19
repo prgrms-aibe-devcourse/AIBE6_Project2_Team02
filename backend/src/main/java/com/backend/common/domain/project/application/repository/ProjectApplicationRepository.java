@@ -47,7 +47,7 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
             SelectionStatus status
     );
 
-    @Query("SELECT pa FROM ProjectApplication pa JOIN FETCH pa.applicant WHERE pa.project.id = :projectId AND pa.status = 'PENDING'")
+    @Query("SELECT pa FROM ProjectApplication pa WHERE pa.project.id = :projectId AND pa.status = 'PENDING'")
     List<ProjectApplication> getProjectApplicationByProject_Id(@Param("projectId") Long projectId);
 
     ProjectApplication deleteProjectApplicationById(Long id);

@@ -26,7 +26,7 @@ export type Project = {
   goals: string[]
   techStack: string[]
   positions: Position[]
-  recruitmentStatus: 'RECRUITING' | 'CLOSED' | 'IN_PROGRESS' | 'COMPLETED' | 'DISBANDED' | 'CANCELLED'
+  recruitmentStatus: 'RECRUITING' | 'CLOSED' | 'IN_PROGRESS' | 'COMPLETED' | 'DISBANDED' | 'CANCELLED' | 'STOPPED'
   category: 'Web' | 'Mobile' | 'AI' | 'Game' | 'Other'
   leader: User
   teamMembers: User[]
@@ -47,12 +47,15 @@ export type PM = {
 }
 
 export type Applicant = {
+  createdAt: string
+  deletedAt: string
+  hibernateLazyInitializer: object
   id: string
   nickname: string
   profileImageUrl: string
-  position: string | null
-  message: string | null
-  techStacks: string[]
+  status: string
+  suspensionUntil: string
+  updatedAt: string
 }
 
 
@@ -63,7 +66,7 @@ export type Project_manage = {
   goals: string[]
   techStack: string[]
   positions: Position[]
-  recruitmentStatus: 'RECRUITING' | 'CLOSED' | 'IN_PROGRESS' | 'COMPLETED' | 'DISBANDED' | 'CANCELLED'
+  recruitmentStatus: 'RECRUITING' | 'CLOSED' | 'IN_PROGRESS' | 'COMPLETED' | 'DISBANDED' | 'CANCELLED' | 'STOPPED'
   category: 'Web' | 'Mobile' | 'AI' | 'Game' | 'Other'
   leader: User
   teamMembers: User[]

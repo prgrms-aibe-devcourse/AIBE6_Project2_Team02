@@ -46,12 +46,13 @@ const categoryMap: Record<string, string> = {
 }
 
 const statusMap: Record<string, string> = {
-  RECRUITING: '모집 중',
-  CLOSED: '인원 모집 마감',
-  IN_PROGRESS: '진행 중',
-  COMPLETED: '완료',
-  DISBANDED: '중단',
-  CANCELLED: '취소',
+  RECRUITING: '모집중',
+  CLOSED: '모집 마감',
+  IN_PROGRESS: '진행중',
+  COMPLETED: '진행완료',
+  DISBANDED: '프로젝트 해산',
+  CANCELLED: '프로젝트 취소',
+  STOPPED: '중단',
 }
 
 export default function ProjectDetailPage() {

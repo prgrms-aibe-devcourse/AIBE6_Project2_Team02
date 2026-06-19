@@ -135,7 +135,7 @@ public class ProjectService {
                 .filter(p -> p.getDeletedAt() == null)
                 .orElseThrow(() -> new NoSuchElementException("Project not found"));
 
-        List<ProjectMember> members = projectMemberRepository.findByProjectIdAndMemberStatus(project.getId(), ProjectMemberStatus.ACTIVE);
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(project.getId());
         Set<Long> featuredProjectIds = featuredProjectIds(
                 projectRepository.findByDeletedAtIsNullOrderByCreatedAtDesc()
         );
@@ -753,10 +753,11 @@ public class ProjectService {
                 .filter(p -> p.getDeletedAt() == null)
                 .orElseThrow(() -> new NoSuchElementException("Project not found"));
 
-        List<ProjectMember> members = projectMemberRepository.findByProjectIdAndMemberStatus(project.getId(), ProjectMemberStatus.ACTIVE);
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(project.getId());
         Set<Long> featuredProjectIds = featuredProjectIds(
                 projectRepository.findByDeletedAtIsNullOrderByCreatedAtDesc()
         );
+        List<ProjectMember> projectMember = projectMemberRepository.findByProjectId(id);
         return toProjectResponse_manage(
                 project,
                 members,
@@ -837,25 +838,13 @@ public class ProjectService {
                 position);
     }
 
-    @Transactional(readOnly = true)
-    public List<ApplicantResponse> getProjectApplication(Long projectId) {
+    public List<Member> getProjectApplication(Long projectId) {
         List<ProjectApplication> applications = projectApplicationRepository.getProjectApplicationByProject_Id(projectId);
-        return applications.stream().map(app -> {
-            Member applicant = app.getApplicant();
-            List<String> techStacks = portfolioRepository.findByMemberId(applicant.getId())
-                    .map(p -> p.getPortfolioTechStacks().stream()
-                            .map(pts -> pts.getTechStack().getName())
-                            .toList())
-                    .orElse(List.of());
-            return new ApplicantResponse(
-                    String.valueOf(applicant.getId()),
-                    applicant.getNickname(),
-                    applicant.getProfileImageUrl(),
-                    app.getPosition() != null ? app.getPosition().name() : null,
-                    app.getMessage(),
-                    techStacks
-            );
-        }).toList();
+        List<Member> memberListm = new ArrayList<>();
+        for (int i = 0; i < applications.size(); i++) {
+            memberListm.add(applications.get(i).getApplicant());
+        }
+        return memberListm;
     }
 
     public Project findByID(Long id) {
@@ -975,29 +964,6 @@ public class ProjectService {
                 null,
                 null
         );
-    }
-
-    @Transactional
-    @PreAuthorize("@projectAuthorizer.isProjectLeaderOf(#projectId, authentication.principal.memberId)")
-    public void deleteProject(Long projectId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("404", "프로젝트를 찾을 수 없습니다."));
-        if (project.getStatus() != ProjectStatus.CANCELLED) {
-            throw new AccessDeniedException("취소된 프로젝트만 삭제할 수 있습니다.");
-        }
-        project.setDeletedAt(java.time.LocalDateTime.now());
-    }
-
-    @Transactional
-    public void leaveProject(Long projectId, Long memberId) {
-        ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberIdAndMemberStatus(
-                        projectId,
-                        memberId,
-                        ProjectMemberStatus.ACTIVE
-                )
-                .orElseThrow(() -> new ResourceNotFoundException("404", "해당 프로젝트에 참여 중인 활성화된 멤버를 찾을 수 없습니다."));
-
-        projectMember.leaveTeam();
     }
 
     @Transactional

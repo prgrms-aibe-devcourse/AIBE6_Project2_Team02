@@ -10,7 +10,7 @@ public enum ProjectStatus {
     CLOSED("CLOSED", "인원 모집 마감"),
     IN_PROGRESS("IN_PROGRESS", "진행 중"),
     COMPLETED("COMPLETED", "완료"),
-    DISBANDED("DISBANDED", "중단"),
+    DISBANDED("DISBANDED", "해산"),
     CANCELLED("CANCELLED", "취소");
 
     private final String code;
