@@ -1,17 +1,26 @@
 'use client'
 
 import { motion } from 'framer-motion';
+import type { MouseEvent } from 'react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Clock, Search, Sparkles, Users } from 'lucide-react';
+import { BookmarkPlus, Clock, Search, Sparkles, Users } from 'lucide-react';
+import { LoginModal } from '../../../components/LoginModal';
 import { PaginationControls } from '../../../components/PaginationControls';
 import { SearchField } from '../../../components/SearchField';
 import { Badge, Button, Card } from '../../../components/ui';
-import { fetchPopularTechStacks, fetchProjects } from '../../../lib/api';
+import {
+  addProjectBookmark,
+  fetchPopularTechStacks,
+  fetchProjectBookmark,
+  fetchProjects,
+  removeProjectBookmark,
+} from '../../../lib/api';
 import { formatDate } from '../../../lib/date';
 import { formatProjectMemberCount } from '../../../lib/project';
 import type { Project } from '../../../types';
+import { useAuth } from '../../providers';
 
 const categoryMap: Record<string, string> = {
   All: '전체', Web: '웹', Mobile: '모바일', AI: 'AI', Game: '게임', Other: '기타',
@@ -25,6 +34,7 @@ const statuses = ['All', 'Open', 'Closed']
 export default function ProjectListingClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { user: authUser, loading: authLoading } = useAuth()
   const initialTech = searchParams.get('tech')
 
   // 🎯 [수정] 서버 페이징 상태 관리를 위한 최적화 명시
@@ -36,6 +46,9 @@ export default function ProjectListingClient() {
   const [pageCount, setPageCount] = useState(0)
   const [totalElements, setTotalElements] = useState(0) // 총 프로젝트 개수 표시용
   const [contentLoading, setContentLoading] = useState(false)
+  const [bookmarkedProjectIds, setBookmarkedProjectIds] = useState<Set<string>>(new Set())
+  const [bookmarkingProjectIds, setBookmarkingProjectIds] = useState<Set<string>>(new Set())
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
 
   // 필터 상태 변수들
   const [searchTerm, setSearchTerm] = useState('')
@@ -61,6 +74,41 @@ export default function ProjectListingClient() {
   const changeStatus = (value: string) => {
     setPage(0)
     setSelectedStatus(value)
+  }
+
+  const handleToggleBookmark = async (
+    event: MouseEvent<HTMLButtonElement>,
+    projectId: string,
+  ) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (authLoading || bookmarkingProjectIds.has(projectId)) return
+    if (!authUser) {
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    setBookmarkingProjectIds((current) => new Set(current).add(projectId))
+    try {
+      const isBookmarked = bookmarkedProjectIds.has(projectId)
+      const nextBookmarked = isBookmarked
+        ? await removeProjectBookmark(projectId)
+        : await addProjectBookmark(projectId)
+
+      setBookmarkedProjectIds((current) => {
+        const next = new Set(current)
+        if (nextBookmarked) next.add(projectId)
+        else next.delete(projectId)
+        return next
+      })
+    } finally {
+      setBookmarkingProjectIds((current) => {
+        const next = new Set(current)
+        next.delete(projectId)
+        return next
+      })
+    }
   }
 
   // 인기 기술 스택 로드 (최초 1회만)
@@ -115,6 +163,34 @@ export default function ProjectListingClient() {
       })
       .finally(() => setContentLoading(false))
   }, [page, searchTerm, selectedCategory, selectedTech, selectedStatus])
+
+  useEffect(() => {
+    if (authLoading || !authUser) {
+      setBookmarkedProjectIds(new Set())
+      return
+    }
+
+    const projectIds = Array.from(
+      new Set([...paginatedProjects, ...featuredProjects].map((project) => project.id)),
+    )
+
+    if (projectIds.length === 0) {
+      setBookmarkedProjectIds(new Set())
+      return
+    }
+
+    Promise.all(
+      projectIds.map((projectId) =>
+        fetchProjectBookmark(projectId)
+          .then((bookmarked) => [projectId, bookmarked] as const)
+          .catch(() => [projectId, false] as const),
+      ),
+    ).then((entries) => {
+      setBookmarkedProjectIds(
+        new Set(entries.filter(([, bookmarked]) => bookmarked).map(([projectId]) => projectId)),
+      )
+    })
+  }, [authLoading, authUser, paginatedProjects, featuredProjects])
 
 
   return (
@@ -192,6 +268,23 @@ export default function ProjectListingClient() {
                       <Badge variant={project.recruitmentStatus === 'Open' ? 'success' : 'secondary'}>{statusMap[project.recruitmentStatus] || project.recruitmentStatus}</Badge>
                       <Badge variant="outline">{categoryMap[project.category] || project.category}</Badge>
                     </div>
+                    <button
+                      type="button"
+                      className={`rounded-md border p-1.5 transition-colors ${
+                        bookmarkedProjectIds.has(project.id)
+                          ? 'border-blue-200 bg-blue-50 text-blue-600'
+                          : 'border-slate-200 text-slate-400 hover:text-blue-600'
+                      }`}
+                      disabled={bookmarkingProjectIds.has(project.id)}
+                      onClick={(event) => handleToggleBookmark(event, project.id)}
+                      aria-label={
+                        bookmarkedProjectIds.has(project.id)
+                          ? '북마크 해제'
+                          : '북마크 추가'
+                      }
+                    >
+                      <BookmarkPlus className="h-3.5 w-3.5" />
+                    </button>
                   </div>
 
                   <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">{project.title}</h3>
@@ -264,9 +357,28 @@ export default function ProjectListingClient() {
                         <Badge variant={project.recruitmentStatus === 'Open' ? 'success' : 'secondary'}>{statusMap[project.recruitmentStatus] || project.recruitmentStatus}</Badge>
                         <Badge variant="outline">{categoryMap[project.category] || project.category}</Badge>
                       </div>
-                      <div className="flex items-center text-slate-400 text-xs gap-1">
-                        <Clock className="h-3 w-3" />
-                        {formatDate(project.createdAt)}
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className={`rounded-md border p-1.5 transition-colors ${
+                            bookmarkedProjectIds.has(project.id)
+                              ? 'border-blue-200 bg-blue-50 text-blue-600'
+                              : 'border-slate-200 text-slate-400 hover:text-blue-600'
+                          }`}
+                          disabled={bookmarkingProjectIds.has(project.id)}
+                          onClick={(event) => handleToggleBookmark(event, project.id)}
+                          aria-label={
+                            bookmarkedProjectIds.has(project.id)
+                              ? '북마크 해제'
+                              : '북마크 추가'
+                          }
+                        >
+                          <BookmarkPlus className="h-3.5 w-3.5" />
+                        </button>
+                        <div className="flex items-center text-slate-400 text-xs gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatDate(project.createdAt)}
+                        </div>
                       </div>
                     </div>
 
@@ -332,6 +444,9 @@ export default function ProjectListingClient() {
           />
         </div>
       </div>
+      {isLoginModalOpen && (
+        <LoginModal onClose={() => setIsLoginModalOpen(false)} />
+      )}
     </div>
   )
 }

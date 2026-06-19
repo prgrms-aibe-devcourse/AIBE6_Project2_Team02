@@ -138,6 +138,22 @@ export function fetchProjectPermissions(id: string) {
   )
 }
 
+export function fetchProjectBookmark(projectId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/projects/${projectId}`)
+}
+
+export function addProjectBookmark(projectId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/projects/${projectId}`, {
+    method: 'POST',
+  })
+}
+
+export function removeProjectBookmark(projectId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/projects/${projectId}`, {
+    method: 'DELETE',
+  })
+}
+
 export function cancelProjectApplication(applicationId: number) {
   return fetchRsDataJson<void>(
     `/mypage/projects/applications/${applicationId}/cancel`,

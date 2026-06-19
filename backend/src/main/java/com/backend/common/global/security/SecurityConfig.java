@@ -35,6 +35,7 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**", "/login/**", "/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/projects", "/projects/*").permitAll()
                         .requestMatchers("/projects/**").authenticated()
+                        .requestMatchers("/bookmarks/**").authenticated()
                         .anyRequest().permitAll()
                 )
 

@@ -27,4 +27,11 @@ public class Bookmark {
     private Long targetId;
 
     private LocalDateTime createdAt;
+
+    public Bookmark(Member member, String targetType, Long targetId) {
+        this.member = member;
+        this.targetType = targetType;
+        this.targetId = targetId;
+        this.createdAt = LocalDateTime.now();
+    }
 }
