@@ -263,28 +263,32 @@ export default function ProjectListingClient() {
             {featuredProjects.slice(0, 3).map((project) => (
               <Link key={project.id} href={`/projects/${project.id}`}>
                 <Card className="listing-card group flex hover:border-blue-300 hover:shadow-md h-full">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex gap-2">
+                  <div className="flex justify-between items-start gap-3 mb-4">
+                    <div className="flex items-center gap-2">
                       <Badge variant={project.recruitmentStatus === 'Open' ? 'success' : 'secondary'}>{statusMap[project.recruitmentStatus] || project.recruitmentStatus}</Badge>
                       <Badge variant="outline">{categoryMap[project.category] || project.category}</Badge>
+                      <button
+                        type="button"
+                        className={`rounded-md border p-1.5 transition-colors ${
+                          bookmarkedProjectIds.has(project.id)
+                            ? 'border-blue-200 bg-blue-50 text-blue-600'
+                            : 'border-slate-200 text-slate-400 hover:text-blue-600'
+                        }`}
+                        disabled={bookmarkingProjectIds.has(project.id)}
+                        onClick={(event) => handleToggleBookmark(event, project.id)}
+                        aria-label={
+                          bookmarkedProjectIds.has(project.id)
+                            ? '북마크 해제'
+                            : '북마크 추가'
+                        }
+                      >
+                        <BookmarkPlus className="h-3.5 w-3.5" />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      className={`rounded-md border p-1.5 transition-colors ${
-                        bookmarkedProjectIds.has(project.id)
-                          ? 'border-blue-200 bg-blue-50 text-blue-600'
-                          : 'border-slate-200 text-slate-400 hover:text-blue-600'
-                      }`}
-                      disabled={bookmarkingProjectIds.has(project.id)}
-                      onClick={(event) => handleToggleBookmark(event, project.id)}
-                      aria-label={
-                        bookmarkedProjectIds.has(project.id)
-                          ? '북마크 해제'
-                          : '북마크 추가'
-                      }
-                    >
-                      <BookmarkPlus className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="flex items-center text-slate-400 text-xs gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatDate(project.createdAt)}
+                    </div>
                   </div>
 
                   <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">{project.title}</h3>
@@ -352,12 +356,10 @@ export default function ProjectListingClient() {
                       }
                     }}
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex gap-2">
+                    <div className="flex justify-between items-start gap-3 mb-4">
+                      <div className="flex items-center gap-2">
                         <Badge variant={project.recruitmentStatus === 'Open' ? 'success' : 'secondary'}>{statusMap[project.recruitmentStatus] || project.recruitmentStatus}</Badge>
                         <Badge variant="outline">{categoryMap[project.category] || project.category}</Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
                         <button
                           type="button"
                           className={`rounded-md border p-1.5 transition-colors ${
@@ -375,10 +377,10 @@ export default function ProjectListingClient() {
                         >
                           <BookmarkPlus className="h-3.5 w-3.5" />
                         </button>
-                        <div className="flex items-center text-slate-400 text-xs gap-1">
-                          <Clock className="h-3 w-3" />
-                          {formatDate(project.createdAt)}
-                        </div>
+                      </div>
+                      <div className="flex items-center text-slate-400 text-xs gap-1">
+                        <Clock className="h-3 w-3" />
+                        {formatDate(project.createdAt)}
                       </div>
                     </div>
 
