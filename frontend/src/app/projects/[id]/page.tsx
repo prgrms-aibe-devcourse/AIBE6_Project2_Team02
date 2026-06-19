@@ -47,8 +47,11 @@ const categoryMap: Record<string, string> = {
 
 const statusMap: Record<string, string> = {
   RECRUITING: '모집중',
-  CLOSED: '인원 마감',
-  COMPLETED: '완료',
+  CLOSED: '모집 마감',
+  IN_PROGRESS: '진행중',
+  COMPLETED: '진행완료',
+  DISBANDED: '프로젝트 해산',
+  CANCELLED: '프로젝트 취소',
   STOPPED: '중단',
 }
 
@@ -282,10 +285,12 @@ export default function ProjectDetailPage() {
                   variant={
                     project.recruitmentStatus === 'RECRUITING'
                       ? 'success'
-                      : 'secondary'
+                      : project.recruitmentStatus === 'IN_PROGRESS'
+                        ? 'purple'
+                        : 'secondary'
                   }
                 >
-                  {statusMap[project.recruitmentStatus]}
+                  {statusMap[project.recruitmentStatus] ?? project.recruitmentStatus}
                 </Badge>
                 <Badge variant="purple">{categoryMap[project.category]}</Badge>
               </div>
@@ -341,6 +346,13 @@ export default function ProjectDetailPage() {
                 >
                   지원하기
                 </Button>
+              )}
+              {isMember && (
+                <Link href={`/projects/${id}/management`}>
+                  <Button size="lg" variant="outline" className="w-full md:w-48">
+                    프로젝트 관리
+                  </Button>
+                </Link>
               )}
               <div className="flex gap-2">
                 <Button

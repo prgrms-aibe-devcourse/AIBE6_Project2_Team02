@@ -2,7 +2,7 @@ package com.backend.common.domain.project.project.dto;
 
 import com.backend.common.domain.member.dto.UserResponse;
 import com.backend.common.domain.project.enums.ProjectCategory;
-import com.backend.common.domain.project.enums.RecruitmentStatus;
+import com.backend.common.domain.project.enums.ProjectStatus;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ public record ProjectResponse_manage(
         List<String> goals,
         List<String> techStack,
         List<PositionResponse> positions,
-        RecruitmentStatus recruitmentStatus,
+        ProjectStatus recruitmentStatus,
         ProjectCategory category,
         UserResponse leader,
         List<UserResponse> teamMembers,

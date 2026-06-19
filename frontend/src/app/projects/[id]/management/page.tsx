@@ -8,25 +8,37 @@ import { useParams, useRouter } from 'next/navigation'
 
 import {
   ArrowLeft,
-  BookmarkPlus,
-  Calendar,
-  CheckCircle2,
   Code2,
+  ExternalLink,
   Pencil,
-  Share2,
-  Target,
+  RefreshCw,
+  Star,
+  UserX,
   Users,
 } from 'lucide-react'
 
-import { Badge, Button, Card, Modal } from '../../../../components/ui'
+import { Badge, Button, Card } from '../../../../components/ui'
 import {
   fetchApplicant,
   fetchApplicantTOteam,
-  fetchChangeStatus,
   fetchProjectPermissions,
   fetchProject_manage,
+  kickProjectMember,
+  rejectApplicant,
+  updateMemberRole,
+  updateProjectStatus,
 } from '../../../../lib/api'
 import type { Applicant, Project_manage } from '../../../../types'
+import { useAuth } from '../../../providers'
+
+const statusOptions = [
+  { value: 'RECRUITING', label: '모집중', variant: 'success' as const },
+  { value: 'CLOSED', label: '모집 마감', variant: 'secondary' as const },
+  { value: 'IN_PROGRESS', label: '진행중', variant: 'purple' as const },
+  { value: 'COMPLETED', label: '진행완료', variant: 'secondary' as const },
+  { value: 'DISBANDED', label: '프로젝트 해산', variant: 'secondary' as const },
+  { value: 'CANCELLED', label: '프로젝트 취소', variant: 'secondary' as const },
+]
 
 const categoryMap: Record<string, string> = {
   Web: '웹',
@@ -36,64 +48,159 @@ const categoryMap: Record<string, string> = {
   Other: '기타',
 }
 
-const statusMap: Record<string, string> = {
-  RECRUITING: '모집중',
-  CLOSED: '인원 마감',
+const roleMap: Record<string, string> = {
+  LEADER: '리더',
+  MANAGER: '매니저',
+  MEMBER: '멤버',
 }
 
-export default function ProjectDetailPage() {
+const positionMap: Record<string, string> = {
+  BACKEND: '백엔드 개발자',
+  FRONTEND: '프론트엔드 개발자',
+  FULL_STACK: '풀스택 개발자',
+  DESIGNER: '디자이너',
+  PRODUCT_MANAGER: '프로덕트 매니저',
+}
+
+export default function ProjectManagementPage() {
   const params = useParams()
   const id = params?.id as string
   const router = useRouter()
+  const { user: authUser } = useAuth()
   const [project, setProject] = useState<Project_manage | null>(null)
-  const [member2, setMember2] = useState<Applicant[]>([])
+  const [applicants, setApplicants] = useState<Applicant[]>([])
   const [loading, setLoading] = useState(true)
-  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
-  const [selectedRole, setSelectedRole] = useState<string>('')
   const [canEdit, setCanEdit] = useState(false)
-  const [isMember, setIsMember] = useState(false)
+  const [isLeader, setIsLeader] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState('RECRUITING')
+  const [currentStatus, setCurrentStatus] = useState('RECRUITING')
+  const [statusLoading, setStatusLoading] = useState(false)
+  const [approvingId, setApprovingId] = useState<string | null>(null)
+  const [rejectingId, setRejectingId] = useState<string | null>(null)
+  const [kickingId, setKickingId] = useState<string | null>(null)
+  const [roleChangingId, setRoleChangingId] = useState<string | null>(null)
+  const [applicantsRefreshing, setApplicantsRefreshing] = useState(false)
+  const [pageRefreshing, setPageRefreshing] = useState(false)
+
+  const refreshAll = () => {
+    setPageRefreshing(true)
+    Promise.all([
+      fetchProject_manage(id).then((res) => {
+        setProject(res)
+        setSelectedStatus(res.recruitmentStatus ?? 'RECRUITING')
+        setCurrentStatus(res.recruitmentStatus ?? 'RECRUITING')
+      }),
+      fetchApplicant(id).then((res) =>
+        setApplicants((res as any).Applicant ?? res ?? []),
+      ),
+    ])
+      .catch(() => {})
+      .finally(() => setPageRefreshing(false))
+  }
 
   useEffect(() => {
     if (!id) {
       setLoading(false)
       return
     }
-
     fetchProject_manage(id)
-      .then((res) => setProject(res))
+      .then((res) => {
+        setProject(res)
+        setSelectedStatus(res.recruitmentStatus ?? 'RECRUITING')
+        setCurrentStatus(res.recruitmentStatus ?? 'RECRUITING')
+      })
       .catch(() => setProject(null))
-      .finally(() => setLoading(false))
-  }, [id, member2])
-
-  useEffect(() => {
-    if (!id) {
-      setLoading(false)
-      return
-    }
-    fetchApplicant(id)
-      .then((res) => setMember2(res.Applicant))
-      .catch(() => setMember2([]))
       .finally(() => setLoading(false))
   }, [id])
 
   useEffect(() => {
     if (!id) return
+    fetchApplicant(id)
+      .then((res) => setApplicants((res as any).Applicant ?? res ?? []))
+      .catch(() => setApplicants([]))
+  }, [id])
 
+  useEffect(() => {
+    if (!id) return
     fetchProjectPermissions(id)
-      .then((permission) => {
-        setCanEdit(permission.canEdit)
-        setIsMember(permission.isMember)
+      .then((p) => {
+        setCanEdit(p.canEdit)
+        setIsLeader(p.isLeader)
       })
       .catch(() => {
         setCanEdit(false)
-        setIsMember(false)
+        setIsLeader(false)
       })
   }, [id])
+
+  const handleStatusChange = (e: React.FormEvent) => {
+    e.preventDefault()
+    setStatusLoading(true)
+    updateProjectStatus(id, selectedStatus)
+      .then(() => {
+        setCurrentStatus(selectedStatus)
+        toast.success('프로젝트 상태가 변경되었습니다.')
+        router.refresh()
+      })
+      .catch(() => toast.error('상태 변경에 실패했습니다.'))
+      .finally(() => setStatusLoading(false))
+  }
+
+  const handleReject = (applicantId: string, applicantName: string) => {
+    setRejectingId(applicantId)
+    rejectApplicant(id, applicantId)
+      .then(() => {
+        setApplicants((prev) => prev.filter((a) => a.id !== applicantId))
+        toast.success(`${applicantName}님의 지원을 거절했습니다.`)
+      })
+      .catch(() => toast.error('거절에 실패했습니다.'))
+      .finally(() => setRejectingId(null))
+  }
+
+  const handleApprove = (applicantId: string) => {
+    setApprovingId(applicantId)
+    fetchApplicantTOteam(applicantId, id)
+      .then(() => {
+        toast.success('팀원으로 승인했습니다.')
+        Promise.all([fetchProject_manage(id), fetchApplicant(id)]).then(
+          ([proj, apps]) => {
+            setProject(proj)
+            setApplicants((apps as any).Applicant ?? apps ?? [])
+          },
+        )
+      })
+      .catch(() => toast.error('승인에 실패했습니다.'))
+      .finally(() => setApprovingId(null))
+  }
+
+  const handleKick = (memberId: string, memberName: string) => {
+    if (!confirm(`${memberName}님을 프로젝트에서 방출하시겠습니까?`)) return
+    setKickingId(memberId)
+    kickProjectMember(id, memberId)
+      .then(() => {
+        toast.success(`${memberName}님을 방출했습니다.`)
+        fetchProject_manage(id).then((proj) => setProject(proj))
+      })
+      .catch(() => toast.error('방출에 실패했습니다.'))
+      .finally(() => setKickingId(null))
+  }
+
+  const handleRoleChange = (
+    memberId: string,
+    memberName: string,
+    role: string,
+  ) => {
+    setRoleChangingId(memberId)
+    updateMemberRole(id, memberId, role)
+      .then(() => toast.success(`${memberName}님 권한을 변경했습니다.`))
+      .catch(() => toast.error('권한 변경에 실패했습니다.'))
+      .finally(() => setRoleChangingId(null))
+  }
 
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-20 text-center text-slate-500">
-        프로젝트를 불러오는 중...
+        불러오는 중...
       </div>
     )
   }
@@ -111,418 +218,370 @@ export default function ProjectDetailPage() {
     )
   }
 
-  const handleApply = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsApplyModalOpen(false)
-    toast.success('지원이 완료되었습니다!', {
-      description: `${project.title}의 ${selectedRole} 포지션에 지원했습니다. 프로젝트 리더가 프로필을 검토할 예정입니다.`,
-    })
+  const leaderEntry = {
+    id: project.leader.id,
+    name: project.leader.name,
+    avatar: project.leader.avatar,
+    role: 'LEADER',
+    position: project.leader.role ?? '',
+    isLeader: true,
   }
-  const cantoTeam = (ap_id: string, id: string) => {
-    fetchApplicantTOteam(ap_id, id)
-      .then((res) => setMember2(res.Applicant))
-      .catch(() => setMember2([]))
-      .finally(() => setLoading(false))
-  }
-
-  const disAgree = (ap_id: string) => {
-    /* fetch(ap_id)
-      .then((res) => setMember2(res.Applicant))
-      .catch(() => setMember2([]))
-      .finally(() => setLoading(false))*/
-  }
-
-  const handleStatus = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log(e.target.project_staus.value)
-    fetchChangeStatus(e.target.project_staus.value, id)
-      .then((res) => setProject(res))
-      .catch(() => setProject(null))
-      .finally(() => setLoading(false))
-  }
+  const displayMembers = [
+    leaderEntry,
+    ...project.pmResponses
+      .filter((m) => m.id !== project.leader.id)
+      .map((m) => ({ ...m, isLeader: false })),
+  ]
+  const isRecruiting = currentStatus === 'RECRUITING'
+  const isCompleted = currentStatus === 'COMPLETED'
+  const currentStatusOption =
+    statusOptions.find((s) => s.value === currentStatus) ?? statusOptions[0]
 
   return (
     <div className="bg-slate-50 min-h-screen pb-20">
-      {/* Header Banner */}
-      <div className="bg-white border-b border-slate-200 pt-8 pb-12">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200 pt-8 pb-8">
         <div className="container mx-auto px-4 max-w-5xl">
-          <Link
-            href="/projects"
-            className="inline-flex items-center text-sm text-slate-500 hover:text-slate-900 mb-6 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" /> 프로젝트 목록으로
-          </Link>
+          <div className="flex items-center justify-between mb-6">
+            <Link
+              href={`/projects/${id}`}
+              className="inline-flex items-center text-sm text-slate-500 hover:text-slate-900 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" /> 프로젝트로 돌아가기
+            </Link>
+            <button
+              className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 transition-colors disabled:opacity-50"
+              disabled={pageRefreshing}
+              onClick={refreshAll}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${pageRefreshing ? 'animate-spin' : ''}`} />
+              새로고침
+            </button>
+          </div>
 
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-            <div className="flex-1">
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge
-                  variant={
-                    project.recruitmentStatus === 'RECRUITING'
-                      ? 'success'
-                      : 'secondary'
-                  }
-                >
-                  {statusMap[project.recruitmentStatus]}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant={currentStatusOption.variant}>
+                  {currentStatusOption.label}
                 </Badge>
-                <Badge variant="purple">{categoryMap[project.category]}</Badge>
+                <Badge variant="purple">
+                  {categoryMap[project.category] ?? project.category}
+                </Badge>
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
                 {project.title}
               </h1>
-              <p className="text-lg text-slate-600 max-w-3xl">
-                {project.description}
-              </p>
             </div>
-
-            <div className="flex flex-row md:flex-col gap-3 shrink-0">
-              {canEdit && (
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-full md:w-48 gap-2"
-                  onClick={() => router.push(`/projects/${id}/edit`)}
-                >
-                  <Pencil className="h-4 w-4" />
-                  프로젝트 수정
-                </Button>
-              )}
+            {canEdit && (
               <Button
-                size="lg"
-                variant="gradient"
-                className={`w-full md:w-48 ${canEdit ? 'hidden' : ''}`}
-                disabled={isMember || project.recruitmentStatus === 'CLOSED'}
-                onClick={() => setIsApplyModalOpen(true)}
+                size="sm"
+                variant="outline"
+                className="gap-2 shrink-0"
+                onClick={() => router.push(`/projects/${id}/edit`)}
               >
-                지원하기
+                <Pencil className="h-4 w-4" />
+                프로젝트 수정
               </Button>
-              <div className="flex gap-2">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="flex-1 md:flex-none"
-                  onClick={() => toast('링크가 복사되었습니다')}
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="flex-1 md:flex-none"
-                  onClick={() => toast.success('프로젝트를 저장했습니다')}
-                >
-                  <BookmarkPlus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Content Grid */}
-      <div className="container mx-auto px-4 max-w-5xl mt-8">
-        <div className="inline-block grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Column */}
-          <div className="lg:col-span-2 space-y-8">
-            <Card className="p-8">
-              <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Target className="h-5 w-5 text-blue-600" /> 프로젝트 소개
-              </h2>
-              <div className="prose prose-slate max-w-none">
-                <p className="text-slate-600 leading-relaxed whitespace-pre-line">
-                  {project.fullDescription}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <form onSubmit={handleStatus}>
-                  <h3 className="text-lg font-bold text-slate-900 mt-8 mb-4">
-                    프로젝트 상태변화
-                  </h3>
-                  <select name="project_staus" id="project_staus">
-                    <option value="RECRUITING">RECRUITING</option>
-                    <option value="IN_PROGRESS">IN_PROGRESS</option>
-                    <option value="COMPLETED">COMPLETED</option>
-                    <option value="DISBANDED">DISBANDED</option>
-                    <option value="CANCELLED">CANCELLED</option>
-                  </select>
-                  <button
-                    type="submit"
-                    className="w-10 h-10 border-radius: 50% m-1 border-2"
-                  >
-                    확인
-                  </button>
-                </form>
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mt-8 mb-4">
-                프로젝트 목표
-              </h3>
-
-              <ul className="space-y-3">
-                {project.goals.map((goal, i) => (
-                  <li key={i} className="flex items-start gap-3 text-slate-600">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-                    <span>{goal}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-
-            <Card className="p-8">
-              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" /> 모집 포지션
-              </h2>
-              <div className="space-y-4">
-                {project.positions.map((pos, i) => {
-                  const isOpen = pos.filled < pos.total
-                  return (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50"
-                    >
-                      <div>
-                        <h4 className="font-semibold text-slate-900">
-                          {pos.role}
-                        </h4>
-                        <p className="text-sm text-slate-500 mt-1">
-                          {pos.total}명 중 {pos.filled}명 모집 완료
-                        </p>
-                      </div>
-                      {isOpen ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={canEdit ? 'hidden' : undefined}
-                          disabled={isMember}
-                        >
-                          모집중
-                        </Button>
-                      ) : (
-                        <Badge variant="secondary">모집 완료</Badge>
-                      )}
-                    </div>
-                  )
-                })}
-                {project.positions.length === 0 && (
-                  <p className="py-6 text-center text-sm text-slate-500">
-                    등록된 모집 포지션이 없습니다.
-                  </p>
-                )}
-              </div>
-            </Card>
-
-            <Card className="p-8">
-              <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Code2 className="h-4 w-4 text-slate-400" /> 기술 스택
-              </h3>
-
-              {project.techStack.map((tech) => (
-                <span
-                  key={tech}
-                  className="px-3 py-1.5 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg"
-                >
-                  {tech}
-                </span>
-              ))}
-            </Card>
-
-            <Card className="p-8">
-              <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-slate-400" /> 일정
-              </h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between py-2 border-b border-slate-100">
-                  <span className="text-slate-500">등록일</span>
-                  <span className="font-medium text-slate-900">
-                    {new Date(project.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-slate-500">마감일</span>
-                  <span className="font-medium text-slate-900">
-                    {new Date(project.deadline).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-8">
-              <h3 className="font-bold text-slate-900 mb-4">팀</h3>
-
-              <div className="mb-6">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-                  프로젝트 리더
-                </p>
-                <div className="flex items-center gap-4">
-                  <Link
-                    href={`/u/${project.leader.id}`}
-                    className="hover:opacity-80 transition-opacity"
-                  >
-                    <img
-                      src={project.leader.avatar}
-                      alt={project.leader.name}
-                      className="w-12 h-12 rounded-full border-2 border-white shadow-sm"
-                    />
-                  </Link>
-                  <div className="flex items-center gap-4">
-                    <Link
-                      href={`/u/${project.leader.id}`}
-                      className="font-medium text-slate-900 hover:text-blue-600 transition-colors"
-                    >
-                      {project.leader.name}
-                    </Link>
-                    <p className="text-sm text-slate-500">
-                      {project.leader.role}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h3 className="font-medium text-slate-900 mb-4">팀원</h3>
-                <div className="inline-block gap-3">
-                  {project.pmResponses.map((member) => (
-                    <div className="flex items-center gap-4" key={member.id}>
-                      <Link
-                        href={`/u/${member.id}`}
-                        className="hover:opacity-80 transition-opacity"
-                      >
-                        <img
-                          src={member.avatar}
-                          alt={member.name}
-                          title={member.name}
-                          className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
-                        />
-                      </Link>
-                      <div>{member.name}</div>
-                      <p className="text-sm text-slate-500">{member.role}</p>
-                      <p className="text-sm text-slate-500">
-                        {member.position}
-                      </p>
-                      <button className="w-20 h-10 border-radius: 50% m-1 border-2">
-                        리뷰쓰기
-                      </button>
-                    </div>
-                  ))}
-                  {project.teamMembers.length === 0 && (
-                    <span className="text-sm text-slate-500 py-2">
-                      아직 팀원이 없어요. 첫 번째 팀원이 되어보세요!
-                    </span>
-                  )}
-                </div>
-              </div>
-            </Card>
-            <Card className="p-8">
-              <div className="inline-block gap-3">
-                <h3 className="font-medium text-slate-900 mb-4">지원자</h3>
-                <div className="inline-block gap-3">
-                  {member2.map((applicantlist) => (
-                    <div
-                      className="flex items-center gap-4"
-                      key={applicantlist.id}
-                    >
-                      <div>
-                        <Link
-                          href={`/u/${applicantlist.id}`}
-                          className="hover:opacity-80 transition-opacity"
-                        >
-                          <img
-                            src={applicantlist.profileImageUrl}
-                            alt={applicantlist.nickname}
-                            title={applicantlist.nickname}
-                            className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
-                          />
-                        </Link>
-                      </div>
-                      <div>{applicantlist.nickname}</div>
-                      <div>
-                        <button
-                          className="w-10 h-10 border-radius: 50% m-1 border-2"
-                          onClick={() =>
-                            cantoTeam(applicantlist.id, project.id)
-                          }
-                        >
-                          승인
-                        </button>
-                        <button
-                          className="w-10 h-10 border-radius: 50% m-1 border-2"
-                          onClick={() => disAgree(applicantlist.id)}
-                        >
-                          거절
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  {project.teamMembers.length === 0 && (
-                    <span className="text-sm text-slate-500 py-2">
-                      아직 팀원이 없어요. 첫 번째 팀원이 되어보세요!
-                    </span>
-                  )}
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </div>
-
-      {/* Apply Modal */}
-      <Modal
-        isOpen={isApplyModalOpen}
-        onClose={() => setIsApplyModalOpen(false)}
-        title={`${project.title} 지원하기`}
-      >
-        <form onSubmit={handleApply} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              포지션 선택
-            </label>
-            <select
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              required
+      <div className="container mx-auto px-4 max-w-5xl mt-8 space-y-6">
+        {/* 상태 변경 */}
+        {isLeader && (
+          <Card className="p-6">
+            <h2 className="text-base font-semibold text-slate-900 mb-4">
+              프로젝트 상태 변경
+            </h2>
+            <form
+              onSubmit={handleStatusChange}
+              className="flex items-center gap-3"
             >
-              <option value="" disabled>
-                포지션을 선택하세요...
-              </option>
-              {project.positions
-                .filter((p) => p.filled < p.total)
-                .map((p) => (
-                  <option key={p.role} value={p.role}>
-                    {p.role}
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="flex-1 max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {statusOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
                   </option>
                 ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              왜 이 프로젝트에 적합한가요?
-            </label>
-            <textarea
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 min-h-[100px] resize-y"
-              placeholder="관련 경험과 이 프로젝트에 참여하고 싶은 이유를 간단히 적어주세요..."
-              required
-            />
-          </div>
-          <div className="bg-blue-50 text-blue-800 text-sm p-3 rounded-lg flex gap-2">
-            <CheckCircle2 className="h-5 w-5 shrink-0 text-blue-600" />
-            <p>
-              지원 시 DevLink 프로필과 포트폴리오가 프로젝트 리더에게 함께
-              전달됩니다.
+              </select>
+              <Button
+                type="submit"
+                size="sm"
+                variant="gradient"
+                disabled={statusLoading}
+              >
+                {statusLoading ? '변경 중...' : '변경 적용'}
+              </Button>
+            </form>
+          </Card>
+        )}
+
+        {/* 참여자 목록 */}
+        <Card className="p-6">
+          <h2 className="text-base font-semibold text-slate-900 mb-5 flex items-center gap-2">
+            <Users className="h-5 w-5 text-blue-600" /> 참여자 목록
+            <span className="ml-1 bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+              {displayMembers.length}
+            </span>
+          </h2>
+
+          {displayMembers.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100">
+                    <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider w-1/3">
+                      이름
+                    </th>
+                    <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      포지션
+                    </th>
+                    <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      권한
+                    </th>
+                    <th className="text-center py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      방출
+                    </th>
+                    <th className="text-center py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      리뷰
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {displayMembers.map((member) => (
+                    <tr
+                      key={member.id}
+                      className="hover:bg-slate-50 transition-colors"
+                    >
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={member.avatar}
+                            alt={member.name}
+                            className="w-8 h-8 rounded-full border border-slate-200 object-cover"
+                          />
+                          <Link
+                            href={`/u/${member.id}`}
+                            className="font-medium text-slate-900 hover:text-blue-600 transition-colors"
+                          >
+                            {member.name}
+                          </Link>
+                        </div>
+                      </td>
+                      <td className="py-3 px-3 text-slate-600">
+                        {positionMap[member.position] ?? member.position}
+                      </td>
+                      <td className="py-3 px-3">
+                        {member.isLeader ? (
+                          <Badge variant="purple">리더</Badge>
+                        ) : isLeader ? (
+                          <select
+                            defaultValue={member.role}
+                            className="text-xs rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            onChange={(e) =>
+                              handleRoleChange(
+                                member.id,
+                                member.name,
+                                e.target.value,
+                              )
+                            }
+                            disabled={roleChangingId === member.id}
+                          >
+                            <option value="MANAGER">매니저</option>
+                            <option value="MEMBER">멤버</option>
+                          </select>
+                        ) : (
+                          <Badge
+                            variant={
+                              member.role === 'MANAGER'
+                                ? 'success'
+                                : 'secondary'
+                            }
+                          >
+                            {roleMap[member.role] ?? member.role}
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        {!member.isLeader && isLeader && (
+                          <button
+                            className="inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-md transition-colors disabled:opacity-50"
+                            disabled={kickingId === member.id}
+                            onClick={() => handleKick(member.id, member.name)}
+                          >
+                            <UserX className="h-3.5 w-3.5" />
+                            {kickingId === member.id ? '처리중...' : '방출'}
+                          </button>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        {isCompleted &&
+                        String(authUser?.memberId) !== member.id ? (
+                          <Link
+                            href={`/projects/${id}/review/${member.id}`}
+                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-md transition-colors"
+                          >
+                            <Star className="h-3.5 w-3.5" />
+                            리뷰
+                          </Link>
+                        ) : (
+                          <span className="text-xs text-slate-300">
+                            완료 후 작성
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500 text-center py-6">
+              아직 팀원이 없습니다.
             </p>
+          )}
+        </Card>
+
+        {/* 지원자 목록 */}
+        {isRecruiting && isLeader && (
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                <Users className="h-5 w-5 text-emerald-600" /> 지원자 목록
+                <span className="ml-1 bg-emerald-100 text-emerald-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                  {applicants.length}
+                </span>
+              </h2>
+              <button
+                className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 transition-colors disabled:opacity-50"
+                disabled={applicantsRefreshing}
+                onClick={() => {
+                  setApplicantsRefreshing(true)
+                  fetchApplicant(id)
+                    .then((res) =>
+                      setApplicants((res as any).Applicant ?? res ?? []),
+                    )
+                    .catch(() => {})
+                    .finally(() => setApplicantsRefreshing(false))
+                }}
+              >
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${applicantsRefreshing ? 'animate-spin' : ''}`}
+                />
+                새로고침
+              </button>
+            </div>
+
+            {applicants.length > 0 ? (
+              <div className="space-y-4">
+                {applicants.map((applicant) => (
+                  <div
+                    key={applicant.id}
+                    className="border border-slate-200 rounded-xl p-5 hover:border-blue-200 hover:bg-blue-50/30 transition-colors"
+                  >
+                    <div className="flex items-start gap-4">
+                      <img
+                        src={applicant.profileImageUrl}
+                        alt={applicant.nickname}
+                        className="w-12 h-12 rounded-full border-2 border-white shadow-sm object-cover shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-slate-900">
+                            {applicant.nickname}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2 shrink-0">
+                        <Link
+                          href={`/u/${applicant.id}`}
+                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 px-3 py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          포트폴리오
+                        </Link>
+                        <button
+                          className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                          disabled={approvingId === applicant.id}
+                          onClick={() => handleApprove(applicant.id)}
+                        >
+                          {approvingId === applicant.id ? '처리중...' : '승인'}
+                        </button>
+                        <button
+                          className="px-3 py-1.5 text-xs font-medium border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50"
+                          disabled={rejectingId === applicant.id}
+                          onClick={() => handleReject(applicant.id, applicant.nickname)}
+                        >
+                          {rejectingId === applicant.id ? '처리중...' : '거절'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500 text-center py-8">
+                아직 지원자가 없습니다.
+              </p>
+            )}
+          </Card>
+        )}
+
+        {/* 프로젝트 정보 */}
+        <Card className="p-6">
+          <h2 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Code2 className="h-5 w-5 text-slate-400" /> 프로젝트 정보
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+            <div className="flex flex-col items-center justify-center py-3 border border-slate-100 rounded-lg bg-slate-50">
+              <span className="text-xs text-slate-500 mb-1">모집구분</span>
+              <span className="font-semibold text-slate-900">
+                {categoryMap[project.category] ?? project.category}
+              </span>
+            </div>
+            <div className="flex flex-col items-center justify-center py-3 border border-slate-100 rounded-lg bg-slate-50">
+              <span className="text-xs text-slate-500 mb-1">모집인원</span>
+              <span className="font-semibold text-slate-900">
+                {project.positions.reduce((s, p) => s + p.total, 0)}명
+              </span>
+            </div>
+            <div className="flex flex-col items-center justify-center py-3 border border-slate-100 rounded-lg bg-slate-50">
+              <span className="text-xs text-slate-500 mb-1">등록일</span>
+              <span className="font-semibold text-slate-900">
+                {new Date(project.createdAt).toLocaleDateString('ko-KR')}
+              </span>
+            </div>
+            <div className="flex flex-col items-center justify-center py-3 border border-slate-100 rounded-lg bg-slate-50">
+              <span className="text-xs text-slate-500 mb-1">모집 마감일</span>
+              <span className="font-semibold text-slate-900">
+                {new Date(project.deadline).toLocaleDateString('ko-KR')}
+              </span>
+            </div>
           </div>
-          <div className="pt-4 flex justify-end gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setIsApplyModalOpen(false)}
-            >
-              취소
-            </Button>
-            <Button type="submit" variant="gradient">
-              지원서 제출
-            </Button>
-          </div>
-        </form>
-      </Modal>
+
+          {project.techStack.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <p className="text-xs text-slate-500 mb-2">기술 스택</p>
+              <div className="flex flex-wrap gap-2">
+                {project.techStack.map((tech) => (
+                  <span
+                    key={tech}
+                    className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-md"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   )
 }

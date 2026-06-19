@@ -24,7 +24,7 @@ export type Project = {
   goals: string[]
   techStack: string[]
   positions: Position[]
-  recruitmentStatus: 'RECRUITING' | 'CLOSED' | 'COMPLETED' | 'STOPPED'
+  recruitmentStatus: 'RECRUITING' | 'CLOSED' | 'IN_PROGRESS' | 'COMPLETED' | 'DISBANDED' | 'CANCELLED' | 'STOPPED'
   category: 'Web' | 'Mobile' | 'AI' | 'Game' | 'Other'
   leader: User
   teamMembers: User[]
@@ -64,7 +64,7 @@ export type Project_manage = {
   goals: string[]
   techStack: string[]
   positions: Position[]
-  recruitmentStatus: 'RECRUITING' | 'CLOSED' | 'COMPLETED' | 'STOPPED'
+  recruitmentStatus: 'RECRUITING' | 'CLOSED' | 'IN_PROGRESS' | 'COMPLETED' | 'DISBANDED' | 'CANCELLED' | 'STOPPED'
   category: 'Web' | 'Mobile' | 'AI' | 'Game' | 'Other'
   leader: User
   teamMembers: User[]

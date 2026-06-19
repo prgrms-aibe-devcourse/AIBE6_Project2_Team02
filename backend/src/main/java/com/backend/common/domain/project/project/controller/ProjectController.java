@@ -84,13 +84,15 @@ public class ProjectController {
                 && projectService.canEditProject(id, principal.getMemberId());
         boolean isMember = principal != null
                 && projectService.isProjectMember(id, principal.getMemberId());
+        boolean isLeader = principal != null
+                && projectService.isProjectLeader(id, principal.getMemberId());
         Long pendingApplicationId = principal == null
                 ? null
                 : projectService.findPendingApplicationId(id, principal.getMemberId()).orElse(null);
         return RsData.of(
                 "200",
                 "프로젝트 권한 조회 성공",
-                new ProjectPermissionResponse(canEdit, isMember, pendingApplicationId)
+                new ProjectPermissionResponse(canEdit, isMember, isLeader, pendingApplicationId)
         );
     }
 
@@ -137,15 +139,14 @@ public class ProjectController {
         if (principal == null) {
             throw new InsufficientAuthenticationException("Login is required");
         }
+        if (!projectService.isProjectMember(id, principal.getMemberId())) {
+            throw new InsufficientAuthenticationException("프로젝트 멤버가 아닙니다.");
+        }
+
         try {
-            ProjectResponse_manage response = projectService.getProject_manage(id);
-            if (principal != null && Long.parseLong(response.leader().id())!=principal.getMemberId()) {
-                throw new InsufficientAuthenticationException("관리자ID가 아닙니다.");
-            }
-            if (principal != null && principal.getMemberId() != null) {
+            if (principal.getMemberId() != null) {
                 projectService.makeProjectView(id, principal.getMemberId());
             }
-
         } catch (NoSuchElementException ex) {
             throw new ProjectNotFoundException("404", "Project not found");
         }
@@ -156,6 +157,19 @@ public class ProjectController {
             throw new RuntimeException("지원자 맴버찾기가 실패하였습니다.");
         }
 
+    }
+
+    @PostMapping("/{projectId}/applications/{memberId}/reject")
+    public RsData<Void> rejectApplicant(
+            @PathVariable Long projectId,
+            @PathVariable Long memberId,
+            @AuthenticationPrincipal CustomMemberDetails userDetails
+    ) {
+        if (userDetails == null) {
+            throw new InsufficientAuthenticationException("Login is required");
+        }
+        projectService.rejectApplicant(projectId, memberId);
+        return RsData.of("200", "지원이 거절되었습니다.");
     }
 
     @Transactional
@@ -235,15 +249,15 @@ public class ProjectController {
             throw new InsufficientAuthenticationException("Login is required");
         }
 
+        if (!projectService.isProjectMember(id, userDetails.getMemberId())) {
+            throw new InsufficientAuthenticationException("프로젝트 멤버가 아닙니다.");
+        }
+
         try {
             ProjectResponse_manage response = projectService.getProject_manage(id);
-            if (userDetails != null && Long.parseLong(response.leader().id())!=userDetails.getMemberId()) {
-                throw new InsufficientAuthenticationException("관리자ID가 아닙니다.");
-            }
-            if (userDetails != null && userDetails.getMemberId() != null) {
+            if (userDetails.getMemberId() != null) {
                 projectService.makeProjectView(id, userDetails.getMemberId());
             }
-
             return RsData.of("200", "프로젝트 조회 성공", response);
         } catch (NoSuchElementException ex) {
             throw new ProjectNotFoundException("404", "Project not found");

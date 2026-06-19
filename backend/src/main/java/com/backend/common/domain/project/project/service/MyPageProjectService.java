@@ -131,12 +131,19 @@ public class MyPageProjectService {
      * 설정이 정상 작동하여 브라우저가 쿠키를 완벽하게 전달합니다.
      * 따라서 jwtAuthenticationFilter가 유저를 정상 식별하므로, @PreAuthorize 문턱을 문제없이 통과(200 OK)합니다.
      */
-    @PreAuthorize("@mypageAuthorizer.isApplicant(#applicationId, authentication.principal.memberId)")
-    public void cancelProjectApplication(Long memberId, Long projectId) {
+    public void cancelProjectApplication(Long memberId, Long applicationId) {
 
         ProjectApplication application = projectApplicationRepository
-                .findByApplicantIdAndProjectIdAndStatus(memberId, projectId, SelectionStatus.PENDING)
-                .orElseThrow(() -> new ResourceNotFoundException("404", "취소 가능한 대기 중인 지원 내역이 존재하지 않습니다."));
+                .findById(applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("404", "지원 내역이 존재하지 않습니다."));
+
+        if (!application.getApplicant().getId().equals(memberId)) {
+            throw new org.springframework.security.authentication.InsufficientAuthenticationException("본인의 지원만 취소할 수 있습니다.");
+        }
+
+        if (application.getStatus() != SelectionStatus.PENDING) {
+            throw new ResourceNotFoundException("404", "취소 가능한 대기 중인 지원 내역이 존재하지 않습니다.");
+        }
 
         projectApplicationRepository.delete(application);
     }
