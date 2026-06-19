@@ -34,6 +34,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -1016,6 +1017,7 @@ public class ProjectService {
     }
 
     @Transactional
+    @PreAuthorize("@projectAuthorizer.isProjectLeaderOf(#projectId, authentication.principal.memberId)")
     public void updateStatus(Long projectId, ProjectStatus newStatus) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("404", "프로젝트를 찾을 수 없습니다."));
