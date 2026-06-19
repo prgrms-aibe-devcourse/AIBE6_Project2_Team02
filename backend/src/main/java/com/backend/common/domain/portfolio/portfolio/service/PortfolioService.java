@@ -19,10 +19,10 @@ import com.backend.common.domain.portfolio.proposals.repository.ProjectProposalR
 import com.backend.common.domain.project.enums.PositionType;
 import com.backend.common.domain.project.enums.ProjectStatus;
 import com.backend.common.domain.project.enums.SelectionStatus;
+import com.backend.common.domain.project.project.entity.Project;
 import com.backend.common.domain.project.project.entity.ProjectMember;
 import com.backend.common.domain.project.project.entity.ProjectMemberStatus;
 import com.backend.common.domain.project.project.entity.ProjectRole;
-import com.backend.common.domain.project.project.entity.Project;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.techstack.entity.PortfolioTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
@@ -38,7 +38,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -65,7 +64,7 @@ public class PortfolioService {
             Pageable pageable
     ) {
         String qSearch = normalizeFilter(search);
-        String qRole = normalizePositionFilter(role);
+        String qRole = normalizeFilter(role);
         String qTech = normalizeFilter(tech);
 
         Page<Portfolio> portfolioPage = portfolioRepository.searchPortfolios(
@@ -89,36 +88,6 @@ public class PortfolioService {
             return null;
         }
         return value.trim();
-    }
-
-    private String normalizePositionFilter(String value) {
-        String normalized = normalizeFilter(value);
-        if (normalized == null) {
-            return null;
-        }
-
-        String positionCode = toPositionSearchCode(normalized);
-        return positionCode == null ? normalized : positionCode;
-    }
-
-    private String toPositionSearchCode(String search) {
-        PositionType positionType = PositionType.fromDescriptionOrCode(search);
-        if (positionType != PositionType.ERROR) {
-            return positionType.name();
-        }
-
-        return switch (normalizeSearchText(search)) {
-            case "backend", "back-end", "server", "백엔드", "백엔드개발자", "서버" -> PositionType.BACKEND.name();
-            case "frontend", "front-end", "front", "프론트엔드", "프론트엔드개발자", "프론트" -> PositionType.FRONTEND.name();
-            case "fullstack", "full-stack", "full stack", "풀스택", "풀스택개발자" -> PositionType.FULL_STACK.name();
-            case "designer", "design", "ui", "ux", "디자이너", "디자인" -> PositionType.DESIGNER.name();
-            case "pm", "productmanager", "product manager", "프로덕트매니저", "프로덕트 매니저" -> PositionType.PRODUCT_MANAGER.name();
-            default -> null;
-        };
-    }
-
-    private String normalizeSearchText(String value) {
-        return value == null ? "" : value.trim().replaceAll("\\s+", "").toLowerCase();
     }
 
     @Transactional
