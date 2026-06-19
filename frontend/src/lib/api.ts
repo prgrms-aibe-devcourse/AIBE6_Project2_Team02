@@ -211,7 +211,7 @@ export function fetchMyPortfolio() {
 
 export function updateMyPortfolio(payload: PortfolioUpdateRequest) {
   return fetchRsDataJson<Portfolio>('/portfolios/me', {
-    method: 'PUT',
+    method: 'PATCH',
     body: JSON.stringify(payload),
   })
 }
