@@ -19,7 +19,7 @@ public class MemberScheduler {
     private final MemberRepository memberRepository;
 
     @Transactional
-    @Scheduled(cron = "0 0 * * * *") // 매 시간 정각 실행
+    @Scheduled(cron = "0 * * * * *") // 매 분 실행
     public void checkSuspensionExpirations() {
         log.info("Checking for expired member suspensions...");
         LocalDateTime now = LocalDateTime.now();

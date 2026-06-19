@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 import {
@@ -21,7 +21,8 @@ import type { User } from '../../../types'
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
+  const [hasSearched, setHasSearched] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'all' | 'suspended'>('all')
   const [searchKeyword, setSearchKeyword] = useState('')
   const [suspensionDays, setSuspensionDays] = useState<Record<string, number>>(
@@ -30,17 +31,19 @@ export default function AdminUsersPage() {
 
   const loadData = async (keyword?: string) => {
     setLoading(true)
+
     try {
       const data = await searchMembers(keyword)
-      // Map backend Member fields to frontend User fields
+
       const mappedUsers: User[] = (data || []).map((m: any) => ({
         id: String(m.id),
         name: m.nickname,
         avatar: m.profileImageUrl,
         status: m.status,
         suspensionUntil: m.suspensionUntil,
-        role: 'USER', // Default role as it's not explicitly in Member entity yet
+        role: 'USER',
       }))
+
       setUsers(mappedUsers)
     } catch (err) {
       console.error('Failed to load users:', err)
@@ -50,13 +53,18 @@ export default function AdminUsersPage() {
     }
   }
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    loadData(searchKeyword)
+
+    const keyword = searchKeyword.trim()
+
+    if (!keyword) {
+      toast.error('검색어를 입력해주세요.')
+      return
+    }
+
+    setHasSearched(true)
+    await loadData(keyword)
   }
 
   const handleSuspend = async (userId: string) => {
@@ -158,7 +166,8 @@ export default function AdminUsersPage() {
               type="button"
               onClick={() => {
                 setSearchKeyword('')
-                loadData('')
+                setUsers([])
+                setHasSearched(false)
               }}
               className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors"
             >
@@ -174,17 +183,22 @@ export default function AdminUsersPage() {
         명
       </div>
 
-      {filteredUsers.length === 0 ? (
+      {!hasSearched ? (
+        <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 border-dashed">
+          <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search size={32} />
+          </div>
+          <p className="text-slate-500 font-medium">
+            닉네임을 입력하고 검색해주세요.
+          </p>
+        </div>
+      ) : filteredUsers.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 border-dashed">
           <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle size={32} />
           </div>
           <p className="text-slate-500 font-medium">
-            {searchKeyword
-              ? '검색 결과와 일치하는 유저가 없습니다.'
-              : activeTab === 'suspended'
-                ? '정지된 유저가 없습니다.'
-                : '등록된 유저가 없습니다.'}
+            검색 결과와 일치하는 유저가 없습니다.
           </p>
         </div>
       ) : (

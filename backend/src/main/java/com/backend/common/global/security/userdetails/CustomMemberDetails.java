@@ -33,6 +33,7 @@ public class CustomMemberDetails implements UserDetails {
         this.memberId = member.getId();
         this.nickname = member.getNickname();
         this.status = member.getStatus();
+        this.role = member.getRole().name();
     }
 
     @Override
