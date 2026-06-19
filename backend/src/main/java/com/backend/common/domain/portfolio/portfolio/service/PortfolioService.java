@@ -32,17 +32,12 @@ import com.backend.common.global.exception.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Predicate;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -70,11 +65,13 @@ public class PortfolioService {
             Pageable pageable
     ) {
         String qSearch = normalizeFilter(search);
-        String qRole = normalizeFilter(role);
+        String qRole = normalizePositionFilter(role);
         String qTech = normalizeFilter(tech);
 
-        Page<Portfolio> portfolioPage = portfolioRepository.findAll(
-                portfolioFilter(qSearch, qRole, qTech),
+        Page<Portfolio> portfolioPage = portfolioRepository.searchPortfolios(
+                qSearch,
+                qRole,
+                qTech,
                 pageable
         );
         AtomicInteger index = new AtomicInteger((int) pageable.getOffset());
@@ -91,41 +88,37 @@ public class PortfolioService {
         if (value == null || value.isBlank() || "All".equalsIgnoreCase(value)) {
             return null;
         }
-        return value;
+        return value.trim();
     }
 
-    private Specification<Portfolio> portfolioFilter(String search, String role, String tech) {
-        return (root, query, cb) -> {
-            query.distinct(true);
+    private String normalizePositionFilter(String value) {
+        String normalized = normalizeFilter(value);
+        if (normalized == null) {
+            return null;
+        }
 
-            List<Predicate> conditions = new ArrayList<>();
-            conditions.add(cb.isTrue(root.get("isPublished")));
+        String positionCode = toPositionSearchCode(normalized);
+        return positionCode == null ? normalized : positionCode;
+    }
 
-            if (role != null) {
-                conditions.add(cb.equal(root.get("desiredPosition"), role));
-            }
+    private String toPositionSearchCode(String search) {
+        PositionType positionType = PositionType.fromDescriptionOrCode(search);
+        if (positionType != PositionType.ERROR) {
+            return positionType.name();
+        }
 
-            if (tech != null) {
-                Join<Object, Object> techStacks = root.join("portfolioTechStacks", JoinType.LEFT);
-                conditions.add(cb.equal(techStacks.get("techStack").get("name"), tech));
-            }
-
-            if (search != null) {
-                Join<Object, Object> member = root.join("member", JoinType.INNER);
-                Join<Object, Object> techStacks = root.join("portfolioTechStacks", JoinType.LEFT);
-                String pattern = "%" + search.toLowerCase(Locale.ROOT) + "%";
-
-                conditions.add(cb.or(
-                        cb.like(cb.lower(member.get("nickname")), pattern),
-                        cb.like(cb.lower(root.get("title")), pattern),
-                        cb.like(cb.lower(root.get("introduction")), pattern),
-                        cb.like(cb.lower(root.get("desiredPosition")), pattern),
-                        cb.like(cb.lower(techStacks.get("techStack").get("name")), pattern)
-                ));
-            }
-
-            return cb.and(conditions.toArray(Predicate[]::new));
+        return switch (normalizeSearchText(search)) {
+            case "backend", "back-end", "server", "백엔드", "백엔드개발자", "서버" -> PositionType.BACKEND.name();
+            case "frontend", "front-end", "front", "프론트엔드", "프론트엔드개발자", "프론트" -> PositionType.FRONTEND.name();
+            case "fullstack", "full-stack", "full stack", "풀스택", "풀스택개발자" -> PositionType.FULL_STACK.name();
+            case "designer", "design", "ui", "ux", "디자이너", "디자인" -> PositionType.DESIGNER.name();
+            case "pm", "productmanager", "product manager", "프로덕트매니저", "프로덕트 매니저" -> PositionType.PRODUCT_MANAGER.name();
+            default -> null;
         };
+    }
+
+    private String normalizeSearchText(String value) {
+        return value == null ? "" : value.trim().replaceAll("\\s+", "").toLowerCase();
     }
 
     @Transactional

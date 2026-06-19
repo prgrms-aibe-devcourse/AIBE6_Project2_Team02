@@ -112,7 +112,8 @@ export function fetchProjects(params: ProjectFilterParams = {}) {
   query.append('page', page.toString())
   query.append('size', size.toString())
 
-  if (search) query.append('search', search)
+  const trimmedSearch = search?.trim()
+  if (trimmedSearch) query.append('search', trimmedSearch)
   if (category && category !== 'All') query.append('category', category)
   if (tech && tech !== 'All') query.append('tech', tech)
   if (status && status !== 'All') query.append('status', status)
@@ -211,7 +212,8 @@ export function fetchPortfolios(params: PortfolioFilterParams = {}) {
   query.append('page', page.toString())
   query.append('size', size.toString())
 
-  if (search) query.append('search', search)
+  const trimmedSearch = search?.trim()
+  if (trimmedSearch) query.append('search', trimmedSearch)
   if (role && role !== 'All') query.append('role', role)
   if (tech && tech !== 'All') query.append('tech', tech)
 
