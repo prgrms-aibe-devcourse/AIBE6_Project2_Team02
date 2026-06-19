@@ -287,18 +287,21 @@ public class PortfolioService {
 
         if (isAccept) {
             proposal.accept();
-            
+
             PositionType positionEnum = PositionType.fromDescriptionOrCode(
                     proposal.getPortfolio().getDesiredPosition()
             );
 
-            ProjectMember projectMember = ProjectMember.builder()
-                    .project(proposal.getProject())
-                    .member(proposal.getPortfolio().getMember())
-                    .position(positionEnum)
-                    .role(ProjectRole.MEMBER)
-                    .build();
-            projectMemberRepository.save(projectMember);
+            boolean isAlreadyMember = projectMemberRepository.existsByProjectIdAndMemberId(proposal.getProject().getId(), proposal.getPortfolio().getMember().getId());
+            if (!isAlreadyMember) {
+                ProjectMember projectMember = ProjectMember.builder()
+                        .project(proposal.getProject())
+                        .member(proposal.getPortfolio().getMember())
+                        .position(positionEnum)
+                        .role(ProjectRole.MEMBER)
+                        .build();
+                projectMemberRepository.save(projectMember);
+            }
 
             notificationService.notify(
                     proposal.getProposer(),
@@ -308,6 +311,7 @@ public class PortfolioService {
                     "/projects/" + proposal.getProject().getId(),
                     proposal.getId()
             );
+            projectProposalRepository.delete(proposal);
         } else {
             proposal.reject();
 
@@ -319,6 +323,7 @@ public class PortfolioService {
                     null,
                     proposal.getId()
             );
+            projectProposalRepository.delete(proposal);
         }
     }
 

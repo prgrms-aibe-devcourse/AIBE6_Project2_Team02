@@ -1,9 +1,11 @@
 package com.backend.common.domain.portfolio.proposals.repository;
 
 import com.backend.common.domain.portfolio.proposals.entity.ProjectProposal;
+import com.backend.common.domain.project.enums.SelectionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
@@ -34,4 +36,9 @@ public interface ProjectProposalRepository extends JpaRepository<ProjectProposal
             @Param("targetMemberId") Long targetMemberId,
             @Param("proposerId") Long proposerId
     );
+
+    @Modifying
+    @Query("DELETE FROM ProjectProposal p WHERE p.project.id = :projectId AND p.portfolio.member.id = :memberId AND p.status = :status")
+    void deleteMatchingProposals(@Param("projectId") Long projectId, @Param("memberId") Long memberId, @Param("status") SelectionStatus status);
+
 }

@@ -60,7 +60,7 @@ public class PortfolioController {
     /**
      * 내 포트폴리오 수정
      */
-    @PutMapping("/me")
+    @PatchMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public RsData<PortfolioResponse> updatePortfolio(
             @AuthenticationPrincipal CustomMemberDetails userDetails,

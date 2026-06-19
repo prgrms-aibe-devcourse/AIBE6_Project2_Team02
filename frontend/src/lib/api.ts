@@ -138,6 +138,38 @@ export function fetchProjectPermissions(id: string) {
   )
 }
 
+export function fetchProjectBookmark(projectId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/projects/${projectId}`)
+}
+
+export function addProjectBookmark(projectId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/projects/${projectId}`, {
+    method: 'POST',
+  })
+}
+
+export function removeProjectBookmark(projectId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/projects/${projectId}`, {
+    method: 'DELETE',
+  })
+}
+
+export function fetchPortfolioBookmark(memberId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/portfolios/${memberId}`)
+}
+
+export function addPortfolioBookmark(memberId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/portfolios/${memberId}`, {
+    method: 'POST',
+  })
+}
+
+export function removePortfolioBookmark(memberId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/portfolios/${memberId}`, {
+    method: 'DELETE',
+  })
+}
+
 export function cancelProjectApplication(applicationId: number) {
   return fetchRsDataJson<void>(
     `/mypage/projects/applications/${applicationId}/cancel`,
@@ -211,7 +243,7 @@ export function fetchMyPortfolio() {
 
 export function updateMyPortfolio(payload: PortfolioUpdateRequest) {
   return fetchRsDataJson<Portfolio>('/portfolios/me', {
-    method: 'PUT',
+    method: 'PATCH',
     body: JSON.stringify(payload),
   })
 }
