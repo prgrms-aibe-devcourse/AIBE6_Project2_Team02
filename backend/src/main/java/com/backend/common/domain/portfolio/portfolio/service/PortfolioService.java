@@ -22,6 +22,7 @@ import com.backend.common.domain.project.enums.SelectionStatus;
 import com.backend.common.domain.project.project.entity.ProjectMember;
 import com.backend.common.domain.project.project.entity.ProjectMemberStatus;
 import com.backend.common.domain.project.project.entity.ProjectRole;
+import com.backend.common.domain.project.project.entity.Project;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.techstack.entity.PortfolioTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
@@ -37,7 +38,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -302,6 +305,7 @@ public class PortfolioService {
                         .build();
                 projectMemberRepository.save(projectMember);
             }
+            closeRecruitmentIfNoVacancy(proposal.getProject());
 
             notificationService.notify(
                     proposal.getProposer(),
@@ -324,6 +328,34 @@ public class PortfolioService {
                     proposal.getId()
             );
             projectProposalRepository.delete(proposal);
+        }
+    }
+
+    private void closeRecruitmentIfNoVacancy(Project project) {
+        if (project.getStatus() != ProjectStatus.RECRUITING || !project.isRecruitmentOpen()) {
+            return;
+        }
+
+        if (project.getPositions().isEmpty()) {
+            project.updateRecruitmentOpen(false);
+            return;
+        }
+
+        Map<String, Long> activeMemberCountByPosition = projectMemberRepository.findByProjectId(project.getId())
+                .stream()
+                .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE)
+                .collect(Collectors.groupingBy(
+                        member -> member.getPosition().name(),
+                        Collectors.counting()
+                ));
+
+        boolean hasVacancy = project.getPositions().stream()
+                .anyMatch(position ->
+                        activeMemberCountByPosition.getOrDefault(position.getRole(), 0L) < position.getTotal()
+                );
+
+        if (!hasVacancy) {
+            project.updateRecruitmentOpen(false);
         }
     }
 
