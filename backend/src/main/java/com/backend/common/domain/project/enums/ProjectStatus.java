@@ -15,4 +15,13 @@ public enum ProjectStatus {
 
     private final String code;
     private final String description;
+
+    public static ProjectStatus fromString(String value) {
+        for (ProjectStatus status : ProjectStatus.values()) {
+            if (status.name().equalsIgnoreCase(value) || status.code.equalsIgnoreCase(value)) {
+                return status;
+            }
+        }
+        throw new IllegalArgumentException("존재하지 않는 프로젝트 상태 값입니다: " + value);
+    }
 }

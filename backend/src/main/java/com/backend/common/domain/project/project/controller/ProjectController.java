@@ -12,6 +12,7 @@ import com.backend.common.domain.project.project.entity.ProjectMember;
 import com.backend.common.domain.project.project.service.ProjectService;
 import com.backend.common.global.rsdata.RsData;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -247,6 +248,17 @@ public class ProjectController {
         } catch (NoSuchElementException ex) {
             throw new ProjectNotFoundException("404", "Project not found");
         }
+    }
+
+
+    @PatchMapping("/{projectId}/status")
+    public ResponseEntity<Void> updateProjectStatus(
+            @PathVariable Long projectId,
+            @Valid @RequestBody ProjectStatusUpdateRequest request) {
+
+        projectService.updateStatus(projectId, request.status());
+
+        return ResponseEntity.ok().build();
     }
 
 }

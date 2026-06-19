@@ -26,6 +26,7 @@ import com.backend.common.domain.techstack.entity.MemberTechStack;
 import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
+import com.backend.common.global.exception.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -1012,6 +1013,14 @@ public class ProjectService {
             throw new RuntimeException("프로젝트 수정이 실패하였습니다.");
         }
         return project;
+    }
+
+    @Transactional
+    public void updateStatus(Long projectId, ProjectStatus newStatus) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("404", "프로젝트를 찾을 수 없습니다."));
+
+        project.changeStatus(newStatus);
     }
 
 }
