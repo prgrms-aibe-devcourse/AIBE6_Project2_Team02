@@ -38,7 +38,7 @@ public class AuthController {
         if (principal == null) return ResponseEntity.status(401).build();
         Member member = memberRepository.findById(principal.getMemberId()).orElse(null);
         if (member == null) return ResponseEntity.status(401).build();
-        return ResponseEntity.ok(new AuthResponse(principal.getMemberId(), member.getNickname(), member.getProfileImageUrl()));
+        return ResponseEntity.ok(new AuthResponse(principal.getMemberId(), member.getNickname(), member.getProfileImageUrl(), member.getRole()));
     }
 
     @PostMapping("/logout")

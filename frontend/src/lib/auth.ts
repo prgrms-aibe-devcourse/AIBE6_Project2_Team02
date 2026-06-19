@@ -4,6 +4,7 @@ export interface AuthUser {
   memberId: number
   nickname: string
   profileImageUrl: string | null
+  role: string
 }
 
 export async function fetchMe(): Promise<AuthUser | null> {

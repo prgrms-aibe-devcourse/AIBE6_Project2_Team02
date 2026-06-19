@@ -1,8 +1,9 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Toaster } from 'sonner'
+
+import { usePathname, useRouter } from 'next/navigation'
 
 import { type AuthUser, fetchMe, logout as logoutApi } from '../lib/auth'
 import { useScreenInit } from '../useScreenInit'
@@ -29,13 +30,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const pathname = usePathname()
 
   useEffect(() => {
     fetchMe().then((me) => {
       setUser(me)
       setLoading(false)
+      if (
+        me &&
+        me.role === 'ROLE_ADMIN' &&
+        (pathname === '/' || pathname === '/login')
+      ) {
+        router.replace('/admin/reports')
+      }
     })
-  }, [])
+  }, [pathname, router])
 
   const logout = async () => {
     await logoutApi()
