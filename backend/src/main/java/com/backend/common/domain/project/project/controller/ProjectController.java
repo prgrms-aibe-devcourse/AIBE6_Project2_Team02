@@ -252,13 +252,23 @@ public class ProjectController {
 
 
     @PatchMapping("/{projectId}/status")
-    public ResponseEntity<Void> updateProjectStatus(
+    public RsData<Void> updateProjectStatus(
             @PathVariable Long projectId,
             @Valid @RequestBody ProjectStatusUpdateRequest request) {
 
         projectService.updateStatus(projectId, request.status());
 
-        return ResponseEntity.ok().build();
+        return RsData.of("200", "프로젝트 상태가 성공적으로 변경되었습니다.");
+    }
+
+    @DeleteMapping("/{projectId}/members/{memberId}")
+    public RsData<Void> kickMember(
+            @PathVariable Long projectId,
+            @PathVariable("memberId") Long targetMemberId) {
+
+        projectService.kickProjectMember(projectId, targetMemberId);
+
+        return RsData.of("200", "해당 팀원이 프로젝트에서 방출되었습니다.");
     }
 
 }

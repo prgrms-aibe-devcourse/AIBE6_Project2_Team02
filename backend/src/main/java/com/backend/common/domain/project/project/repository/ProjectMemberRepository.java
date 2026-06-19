@@ -40,4 +40,11 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Lo
             ProjectRole role,
             ProjectMemberStatus memberStatus
     );
+
+    // 특정 프로젝트에 활성화 상태인 멤버 단건 조회
+    Optional<ProjectMember> findByProjectIdAndMemberIdAndMemberStatus(
+            Long projectId,
+            Long memberId,
+            ProjectMemberStatus memberStatus
+    );
 }

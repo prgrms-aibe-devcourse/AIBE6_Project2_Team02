@@ -60,4 +60,17 @@ public class ProjectMember {
         this.position = position;
     }
 
+    public void kickMember() {
+        if (this.role == ProjectRole.LEADER) {
+            throw new IllegalStateException("프로젝트 팀장은 자기 자신을 방출할 수 없습니다.");
+        }
+        if (this.memberStatus == ProjectMemberStatus.REMOVED || this.memberStatus == ProjectMemberStatus.LEFT) {
+            throw new IllegalStateException("이미 프로젝트를 나갔거나 방출된 회원입니다.");
+        }
+
+        // 상태 변경 및 탈퇴 시간 기록
+        this.memberStatus = ProjectMemberStatus.REMOVED;
+        this.leftAt = LocalDateTime.now();
+    }
+
 }
