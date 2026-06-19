@@ -1,101 +1,167 @@
-'use client'
+﻿'use client'
 
 import { motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import type { MouseEvent } from 'react'
+import { useEffect, useState } from 'react'
 
 import Link from 'next/link'
 
-import { Clock, MapPin, Search, Sparkles } from 'lucide-react'
+import { BookmarkPlus, Clock, MapPin, Search, Sparkles } from 'lucide-react'
 
+import { LoginModal } from '../../components/LoginModal'
 import { PaginationControls } from '../../components/PaginationControls'
 import { SearchField } from '../../components/SearchField'
 import { Badge, Button, Card } from '../../components/ui'
 import {
   formatPositionLabel,
   leaderPositionOptions,
-  toPositionValue,
 } from '../../constants/project'
-import { usePaginatedList } from '../../hooks/usePaginatedList'
-import { fetchMembers, fetchPopularTechStacks } from '../../lib/api'
+import {
+  addPortfolioBookmark,
+  fetchPopularTechStacks,
+  fetchPortfolioBookmark,
+  fetchPortfolios,
+  removePortfolioBookmark,
+} from '../../lib/api'
 import type { User } from '../../types'
+import { useAuth } from '../providers'
 
 const roleOptions = [
   { value: 'All', label: '전체' },
   ...leaderPositionOptions,
 ]
 
-interface TalentFilterOptions {
-  searchTerm: string
-  selectedRole: string
-  selectedTech: string
-}
-
-function matchesTalentFilters(
-  user: User,
-  { searchTerm, selectedRole, selectedTech }: TalentFilterOptions,
-) {
-  const normalizedSearchTerm = searchTerm.toLowerCase()
-  const roleLabel = formatPositionLabel(user.role)
-  const searchableText = [
-    user.name,
-    user.bio ?? '',
-    user.role,
-    roleLabel,
-    ...(user.techStack ?? []),
-  ]
-    .join(' ')
-    .toLowerCase()
-  const matchesSearch = searchableText.includes(normalizedSearchTerm)
-  const userRole = toPositionValue(user.role)
-  const matchesRole =
-    selectedRole === 'All' ||
-    userRole === selectedRole
-  const matchesTech =
-    selectedTech === 'All' || Boolean(user.techStack?.includes(selectedTech))
-
-  return matchesSearch && matchesRole && matchesTech
-}
-
 export default function TalentListingPage() {
-  const [allUsers, setAllUsers] = useState<User[]>([])
+  const { user: authUser, loading: authLoading } = useAuth()
+  const [paginatedTalents, setPaginatedTalents] = useState<User[]>([])
+  const [featuredTalents, setFeaturedTalents] = useState<User[]>([])
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
+  const [page, setPage] = useState(0)
+  const [pageCount, setPageCount] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const [contentLoading, setContentLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>('All')
+  const [bookmarkedPortfolioIds, setBookmarkedPortfolioIds] = useState<Set<string>>(new Set())
+  const [bookmarkingPortfolioIds, setBookmarkingPortfolioIds] = useState<Set<string>>(new Set())
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
 
   useEffect(() => {
-    Promise.all([fetchMembers(), fetchPopularTechStacks()])
-      .then(([members, techStacks]) => {
-        setAllUsers(members)
-        setPopularTechStacks(techStacks)
-      })
-      .catch(() => {
-        setAllUsers([])
-        setPopularTechStacks([])
-      })
+    fetchPopularTechStacks()
+      .then(setPopularTechStacks)
+      .catch(() => setPopularTechStacks([]))
   }, [])
 
-  const featuredTalents = allUsers.filter((u) => u.featured)
-  const filteredTalents = useMemo(() => {
-    return allUsers.filter((user) =>
-      matchesTalentFilters(user, {
-        searchTerm,
-        selectedRole,
-        selectedTech,
-      }),
+  useEffect(() => {
+    setContentLoading(true)
+
+    fetchPortfolios({
+      page,
+      size: 9,
+      search: searchTerm,
+      role: selectedRole,
+      tech: selectedTech,
+    })
+      .then((pageData) => {
+        if (pageData && pageData.content) {
+          setPaginatedTalents(pageData.content)
+          setPageCount(pageData.totalPages)
+          setTotalElements(pageData.totalElements)
+          setFeaturedTalents(pageData.content.filter((user) => user.featured))
+        } else {
+          setPaginatedTalents([])
+          setPageCount(0)
+          setTotalElements(0)
+          setFeaturedTalents([])
+        }
+      })
+      .catch(() => {
+        setPaginatedTalents([])
+        setPageCount(0)
+        setTotalElements(0)
+        setFeaturedTalents([])
+      })
+      .finally(() => setContentLoading(false))
+  }, [page, searchTerm, selectedRole, selectedTech])
+
+  useEffect(() => {
+    if (authLoading || !authUser) {
+      setBookmarkedPortfolioIds(new Set())
+      return
+    }
+
+    const memberIds = Array.from(
+      new Set([...paginatedTalents, ...featuredTalents].map((user) => user.id)),
     )
-  }, [allUsers, searchTerm, selectedRole, selectedTech])
-  const portfoliosPerPage = 9
-  const {
-    page,
-    pageCount,
-    paginatedItems: paginatedTalents,
-    setPage,
-  } = usePaginatedList({
-    items: filteredTalents,
-    pageSize: portfoliosPerPage,
-    resetDeps: [searchTerm, selectedRole, selectedTech],
-  })
+
+    if (memberIds.length === 0) {
+      setBookmarkedPortfolioIds(new Set())
+      return
+    }
+
+    Promise.all(
+      memberIds.map((memberId) =>
+        fetchPortfolioBookmark(memberId)
+          .then((bookmarked) => [memberId, bookmarked] as const)
+          .catch(() => [memberId, false] as const),
+      ),
+    ).then((entries) => {
+      setBookmarkedPortfolioIds(
+        new Set(entries.filter(([, bookmarked]) => bookmarked).map(([memberId]) => memberId)),
+      )
+    })
+  }, [authLoading, authUser, paginatedTalents, featuredTalents])
+
+  const changeSearchTerm = (value: string) => {
+    setPage(0)
+    setSearchTerm(value)
+  }
+
+  const changeRole = (value: string) => {
+    setPage(0)
+    setSelectedRole(value)
+  }
+
+  const changeTech = (value: string) => {
+    setPage(0)
+    setSelectedTech(value)
+  }
+
+  const handleToggleBookmark = async (
+    event: MouseEvent<HTMLButtonElement>,
+    memberId: string,
+  ) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (authLoading || bookmarkingPortfolioIds.has(memberId)) return
+    if (!authUser) {
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    setBookmarkingPortfolioIds((current) => new Set(current).add(memberId))
+    try {
+      const isBookmarked = bookmarkedPortfolioIds.has(memberId)
+      const nextBookmarked = isBookmarked
+        ? await removePortfolioBookmark(memberId)
+        : await addPortfolioBookmark(memberId)
+
+      setBookmarkedPortfolioIds((current) => {
+        const next = new Set(current)
+        if (nextBookmarked) next.add(memberId)
+        else next.delete(memberId)
+        return next
+      })
+    } finally {
+      setBookmarkingPortfolioIds((current) => {
+        const next = new Set(current)
+        next.delete(memberId)
+        return next
+      })
+    }
+  }
 
   const containerVariants = {
     hidden: {
@@ -142,7 +208,7 @@ export default function TalentListingPage() {
           <SearchField
             placeholder="이름 / 키워드 검색..."
             value={searchTerm}
-            onChange={setSearchTerm}
+            onChange={changeSearchTerm}
           />
 
           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
@@ -151,7 +217,7 @@ export default function TalentListingPage() {
               {roleOptions.map((role) => (
                 <button
                   key={role.value}
-                  onClick={() => setSelectedRole(role.value)}
+                  onClick={() => changeRole(role.value)}
                   className={`segment-option ${selectedRole === role.value ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
                   {role.label}
@@ -163,7 +229,7 @@ export default function TalentListingPage() {
             <select
               className="form-field md:w-auto"
               value={selectedTech}
-              onChange={(e) => setSelectedTech(e.target.value)}
+              onChange={(e) => changeTech(e.target.value)}
             >
               <option value="All">전체 기술 스택</option>
               {popularTechStacks.map((tech) => (
@@ -194,6 +260,19 @@ export default function TalentListingPage() {
                     />
 
                     <div className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
+                    <button
+                      type="button"
+                      className={`absolute -top-1 -right-1 rounded-md border bg-white p-1.5 transition-colors ${
+                        bookmarkedPortfolioIds.has(user.id)
+                          ? 'border-blue-200 text-blue-600'
+                          : 'border-slate-200 text-slate-400 hover:text-blue-600'
+                      }`}
+                      disabled={bookmarkingPortfolioIds.has(user.id)}
+                      onClick={(event) => handleToggleBookmark(event, user.id)}
+                      aria-label={bookmarkedPortfolioIds.has(user.id) ? '북마크 해제' : '북마크 추가'}
+                    >
+                      <BookmarkPlus className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                   <h3 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                     {user.name}
@@ -229,29 +308,49 @@ export default function TalentListingPage() {
           </h2>
           <p className="text-sm text-slate-500">
             <span className="font-medium text-slate-900">
-              {filteredTalents.length}
+              {totalElements}
             </span>
             명의 프로필
           </p>
         </div>
 
+        {contentLoading ? (
+          <div className="text-center py-24 text-slate-400 font-medium">
+            조건에 맞는 포트폴리오를 불러오는 중...
+          </div>
+        ) : (
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {filteredTalents.length > 0 ? (
+          {paginatedTalents.length > 0 ? (
             paginatedTalents.map((user) => (
               <motion.div key={user.id} variants={itemVariants}>
                 <Link href={`/u/${user.id}`}>
                   <Card className="listing-card group flex">
                     <div className="flex items-start gap-4 mb-4">
-                      <img
-                        src={user.avatar}
-                        alt={user.name}
-                        className="w-14 h-14 rounded-full object-cover border border-slate-100"
-                      />
+                      <div className="relative shrink-0">
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          className="w-14 h-14 rounded-full object-cover border border-slate-100"
+                        />
+                        <button
+                          type="button"
+                          className={`absolute -top-1 -right-1 rounded-md border bg-white p-1.5 transition-colors ${
+                            bookmarkedPortfolioIds.has(user.id)
+                              ? 'border-blue-200 text-blue-600'
+                              : 'border-slate-200 text-slate-400 hover:text-blue-600'
+                          }`}
+                          disabled={bookmarkingPortfolioIds.has(user.id)}
+                          onClick={(event) => handleToggleBookmark(event, user.id)}
+                          aria-label={bookmarkedPortfolioIds.has(user.id) ? '북마크 해제' : '북마크 추가'}
+                        >
+                          <BookmarkPlus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
 
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
@@ -316,6 +415,7 @@ export default function TalentListingPage() {
                 variant="outline"
                 className="mt-4"
                 onClick={() => {
+                  setPage(0)
                   setSearchTerm('')
                   setSelectedRole('All')
                   setSelectedTech('All')
@@ -326,12 +426,17 @@ export default function TalentListingPage() {
             </div>
           )}
         </motion.div>
+        )}
         <PaginationControls
           page={page}
           pageCount={pageCount}
           onPageChange={setPage}
         />
       </div>
+      {isLoginModalOpen && (
+        <LoginModal onClose={() => setIsLoginModalOpen(false)} />
+      )}
     </div>
   )
 }
+

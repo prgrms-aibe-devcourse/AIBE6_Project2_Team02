@@ -1,6 +1,7 @@
 package com.backend.common.global.init;
 
 import com.backend.common.domain.member.entity.Member;
+import com.backend.common.domain.member.entity.MemberRole; // 🎯 권한 이넘 임포트
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.member.repository.MemberTechStackRepository;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
@@ -24,6 +25,7 @@ import com.backend.common.domain.report.repository.ReportRepository;
 import com.backend.common.domain.review.entity.Review;
 import com.backend.common.domain.review.repository.ReviewRepository;
 import com.backend.common.domain.techstack.entity.MemberTechStack;
+import com.backend.common.domain.techstack.entity.PortfolioTechStack;
 import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
@@ -65,6 +67,7 @@ public class DummyDataInitializer implements ApplicationRunner {
             backfillProjectTechStacks(techStacks);
             backfillProjectPositionRoles();
             backfillPortfolioDesiredPositions();
+            backfillMissingPortfolios();
             return;
         }
 
@@ -84,11 +87,8 @@ public class DummyDataInitializer implements ApplicationRunner {
     /**
      * 마이페이지 프론트엔드 페이징(Size=5) 통합 검증을 위한 6~8개 단위 테스트 데이터 벌크 빌딩
      */
-    /**
-     * 마이페이지 프론트엔드 페이징(Size=5) 통합 검증을 위한 6~8개 단위 테스트 데이터 벌크 빌딩
-     */
     private void saveMyPageTestData(Map<String, Member> members) {
-        Member testUser = Member.create("아무개", "https://avatars.githubusercontent.com/u/12345678?v=4");
+        Member testUser = Member.createAdmin("아무개", "https://avatars.githubusercontent.com/u/12345678?v=4");
         memberRepository.save(testUser);
 
         members.put("testuser", testUser);
@@ -122,8 +122,8 @@ public class DummyDataInitializer implements ApplicationRunner {
                     .deadline(LocalDate.now().plusMonths(1))
                     .build();
 
-            ownedProject.changeStatus(ProjectStatus.COMPLETED);
-            ownedProject.forceSetRecruitmentOpen(true);
+            ownedProject.changeStatus(ProjectStatus.RECRUITING);
+            ownedProject.toggleRecruitment(true);
 
             projectRepository.save(ownedProject);
 
@@ -157,7 +157,6 @@ public class DummyDataInitializer implements ApplicationRunner {
         int participatingCount = Math.min(allProjects.size(), 6);
         for (int i = 0; i < participatingCount; i++) {
             Project targetProj = allProjects.get(i);
-
 
             targetProj.changeStatus(com.backend.common.domain.project.enums.ProjectStatus.RECRUITING);
             targetProj.startProject();
@@ -244,6 +243,7 @@ public class DummyDataInitializer implements ApplicationRunner {
 
     private Map<String, Member> saveMembers(Map<String, MemberSeed> memberSeeds) {
         Map<String, Member> members = new LinkedHashMap<>();
+        // 🎯 변경 포인트: 시드 데이터 유저들은 Member.create를 타므로 내부적으로 전부 ROLE_USER로 들어감!
         memberSeeds.forEach((id, seed) -> members.put(id, memberRepository.save(Member.create(seed.name(), seed.avatar()))));
         return members;
     }
@@ -291,16 +291,62 @@ public class DummyDataInitializer implements ApplicationRunner {
     }
 
     private void savePortfolios(Map<String, MemberSeed> memberSeeds, Map<String, Member> members) {
-        memberSeeds.forEach((id, seed) -> portfolioRepository.save(
-                Portfolio.builder()
-                        .member(members.get(id))
-                        .title(seed.name() + " Portfolio")
-                        .introduction(seed.bio())
-                        .portfolioLinks(null)
-                        .desiredPosition(inferPosition(seed.role()).name())
-                        .isPublished(true)
-                        .build()
-        ));
+        Map<String, TechStack> techStacks = loadTechStacks();
+        memberSeeds.forEach((id, seed) -> {
+            Portfolio portfolio = Portfolio.builder()
+                    .member(members.get(id))
+                    .title(seed.name() + " Portfolio")
+                    .introduction(seed.bio())
+                    .portfolioLinks(null)
+                    .desiredPosition(inferPosition(seed.role()).name())
+                    .isPublished(true)
+                    .build();
+
+            portfolio.updateTechStacks(buildPortfolioTechStacks(portfolio, seed, techStacks));
+            portfolioRepository.save(portfolio);
+        });
+    }
+
+    private void backfillMissingPortfolios() {
+        Map<String, TechStack> techStacks = loadTechStacks();
+        memberSeeds().values().forEach(seed ->
+                memberRepository.findByNickname(seed.name())
+                        .ifPresent(member -> {
+                            Portfolio portfolio = portfolioRepository.findByMemberId(member.getId())
+                                    .orElseGet(() -> Portfolio.builder()
+                                            .member(member)
+                                            .title(seed.name() + " Portfolio")
+                                            .introduction(seed.bio())
+                                            .portfolioLinks(null)
+                                            .desiredPosition(inferPosition(seed.role()).name())
+                                            .isPublished(true)
+                                            .build());
+
+                            if (portfolio.getPortfolioTechStacks().isEmpty()) {
+                                portfolio.updateTechStacks(buildPortfolioTechStacks(portfolio, seed, techStacks));
+                            }
+
+                            portfolioRepository.save(portfolio);
+                        })
+        );
+    }
+
+    private List<PortfolioTechStack> buildPortfolioTechStacks(
+            Portfolio portfolio,
+            MemberSeed seed,
+            Map<String, TechStack> techStacks
+    ) {
+        return seed.techStacks().stream()
+                .map(String::trim)
+                .filter(name -> !name.isBlank())
+                .distinct()
+                .map(techStacks::get)
+                .filter(Objects::nonNull)
+                .map(techStack -> PortfolioTechStack.builder()
+                        .portfolio(portfolio)
+                        .techStack(techStack)
+                        .build())
+                .toList();
     }
 
     private void saveProjects(Map<String, Member> members, Map<String, TechStack> techStacks) {

@@ -1,18 +1,34 @@
-import type { CreateReportRequest, CreateReviewRequest, Portfolio, PortfolioUpdateRequest, Project, ProjectProposal, ReportResponse, ReportStatus, ReportTargetType, ReviewResponse, RsData, User } from '../types';
-import type { PortfolioCreateRequest } from '../types/dto/portfolio';
-import type { ProjectApplicationCreateRequest, ProjectApplicationCreateResponse, ProjectCreateRequest, ProjectPermissionResponse, ProjectUpdateRequest } from '../types/dto/project';
-import type { ProjectProposalCreateRequest, ProposalProject, SentProjectProposal } from '../types/dto/proposal';
-import type { TechStackItem } from '../types/tech-stack';
-
-
-
-
-
-
-
-
-
-
+import type {
+  Applicant,
+  CreateReportRequest,
+  CreateReviewRequest,
+  NotificationResponse,
+  Portfolio,
+  PortfolioUpdateRequest,
+  Project,
+  ProjectProposal,
+  Project_manage,
+  ReportResponse,
+  ReportStatus,
+  ReportTargetType,
+  ReviewResponse,
+  RsData,
+  User,
+} from '../types'
+import type { PortfolioCreateRequest } from '../types/dto/portfolio'
+import type {
+  ProjectApplicationCreateRequest,
+  ProjectApplicationCreateResponse,
+  ProjectCreateRequest,
+  ProjectPermissionResponse,
+  ProjectUpdateRequest,
+} from '../types/dto/project'
+import type {
+  ProjectProposalCreateRequest,
+  ProposalProject,
+  SentProjectProposal,
+} from '../types/dto/proposal'
+import type { TechStackItem } from '../types/tech-stack'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -45,11 +61,11 @@ async function fetchRsDataJson<T>(
 
 // 스프링의 Page 공통 규격을 받아줄 인터페이스 정의
 interface SpringPage<T> {
-  content: T[]          // 실제 데이터 리스트 (6개)
-  totalPages: number    // 전체 페이지 개수
+  content: T[] // 실제 데이터 리스트 (6개)
+  totalPages: number // 전체 페이지 개수
   totalElements: number // 전체 데이터 개수
-  number: number        // 현재 페이지 번호 (0부터 시작)
-  size: number          // 한 페이지당 데이터 개수
+  number: number // 현재 페이지 번호 (0부터 시작)
+  size: number // 한 페이지당 데이터 개수
 }
 
 export interface ProjectFilterParams {
@@ -60,6 +76,33 @@ export interface ProjectFilterParams {
   tech?: string
   status?: string
   sort?: string
+}
+
+export interface PortfolioFilterParams {
+  page?: number
+  size?: number
+  search?: string
+  role?: string
+  tech?: string
+}
+export function fetchChangeStatus(status: string, id: string) {
+  return fetchRsDataJson<Project_manage>(`/projects/${id}/change`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  })
+}
+
+export function fetchApplicantTOteam(id: string, ProjectID: string) {
+  return fetchRsDataJson<Applicant[]>(`/projects/manageToTeam/${id}`, {
+    method: 'POST',
+    body: JSON.stringify({ ProjectID }),
+  })
+}
+export function fetchProject_manage(id: string) {
+  return fetchRsDataJson<Project_manage>(`/projects/man/${id}`)
+}
+export function fetchApplicant(id: string) {
+  return fetchRsDataJson<Applicant[]>(`/projects/manage/${id}`)
 }
 
 export function fetchProjects(params: ProjectFilterParams = {}) {
@@ -74,7 +117,7 @@ export function fetchProjects(params: ProjectFilterParams = {}) {
   if (tech && tech !== 'All') query.append('tech', tech)
   if (status && status !== 'All') query.append('status', status)
   if (sort) query.append('sort', sort)
-  
+
   return fetchRsDataJson<SpringPage<Project>>(`/projects?${query.toString()}`)
 }
 
@@ -93,6 +136,38 @@ export function fetchProjectPermissions(id: string) {
   return fetchRsDataJson<ProjectPermissionResponse>(
     `/projects/${id}/permissions`,
   )
+}
+
+export function fetchProjectBookmark(projectId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/projects/${projectId}`)
+}
+
+export function addProjectBookmark(projectId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/projects/${projectId}`, {
+    method: 'POST',
+  })
+}
+
+export function removeProjectBookmark(projectId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/projects/${projectId}`, {
+    method: 'DELETE',
+  })
+}
+
+export function fetchPortfolioBookmark(memberId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/portfolios/${memberId}`)
+}
+
+export function addPortfolioBookmark(memberId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/portfolios/${memberId}`, {
+    method: 'POST',
+  })
+}
+
+export function removePortfolioBookmark(memberId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/portfolios/${memberId}`, {
+    method: 'DELETE',
+  })
 }
 
 export function cancelProjectApplication(applicationId: number) {
@@ -129,6 +204,20 @@ export function fetchMembers() {
   return fetchRsDataJson<User[]>('/members')
 }
 
+export function fetchPortfolios(params: PortfolioFilterParams = {}) {
+  const { page = 0, size = 9, search, role, tech } = params
+
+  const query = new URLSearchParams()
+  query.append('page', page.toString())
+  query.append('size', size.toString())
+
+  if (search) query.append('search', search)
+  if (role && role !== 'All') query.append('role', role)
+  if (tech && tech !== 'All') query.append('tech', tech)
+
+  return fetchRsDataJson<SpringPage<User>>(`/portfolios?${query.toString()}`)
+}
+
 export function fetchMember(id: string) {
   return fetchRsDataJson<User>(`/members/${id}`)
 }
@@ -154,7 +243,7 @@ export function fetchMyPortfolio() {
 
 export function updateMyPortfolio(payload: PortfolioUpdateRequest) {
   return fetchRsDataJson<Portfolio>('/portfolios/me', {
-    method: 'PUT',
+    method: 'PATCH',
     body: JSON.stringify(payload),
   })
 }
@@ -281,4 +370,24 @@ export function createReview(request: CreateReviewRequest) {
 
 export function fetchReviews(userId: string) {
   return fetchRsDataJson<ReviewResponse[]>(`/reviews/users/${userId}`)
+}
+
+export function fetchMyNotifications() {
+  return fetchRsDataJson<NotificationResponse[]>('/notifications/me')
+}
+
+export function fetchUnreadNotificationCount() {
+  return fetchRsDataJson<number>('/notifications/me/unread-count')
+}
+
+export function markNotificationAsRead(notificationId: number) {
+  return fetchRsDataJson<void>(`/notifications/${notificationId}/read`, {
+    method: 'PATCH',
+  })
+}
+
+export function checkReviewAccess(projectId: number, revieweeId: number) {
+  return fetchRsDataJson<void>(
+    `/reviews/check-access?projectId=${projectId}&revieweeId=${revieweeId}`,
+  )
 }

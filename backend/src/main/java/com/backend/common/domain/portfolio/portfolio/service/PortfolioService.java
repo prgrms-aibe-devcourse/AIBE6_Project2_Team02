@@ -2,7 +2,10 @@ package com.backend.common.domain.portfolio.portfolio.service;
 
 import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.repository.MemberRepository;
+import com.backend.common.domain.notification.entity.NotificationType;
+import com.backend.common.domain.notification.service.NotificationService;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioCreateRequest;
+import com.backend.common.domain.portfolio.portfolio.dto.PortfolioListResponse;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioResponse;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioUpdateRequest;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
@@ -34,6 +37,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Transactional(readOnly = true)
@@ -45,17 +49,49 @@ public class PortfolioService {
     private final TechStackRepository techStackRepository;
     private final ProjectProposalRepository projectProposalRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final NotificationService notificationService;
 
     /**
-     * 포트폴리오 등록
+     * 포트폴리오 목록 조회
      */
+    public Page<PortfolioListResponse> getPublishedPortfolios(
+            String search,
+            String role,
+            String tech,
+            Pageable pageable
+    ) {
+        String qSearch = normalizeFilter(search);
+        String qRole = normalizeFilter(role);
+        String qTech = normalizeFilter(tech);
+
+        Page<Portfolio> portfolioPage = portfolioRepository.searchPortfolios(qSearch, qRole, qTech, pageable);
+        AtomicInteger index = new AtomicInteger((int) pageable.getOffset());
+
+        return portfolioPage.map(portfolio ->
+                PortfolioListResponse.from(
+                        portfolio,
+                        index.getAndIncrement() < 8
+                )
+        );
+    }
+
+    private String normalizeFilter(String value) {
+        if (value == null || value.isBlank() || "All".equalsIgnoreCase(value)) {
+            return null;
+        }
+        return value;
+    }
+
     @Transactional
     public void createPortfolio(Long memberId, PortfolioCreateRequest request) {
         if(request.title() == null || request.title().isBlank())
             throw new PortfolioInputException("400","포트폴리오 제목은 필수 입니다.");
         if(request.desiredPosition() == null || request.desiredPosition().isBlank())
             throw new PortfolioInputException("400","희망 포지션은 필수 입니다.");
-        PositionType desiredPosition = parseDesiredPosition(request.desiredPosition());
+        PositionType desiredPosition = PositionType.fromDescriptionOrCode(request.desiredPosition());
+        if (desiredPosition == PositionType.ERROR) {
+            throw new PortfolioInputException("400", "지원할 수 없는 포지션입니다.");
+        }
 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 회원입니다."));
@@ -96,7 +132,10 @@ public class PortfolioService {
     public PortfolioResponse updatePortfolio(Long memberId, PortfolioUpdateRequest request) {
         Portfolio portfolio = portfolioRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("404", "등록된 포트폴리오가 없습니다."));
-        PositionType desiredPosition = parseDesiredPosition(request.desiredPosition());
+        PositionType desiredPosition = PositionType.fromDescriptionOrCode(request.desiredPosition());
+        if (desiredPosition == PositionType.ERROR) {
+            throw new PortfolioInputException("400", "지원할 수 없는 포지션입니다.");
+        }
 
         // 1. 기본 정보 정보 업데이트
         portfolio.update(
@@ -204,12 +243,21 @@ public class PortfolioService {
                         "404",
                         "제안자를 찾을 수 없습니다."
                 ));
-        projectProposalRepository.save(ProjectProposal.builder()
+        ProjectProposal savedProposal = projectProposalRepository.save(ProjectProposal.builder()
                 .project(proposerMembership.getProject())
                 .portfolio(portfolio)
                 .proposer(proposer)
                 .message(message)
                 .build());
+
+        notificationService.notify(
+                portfolio.getMember(),
+                NotificationType.PROPOSAL_RECEIVED,
+                "새로운 프로젝트 제안",
+                proposer.getNickname() + "님이 프로젝트 참여를 제안했습니다.",
+                "/mypage?tab=proposal",
+                savedProposal.getId()
+        );
     }
 
     @Transactional
@@ -239,29 +287,44 @@ public class PortfolioService {
 
         if (isAccept) {
             proposal.accept();
-            
+
             PositionType positionEnum = PositionType.fromDescriptionOrCode(
                     proposal.getPortfolio().getDesiredPosition()
             );
 
-            ProjectMember projectMember = ProjectMember.builder()
-                    .project(proposal.getProject())
-                    .member(proposal.getPortfolio().getMember())
-                    .position(positionEnum)
-                    .role(ProjectRole.MEMBER)
-                    .build();
-            projectMemberRepository.save(projectMember);
+            boolean isAlreadyMember = projectMemberRepository.existsByProjectIdAndMemberId(proposal.getProject().getId(), proposal.getPortfolio().getMember().getId());
+            if (!isAlreadyMember) {
+                ProjectMember projectMember = ProjectMember.builder()
+                        .project(proposal.getProject())
+                        .member(proposal.getPortfolio().getMember())
+                        .position(positionEnum)
+                        .role(ProjectRole.MEMBER)
+                        .build();
+                projectMemberRepository.save(projectMember);
+            }
+
+            notificationService.notify(
+                    proposal.getProposer(),
+                    NotificationType.PROPOSAL_ACCEPTED,
+                    "제안이 수락되었습니다.",
+                    proposal.getPortfolio().getMember().getNickname() + "님이 제안을 수락했습니다.",
+                    "/projects/" + proposal.getProject().getId(),
+                    proposal.getId()
+            );
+            projectProposalRepository.delete(proposal);
         } else {
             proposal.reject();
-        }
-    }
 
-    private PositionType parseDesiredPosition(String value) {
-        PositionType position = PositionType.fromDescriptionOrCode(value);
-        if (position == PositionType.ERROR) {
-            throw new PortfolioInputException("400", "지원할 수 없는 포지션입니다.");
+            notificationService.notify(
+                    proposal.getProposer(),
+                    NotificationType.PROPOSAL_REJECTED,
+                    "제안이 거절되었습니다.",
+                    proposal.getPortfolio().getMember().getNickname() + "님이 제안을 거절했습니다.",
+                    null,
+                    proposal.getId()
+            );
+            projectProposalRepository.delete(proposal);
         }
-        return position;
     }
 
 }

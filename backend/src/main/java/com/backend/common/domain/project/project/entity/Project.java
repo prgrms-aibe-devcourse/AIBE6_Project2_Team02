@@ -5,10 +5,7 @@ import com.backend.common.domain.project.enums.ProjectCategory;
 import com.backend.common.domain.project.enums.ProjectStatus;
 import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,6 +15,7 @@ import java.util.List;
 @Entity
 @Table(name = "projects")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Project {
 
@@ -119,7 +117,7 @@ public class Project {
         this.category = category;
         this.goal = goal;
         this.deadline = deadline;
-        this.recruitmentOpen = recruitmentOpen;
+        updateRecruitmentOpen(recruitmentOpen);
         this.positions.clear();
         this.positions.addAll(positions);
         this.updatedAt = LocalDateTime.now();
@@ -132,7 +130,7 @@ public class Project {
      * 허용 조건: RECRUITING 상태에서만 시작 가능
      */
     public void startProject() {
-        if (this.status != ProjectStatus.RECRUITING) {
+        if (this.status != ProjectStatus.RECRUITING && this.status != ProjectStatus.CLOSED) {
             throw new IllegalStateException("모집 중인 프로젝트만 진행 상태로 변경할 수 있습니다.");
         }
         this.status = ProjectStatus.IN_PROGRESS;
@@ -172,8 +170,8 @@ public class Project {
      * 허용 조건: 팀원을 모집하던 중(RECRUITING) 아예 엎어지는 경우에만 가능
      */
     public void cancelProject() {
-        if (this.status != ProjectStatus.RECRUITING) {
-            throw new IllegalStateException("모집 중인 상태에서만 프로젝트를 취소할 수 있습니다.");
+        if (this.status != ProjectStatus.RECRUITING && this.status != ProjectStatus.CLOSED) {
+            throw new IllegalStateException("모집 중이거나 모집 마감 상태에서만 프로젝트를 취소할 수 있습니다.");
         }
         this.status = ProjectStatus.CANCELLED;
         this.recruitmentOpen = false;
@@ -185,10 +183,10 @@ public class Project {
      * 프로젝트 상태가 RECRUITING 일 때만 수동으로 켜고 끌 수 있음
      */
     public void toggleRecruitment(boolean open) {
-        if (this.status != ProjectStatus.RECRUITING) {
+        if (this.status != ProjectStatus.RECRUITING && this.status != ProjectStatus.CLOSED) {
             throw new IllegalStateException("모집 중인 프로젝트만 모집 여부를 변경할 수 있습니다.");
         }
-        this.recruitmentOpen = open;
+        updateRecruitmentOpen(open);
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -197,7 +195,7 @@ public class Project {
      */
     public void changeStatus(ProjectStatus projectStatus) {
         this.status = projectStatus;
-        if (projectStatus == ProjectStatus.COMPLETED) {
+        if (projectStatus == ProjectStatus.COMPLETED || projectStatus == ProjectStatus.CLOSED) {
             this.recruitmentOpen = false;
         }
         this.updatedAt = LocalDateTime.now();
@@ -206,6 +204,20 @@ public class Project {
     // 더미 데이터 초기화용 강제 상태 전이 메서드
     public void forceSetRecruitmentOpen(boolean recruitmentOpen) {
         this.recruitmentOpen = recruitmentOpen;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateRecruitmentOpen(boolean recruitmentOpen) {
+        if (this.status != ProjectStatus.RECRUITING && this.status != ProjectStatus.CLOSED) {
+            if (recruitmentOpen) {
+                throw new IllegalStateException("모집 중이거나 모집 마감 상태인 프로젝트만 모집 여부를 변경할 수 있습니다.");
+            }
+            this.recruitmentOpen = false;
+            this.updatedAt = LocalDateTime.now();
+            return;
+        }
+        this.recruitmentOpen = recruitmentOpen;
+        this.status = recruitmentOpen ? ProjectStatus.RECRUITING : ProjectStatus.CLOSED;
         this.updatedAt = LocalDateTime.now();
     }
 }

@@ -1,5 +1,6 @@
 package com.backend.common.domain.member.controller;
 
+import com.backend.common.domain.member.dto.FcmTokenRequest;
 import com.backend.common.domain.member.dto.NicknameUpdateRequest;
 import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.exception.MemberNotFoundException;
@@ -86,6 +87,19 @@ public class MemberController {
         return RsData.of("200","닉네임 수정 성공");
     }
 
+
+    @PostMapping("/me/fcm-token")
+    @PreAuthorize("isAuthenticated()")
+    public RsData<Void> updateFcmToken(
+            @AuthenticationPrincipal CustomMemberDetails userDetails,
+            @RequestBody FcmTokenRequest request
+    ) {
+        Member member = memberRepository.findById(userDetails.getMemberId())
+                .orElseThrow(() -> new MemberNotFoundException("404", "회원 정보가 없습니다."));
+        member.updateFcmToken(request.fcmToken());
+        memberRepository.save(member);
+        return RsData.of("200", "FCM 토큰 등록 성공");
+    }
 
     private String normalize(String s){
         return s.toLowerCase()

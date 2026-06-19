@@ -1,6 +1,7 @@
 package com.backend.common.domain.project.project.repository;
 
 import com.backend.common.domain.project.project.entity.Project;
+import com.backend.common.domain.project.enums.ProjectCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,16 +12,65 @@ import java.util.List;
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
 
-    @Query("SELECT DISTINCT p FROM Project p " +
+    @Query(value = "SELECT DISTINCT p FROM Project p " +
             "LEFT JOIN p.projectTechStacks pts " +
             "WHERE p.deletedAt IS NULL " +
-            "AND (:search IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "AND p.isHidden = false " +
             "AND (:category IS NULL OR p.category = :category) " +
             "AND (:status IS NULL OR cast(p.status as string) = :status) " +
-            "AND (:tech IS NULL OR pts.techStack.name = :tech)")
+            "AND (:tech IS NULL OR pts.techStack.name = :tech)",
+            countQuery = "SELECT COUNT(DISTINCT p) FROM Project p " +
+                    "LEFT JOIN p.projectTechStacks pts " +
+                    "WHERE p.deletedAt IS NULL " +
+                    "AND p.isHidden = false " +
+                    "AND (:category IS NULL OR p.category = :category) " +
+                    "AND (:status IS NULL OR cast(p.status as string) = :status) " +
+                    "AND (:tech IS NULL OR pts.techStack.name = :tech)")
+    Page<Project> findProjects(
+            @Param("category") ProjectCategory category,
+            @Param("tech") String tech,
+            @Param("status") String status,
+            Pageable pageable
+    );
+
+    @Query(value = "SELECT DISTINCT p FROM Project p " +
+            "JOIN p.leader leader " +
+            "LEFT JOIN p.projectTechStacks pts " +
+            "LEFT JOIN p.positions pos " +
+            "WHERE p.deletedAt IS NULL " +
+            "AND p.isHidden = false " +
+            "AND (LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(p.goal) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(cast(p.category as string)) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(leader.nickname) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(pts.techStack.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(pos.role) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR (:searchPosition IS NOT NULL AND pos.role = :searchPosition)) " +
+            "AND (:category IS NULL OR p.category = :category) " +
+            "AND (:status IS NULL OR cast(p.status as string) = :status) " +
+            "AND (:tech IS NULL OR pts.techStack.name = :tech)",
+            countQuery = "SELECT COUNT(DISTINCT p) FROM Project p " +
+                    "JOIN p.leader leader " +
+                    "LEFT JOIN p.projectTechStacks pts " +
+                    "LEFT JOIN p.positions pos " +
+                    "WHERE p.deletedAt IS NULL " +
+                    "AND p.isHidden = false " +
+                    "AND (LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                    "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                    "OR LOWER(p.goal) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                    "OR LOWER(cast(p.category as string)) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                    "OR LOWER(leader.nickname) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                    "OR LOWER(pts.techStack.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                    "OR LOWER(pos.role) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                    "OR (:searchPosition IS NOT NULL AND pos.role = :searchPosition)) " +
+                    "AND (:category IS NULL OR p.category = :category) " +
+                    "AND (:status IS NULL OR cast(p.status as string) = :status) " +
+                    "AND (:tech IS NULL OR pts.techStack.name = :tech)")
     Page<Project> searchProjects(
             @Param("search") String search,
-            @Param("category") String category,
+            @Param("searchPosition") String searchPosition,
+            @Param("category") ProjectCategory category,
             @Param("tech") String tech,
             @Param("status") String status,
             Pageable pageable
@@ -43,14 +93,14 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             "WHERE pm.member.id = :memberId " +
             "AND pm.memberStatus = 'ACTIVE' " +
             "AND pm.isHidden = false " +
-            "AND p.status = 'IN_PROGRESS' " +
+            "AND p.status IN ('IN_PROGRESS', 'RECRUITING', 'CLOSED') " +
             "AND p.deletedAt IS NULL",
             countQuery = "SELECT count(p) FROM Project p " +
                     "JOIN ProjectMember pm ON p.id = pm.project.id " +
                     "WHERE pm.member.id = :memberId " +
                     "AND pm.memberStatus = 'ACTIVE' " +
                     "AND pm.isHidden = false " +
-                    "AND p.status = 'IN_PROGRESS' " +
+                    "AND p.status IN ('IN_PROGRESS', 'RECRUITING', 'CLOSED') " +
                     "AND p.deletedAt IS NULL")
     Page<Project> findMyParticipatingProjects(@Param("memberId") Long memberId, Pageable pageable);
 
@@ -100,6 +150,9 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
                     "WHERE pv.member.id = :memberId " +
                     "AND p.deletedAt IS NULL")
     Page<Project> findMyRecentlyViewedProjects(@Param("memberId") Long memberId, Pageable pageable);
+
+    @Query("SELECT p.id FROM Project p WHERE LOWER(p.title) LIKE :pattern AND p.deletedAt IS NULL")
+    List<Long> findIdsByTitle(@Param("pattern") String pattern);
 
     List<Project> findByIsHiddenTrueOrderByUpdatedAtDesc();
 

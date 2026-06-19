@@ -5,6 +5,7 @@ import com.backend.common.domain.project.project.service.AdminProjectService;
 import com.backend.common.global.rsdata.RsData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/admin/projects")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminProjectController {
 
     private final AdminProjectService adminProjectService;

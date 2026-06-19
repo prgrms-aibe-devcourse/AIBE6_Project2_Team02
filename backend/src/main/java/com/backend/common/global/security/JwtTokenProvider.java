@@ -28,11 +28,12 @@ public class JwtTokenProvider {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(Long memberId, String nickname) {
+    public String generateToken(Long memberId, String nickname, String role) {
         Date now = new Date();
         return Jwts.builder()
                 .subject(String.valueOf(memberId))
                 .claim("nickname", nickname)
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + expirationMs))
                 .signWith(key)
@@ -64,4 +65,9 @@ public class JwtTokenProvider {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
+    public String getRole(String token) {
+        return parseClaims(token).get("role", String.class);
+    }
+
 }

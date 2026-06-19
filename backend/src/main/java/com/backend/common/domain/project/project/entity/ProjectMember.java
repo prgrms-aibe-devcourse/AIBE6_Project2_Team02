@@ -56,4 +56,8 @@ public class ProjectMember {
         this.isHidden = false;
     }
 
+    public void updatePosition(PositionType position) {
+        this.position = position;
+    }
+
 }

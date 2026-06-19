@@ -5,6 +5,8 @@ import com.backend.common.domain.member.entity.OauthAccount;
 import com.backend.common.domain.member.entity.OauthProvider;
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.member.repository.OauthAccountRepository;
+import com.backend.common.domain.notification.entity.NotificationType;
+import com.backend.common.domain.notification.service.NotificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberRepository memberRepository;
     private final OauthAccountRepository oauthAccountRepository;
+    private final NotificationService notificationService;
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
@@ -68,9 +71,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             return;
         }
 
-        String jwt = jwtTokenProvider.generateToken(member.getId(), member.getNickname());
+        String jwt = jwtTokenProvider.generateToken(member.getId(), member.getNickname(), member.getRole().name());
 
-        ResponseCookie cookie = ResponseCookie.from("access_token",jwt)
+        ResponseCookie cookie = ResponseCookie.from("access_token", jwt)
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .sameSite(cookieSameSite)
@@ -80,6 +83,17 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
+
+        if (isNew[0]) {
+            notificationService.notify(
+                    member,
+                    NotificationType.WELCOME,
+                    "DevLink 가입을 환영합니다.",
+                    member.getNickname() + "님, DevLink에 가입을 축하드립니다.",
+                    "/mypage",
+                    null
+            );
+        }
 
         String redirectUrl = isNew[0] ? frontendUrl + "/mypage/portfolio/new" : frontendUrl;
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);

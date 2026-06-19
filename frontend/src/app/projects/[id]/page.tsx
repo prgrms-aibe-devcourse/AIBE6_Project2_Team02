@@ -27,8 +27,11 @@ import {
   applyProject,
   cancelProjectApplication,
   checkAlreadyReported,
+  addProjectBookmark,
   fetchProject,
+  fetchProjectBookmark,
   fetchProjectPermissions,
+  removeProjectBookmark,
 } from '../../../lib/api'
 import { formatDate } from '../../../lib/date'
 import type { Project } from '../../../types'
@@ -68,6 +71,8 @@ export default function ProjectDetailPage() {
   )
   const [isCancellingApplication, setIsCancellingApplication] = useState(false)
   const [isApplying, setIsApplying] = useState(false)
+  const [isBookmarked, setIsBookmarked] = useState(false)
+  const [isBookmarking, setIsBookmarking] = useState(false)
 
   const handleOpenReport = async () => {
     try {
@@ -111,6 +116,17 @@ export default function ProjectDetailPage() {
       })
   }, [id])
 
+  useEffect(() => {
+    if (!id || authLoading || !authUser) {
+      setIsBookmarked(false)
+      return
+    }
+
+    fetchProjectBookmark(id)
+      .then(setIsBookmarked)
+      .catch(() => setIsBookmarked(false))
+  }, [id, authLoading, authUser])
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-20 text-center text-slate-500">
@@ -131,6 +147,34 @@ export default function ProjectDetailPage() {
       </div>
     )
   }
+
+  const displayPositions = (() => {
+    if (!project.leader.role) return project.positions
+
+    const leaderRole = toPositionValue(project.leader.role)
+    let includesLeaderRole = false
+    const positions = project.positions.map((position) => {
+      if (toPositionValue(position.role) !== leaderRole) return position
+
+      includesLeaderRole = true
+      return {
+        ...position,
+        filled: position.filled + 1,
+        total: position.total + 1,
+      }
+    })
+
+    if (includesLeaderRole) return positions
+
+    return [
+      {
+        role: leaderRole,
+        filled: 1,
+        total: 1,
+      },
+      ...positions,
+    ]
+  })()
 
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -189,6 +233,33 @@ export default function ProjectDetailPage() {
       )
     } finally {
       setIsCancellingApplication(false)
+    }
+  }
+
+  const handleToggleBookmark = async () => {
+    if (authLoading || isBookmarking) return
+    if (!authUser) {
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    setIsBookmarking(true)
+    try {
+      const nextBookmarked = isBookmarked
+        ? await removeProjectBookmark(id)
+        : await addProjectBookmark(id)
+      setIsBookmarked(nextBookmarked)
+      toast.success(
+        nextBookmarked ? '프로젝트를 북마크했습니다.' : '북마크를 해제했습니다.',
+      )
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : '북마크 처리 중 오류가 발생했습니다.',
+      )
+    } finally {
+      setIsBookmarking(false)
     }
   }
 
@@ -283,8 +354,9 @@ export default function ProjectDetailPage() {
                 <Button
                   size="icon"
                   variant="outline"
-                  className="flex-1 md:flex-none"
-                  onClick={() => toast.success('프로젝트를 저장했습니다')}
+                  className={`flex-1 md:flex-none ${isBookmarked ? 'border-blue-200 bg-blue-50 text-blue-600' : ''}`}
+                  disabled={isBookmarking}
+                  onClick={handleToggleBookmark}
                 >
                   <BookmarkPlus className="h-4 w-4" />
                 </Button>
@@ -338,7 +410,7 @@ export default function ProjectDetailPage() {
                 <Users className="h-5 w-5 text-blue-600" /> 모집 포지션
               </h2>
               <div className="space-y-4">
-                {project.positions.map((pos, i) => {
+                {displayPositions.map((pos, i) => {
                   const isOpen = pos.filled < pos.total
                   return (
                     <div
@@ -452,7 +524,7 @@ export default function ProjectDetailPage() {
                       {project.leader.name}
                     </Link>
                     <p className="text-sm text-slate-500">
-                      {project.leader.role}
+                      {formatPositionLabel(project.leader.role)}
                     </p>
                   </div>
                 </div>

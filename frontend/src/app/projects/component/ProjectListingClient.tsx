@@ -1,70 +1,26 @@
 'use client'
 
 import { motion } from 'framer-motion';
+import type { MouseEvent } from 'react';
 import { useEffect, useState } from 'react';
-
-
-
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-
-
-import { Clock, Search, Sparkles, Users } from 'lucide-react';
-
-
-
+import { BookmarkPlus, Clock, Search, Sparkles, Users } from 'lucide-react';
+import { LoginModal } from '../../../components/LoginModal';
 import { PaginationControls } from '../../../components/PaginationControls';
 import { SearchField } from '../../../components/SearchField';
 import { Badge, Button, Card } from '../../../components/ui';
-import { fetchPopularTechStacks, fetchProjects } from '../../../lib/api';
+import {
+  addProjectBookmark,
+  fetchPopularTechStacks,
+  fetchProjectBookmark,
+  fetchProjects,
+  removeProjectBookmark,
+} from '../../../lib/api';
 import { formatDate } from '../../../lib/date';
 import { formatProjectMemberCount } from '../../../lib/project';
 import type { Project } from '../../../types';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import { useAuth } from '../../providers';
 
 const categoryMap: Record<string, string> = {
   All: '전체', Web: '웹', Mobile: '모바일', AI: 'AI', Game: '게임', Other: '기타',
@@ -78,6 +34,7 @@ const statuses = ['All', 'Open', 'Closed']
 export default function ProjectListingClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { user: authUser, loading: authLoading } = useAuth()
   const initialTech = searchParams.get('tech')
 
   // 🎯 [수정] 서버 페이징 상태 관리를 위한 최적화 명시
@@ -89,13 +46,70 @@ export default function ProjectListingClient() {
   const [pageCount, setPageCount] = useState(0)
   const [totalElements, setTotalElements] = useState(0) // 총 프로젝트 개수 표시용
   const [contentLoading, setContentLoading] = useState(false)
+  const [bookmarkedProjectIds, setBookmarkedProjectIds] = useState<Set<string>>(new Set())
+  const [bookmarkingProjectIds, setBookmarkingProjectIds] = useState<Set<string>>(new Set())
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
 
   // 필터 상태 변수들
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>(initialTech || 'All')
   const [selectedStatus, setSelectedStatus] = useState<string>('Open')
-  const [sortBy, setSortBy] = useState<'newest' | 'popularity'>('newest')
+
+  const changeSearchTerm = (value: string) => {
+    setPage(0)
+    setSearchTerm(value)
+  }
+
+  const changeCategory = (value: string) => {
+    setPage(0)
+    setSelectedCategory(value)
+  }
+
+  const changeTech = (value: string) => {
+    setPage(0)
+    setSelectedTech(value)
+  }
+
+  const changeStatus = (value: string) => {
+    setPage(0)
+    setSelectedStatus(value)
+  }
+
+  const handleToggleBookmark = async (
+    event: MouseEvent<HTMLButtonElement>,
+    projectId: string,
+  ) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (authLoading || bookmarkingProjectIds.has(projectId)) return
+    if (!authUser) {
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    setBookmarkingProjectIds((current) => new Set(current).add(projectId))
+    try {
+      const isBookmarked = bookmarkedProjectIds.has(projectId)
+      const nextBookmarked = isBookmarked
+        ? await removeProjectBookmark(projectId)
+        : await addProjectBookmark(projectId)
+
+      setBookmarkedProjectIds((current) => {
+        const next = new Set(current)
+        if (nextBookmarked) next.add(projectId)
+        else next.delete(projectId)
+        return next
+      })
+    } finally {
+      setBookmarkingProjectIds((current) => {
+        const next = new Set(current)
+        next.delete(projectId)
+        return next
+      })
+    }
+  }
 
   // 인기 기술 스택 로드 (최초 1회만)
   useEffect(() => {
@@ -111,7 +125,7 @@ export default function ProjectListingClient() {
       selectedStatus === 'Open'
         ? 'RECRUITING'
         : selectedStatus === 'Closed'
-          ? 'IN_PROGRESS'
+          ? 'CLOSED'
           : selectedStatus
 
     fetchProjects({
@@ -121,7 +135,6 @@ export default function ProjectListingClient() {
       category: selectedCategory,
       tech: selectedTech,
       status: backendStatus,
-      sort: sortBy === 'newest' ? 'createdAt,desc' : 'popularity,desc',
     })
       .then((pageData) => {
         if (pageData && pageData.content) {
@@ -149,7 +162,35 @@ export default function ProjectListingClient() {
         setFeaturedProjects([])
       })
       .finally(() => setContentLoading(false))
-  }, [page, searchTerm, selectedCategory, selectedTech, selectedStatus, sortBy])
+  }, [page, searchTerm, selectedCategory, selectedTech, selectedStatus])
+
+  useEffect(() => {
+    if (authLoading || !authUser) {
+      setBookmarkedProjectIds(new Set())
+      return
+    }
+
+    const projectIds = Array.from(
+      new Set([...paginatedProjects, ...featuredProjects].map((project) => project.id)),
+    )
+
+    if (projectIds.length === 0) {
+      setBookmarkedProjectIds(new Set())
+      return
+    }
+
+    Promise.all(
+      projectIds.map((projectId) =>
+        fetchProjectBookmark(projectId)
+          .then((bookmarked) => [projectId, bookmarked] as const)
+          .catch(() => [projectId, false] as const),
+      ),
+    ).then((entries) => {
+      setBookmarkedProjectIds(
+        new Set(entries.filter(([, bookmarked]) => bookmarked).map(([projectId]) => projectId)),
+      )
+    })
+  }, [authLoading, authUser, paginatedProjects, featuredProjects])
 
 
   return (
@@ -166,7 +207,7 @@ export default function ProjectListingClient() {
           <SearchField
             placeholder="키워드 입력..."
             value={searchTerm}
-            onChange={setSearchTerm}
+            onChange={changeSearchTerm}
           />
 
           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
@@ -175,7 +216,7 @@ export default function ProjectListingClient() {
               {categories.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => changeCategory(cat)}
                   className={`segment-option ${selectedCategory === cat ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
                   {categoryMap[cat]}
@@ -188,7 +229,7 @@ export default function ProjectListingClient() {
               {statuses.map((status) => (
                 <button
                   key={status}
-                  onClick={() => setSelectedStatus(status)}
+                  onClick={() => changeStatus(status)}
                   className={`segment-option ${selectedStatus === status ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
                   {statusMap[status]}
@@ -200,7 +241,7 @@ export default function ProjectListingClient() {
             <select
               className="form-field md:w-auto"
               value={selectedTech}
-              onChange={(e) => setSelectedTech(e.target.value)}
+              onChange={(e) => changeTech(e.target.value)}
             >
               <option value="All">전체 기술 스택</option>
               {popularTechStacks.map((tech) => (
@@ -208,15 +249,6 @@ export default function ProjectListingClient() {
               ))}
             </select>
 
-            {/* Sort Select */}
-            <select
-              className="form-field md:w-auto"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-            >
-              <option value="newest">최신순</option>
-              <option value="popularity">인기순</option>
-            </select>
           </div>
         </div>
       </div>
@@ -231,10 +263,31 @@ export default function ProjectListingClient() {
             {featuredProjects.slice(0, 3).map((project) => (
               <Link key={project.id} href={`/projects/${project.id}`}>
                 <Card className="listing-card group flex hover:border-blue-300 hover:shadow-md h-full">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex gap-2">
+                  <div className="flex justify-between items-start gap-3 mb-4">
+                    <div className="flex items-center gap-2">
                       <Badge variant={project.recruitmentStatus === 'Open' ? 'success' : 'secondary'}>{statusMap[project.recruitmentStatus] || project.recruitmentStatus}</Badge>
                       <Badge variant="outline">{categoryMap[project.category] || project.category}</Badge>
+                      <button
+                        type="button"
+                        className={`rounded-md border p-1.5 transition-colors ${
+                          bookmarkedProjectIds.has(project.id)
+                            ? 'border-blue-200 bg-blue-50 text-blue-600'
+                            : 'border-slate-200 text-slate-400 hover:text-blue-600'
+                        }`}
+                        disabled={bookmarkingProjectIds.has(project.id)}
+                        onClick={(event) => handleToggleBookmark(event, project.id)}
+                        aria-label={
+                          bookmarkedProjectIds.has(project.id)
+                            ? '북마크 해제'
+                            : '북마크 추가'
+                        }
+                      >
+                        <BookmarkPlus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex items-center text-slate-400 text-xs gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatDate(project.createdAt)}
                     </div>
                   </div>
 
@@ -303,10 +356,27 @@ export default function ProjectListingClient() {
                       }
                     }}
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex gap-2">
+                    <div className="flex justify-between items-start gap-3 mb-4">
+                      <div className="flex items-center gap-2">
                         <Badge variant={project.recruitmentStatus === 'Open' ? 'success' : 'secondary'}>{statusMap[project.recruitmentStatus] || project.recruitmentStatus}</Badge>
                         <Badge variant="outline">{categoryMap[project.category] || project.category}</Badge>
+                        <button
+                          type="button"
+                          className={`rounded-md border p-1.5 transition-colors ${
+                            bookmarkedProjectIds.has(project.id)
+                              ? 'border-blue-200 bg-blue-50 text-blue-600'
+                              : 'border-slate-200 text-slate-400 hover:text-blue-600'
+                          }`}
+                          disabled={bookmarkingProjectIds.has(project.id)}
+                          onClick={(event) => handleToggleBookmark(event, project.id)}
+                          aria-label={
+                            bookmarkedProjectIds.has(project.id)
+                              ? '북마크 해제'
+                              : '북마크 추가'
+                          }
+                        >
+                          <BookmarkPlus className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                       <div className="flex items-center text-slate-400 text-xs gap-1">
                         <Clock className="h-3 w-3" />
@@ -331,7 +401,6 @@ export default function ProjectListingClient() {
                         <div className="flex items-center gap-2">
                           <Link href={`/u/${project.leader.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity" onClick={(e) => e.stopPropagation()}>
                             <img src={project.leader.avatar} alt={project.leader.name} className="w-6 h-6 rounded-full" />
-                            <img src={project.leader.avatar} alt={project.leader.name} className="w-6 h-6 rounded-full" />
                             <span className="text-sm font-medium text-slate-700 hover:text-blue-600">{project.leader.name}</span>
                           </Link>
                         </div>
@@ -355,6 +424,7 @@ export default function ProjectListingClient() {
                   variant="outline"
                   className="mt-4"
                   onClick={() => {
+                    setPage(0)
                     setSearchTerm('')
                     setSelectedCategory('All')
                     setSelectedTech('All')
@@ -376,6 +446,9 @@ export default function ProjectListingClient() {
           />
         </div>
       </div>
+      {isLoginModalOpen && (
+        <LoginModal onClose={() => setIsLoginModalOpen(false)} />
+      )}
     </div>
   )
 }

@@ -4,11 +4,26 @@ import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-import { CheckCircle2, FolderX, ShieldAlert, UserX, ExternalLink, Search, X } from 'lucide-react'
 import Link from 'next/link'
 
+import {
+  CheckCircle2,
+  ExternalLink,
+  FolderX,
+  Search,
+  ShieldAlert,
+  UserX,
+  X,
+} from 'lucide-react'
+
 import { Badge, Button, Card } from '../../../components/ui'
-import { fetchProjectReports, fetchUserReports, resolveReport, rejectReport } from '../../../lib/api'
+import { getReportReasonLabel } from '../../../constants/report'
+import {
+  fetchProjectReports,
+  fetchUserReports,
+  rejectReport,
+  resolveReport,
+} from '../../../lib/api'
 import { formatDate } from '../../../lib/date'
 import type { ReportResponse } from '../../../types'
 
@@ -194,7 +209,7 @@ export default function AdminReportsPage() {
                         <span
                           className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getReasonBadgeColor(report.reasonType)}`}
                         >
-                          {report.reasonType}
+                          {getReportReasonLabel(report.reasonType)}
                         </span>
                         <span className="text-xs text-slate-400">
                           {formatDate(report.createdAt)}
@@ -206,13 +221,17 @@ export default function AdminReportsPage() {
                           <div className="text-xs text-slate-500 mb-2">
                             신고당한 포트폴리오 (유저)
                           </div>
-                          <Link 
+                          <Link
                             href={`/u/${report.targetId}`}
                             className="flex items-center gap-3 group"
                           >
                             <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 bg-white">
                               {report.targetMemberProfileImage ? (
-                                <img src={report.targetMemberProfileImage} alt="" className="w-full h-full object-cover" />
+                                <img
+                                  src={report.targetMemberProfileImage}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
                                   <UserX className="w-5 h-5" />
@@ -221,7 +240,8 @@ export default function AdminReportsPage() {
                             </div>
                             <div>
                               <div className="font-semibold text-slate-900 text-sm group-hover:text-red-600 flex items-center gap-1 transition-colors">
-                                {report.targetMemberNickname || `User #${report.targetId}`}
+                                {report.targetMemberNickname ||
+                                  `User #${report.targetId}`}
                                 <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                               </div>
                               <div className="text-xs text-slate-500 truncate max-w-[200px]">
@@ -246,7 +266,8 @@ export default function AdminReportsPage() {
                               신고자:
                             </span>
                             <span className="text-xs font-medium text-slate-700">
-                              {report.reporterNickname || `User #${report.reporterId}`}
+                              {report.reporterNickname ||
+                                `User #${report.reporterId}`}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -308,7 +329,7 @@ export default function AdminReportsPage() {
                         <span
                           className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getReasonBadgeColor(report.reasonType)}`}
                         >
-                          {report.reasonType}
+                          {getReportReasonLabel(report.reasonType)}
                         </span>
                         <span className="text-xs text-slate-400">
                           {formatDate(report.createdAt)}
@@ -320,7 +341,7 @@ export default function AdminReportsPage() {
                           <div className="text-xs text-slate-500 mb-2">
                             신고당한 프로젝트
                           </div>
-                          <Link 
+                          <Link
                             href={`/projects/${report.targetId}`}
                             className="flex items-center gap-3 group"
                           >
@@ -329,11 +350,13 @@ export default function AdminReportsPage() {
                             </div>
                             <div>
                               <div className="font-semibold text-slate-900 text-sm group-hover:text-orange-600 flex items-center gap-1 transition-colors">
-                                {report.targetTitle || `Project #${report.targetId}`}
+                                {report.targetTitle ||
+                                  `Project #${report.targetId}`}
                                 <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                               </div>
                               <div className="text-xs text-slate-500 truncate max-w-[200px] flex items-center gap-1">
-                                리더: {report.targetMemberNickname || '알 수 없음'}
+                                리더:{' '}
+                                {report.targetMemberNickname || '알 수 없음'}
                               </div>
                             </div>
                           </Link>
@@ -354,7 +377,8 @@ export default function AdminReportsPage() {
                               신고자:
                             </span>
                             <span className="text-xs font-medium text-slate-700">
-                              {report.reporterNickname || `User #${report.reporterId}`}
+                              {report.reporterNickname ||
+                                `User #${report.reporterId}`}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">

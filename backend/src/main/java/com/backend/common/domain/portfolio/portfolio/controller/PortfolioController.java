@@ -1,6 +1,7 @@
 package com.backend.common.domain.portfolio.portfolio.controller;
 
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioCreateRequest;
+import com.backend.common.domain.portfolio.portfolio.dto.PortfolioListResponse;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioResponse;
 import com.backend.common.domain.portfolio.portfolio.dto.PortfolioUpdateRequest;
 import com.backend.common.domain.portfolio.portfolio.service.PortfolioService;
@@ -33,6 +34,20 @@ public class PortfolioController {
     /**
      * 내 포트폴리오 조회
      */
+    @GetMapping
+    public RsData<Page<PortfolioListResponse>> getPublishedPortfolios(
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "role", required = false) String role,
+            @RequestParam(value = "tech", required = false) String tech,
+            @PageableDefault(size = 9, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return RsData.of(
+                "200",
+                "포트폴리오 목록 조회 성공",
+                portfolioService.getPublishedPortfolios(search, role, tech, pageable)
+        );
+    }
+
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public RsData<PortfolioResponse> getMyPortfolio(
@@ -45,7 +60,7 @@ public class PortfolioController {
     /**
      * 내 포트폴리오 수정
      */
-    @PutMapping("/me")
+    @PatchMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public RsData<PortfolioResponse> updatePortfolio(
             @AuthenticationPrincipal CustomMemberDetails userDetails,
@@ -152,6 +167,14 @@ public class PortfolioController {
 
         portfolioService.cancelProjectProposal(proposalId, userDetails.getMemberId());
         return RsData.of("200", "프로젝트 제안을 취소했습니다.", null);
+    }
+
+    @GetMapping("/{memberId}")
+    public RsData<PortfolioResponse> getPortfolioDetails(
+            @PathVariable("memberId") Long memberId
+    ) {
+        PortfolioResponse response = portfolioService.getMyPortfolio(memberId);
+        return RsData.of("200", "포트폴리오 상세 조회가 완료되었습니다.", response);
     }
 
 }
