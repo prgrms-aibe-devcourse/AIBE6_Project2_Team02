@@ -1,6 +1,8 @@
 package com.backend.common.domain.project.project.repository;
 
 import com.backend.common.domain.project.project.entity.ProjectMember;
+import com.backend.common.domain.project.project.entity.ProjectMemberStatus;
+import com.backend.common.domain.project.project.entity.ProjectRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,4 +31,20 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Lo
             ORDER BY p.createdAt DESC
             """)
     List<ProjectMember> findProposalProjects(@Param("memberId") Long memberId);
+
+
+    // 프로젝트 ID, 회원 ID, 역할, 활성화 상태를 기준으로 데이터 존재 여부 확인
+    boolean existsByProjectIdAndMemberIdAndRoleAndMemberStatus(
+            Long projectId,
+            Long memberId,
+            ProjectRole role,
+            ProjectMemberStatus memberStatus
+    );
+
+    // 특정 프로젝트에 활성화 상태인 멤버 단건 조회
+    Optional<ProjectMember> findByProjectIdAndMemberIdAndMemberStatus(
+            Long projectId,
+            Long memberId,
+            ProjectMemberStatus memberStatus
+    );
 }

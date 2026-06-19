@@ -26,6 +26,7 @@ import com.backend.common.domain.techstack.entity.MemberTechStack;
 import com.backend.common.domain.techstack.entity.ProjectTechStack;
 import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
+import com.backend.common.global.exception.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,6 +34,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -1012,6 +1014,65 @@ public class ProjectService {
             throw new RuntimeException("프로젝트 수정이 실패하였습니다.");
         }
         return project;
+    }
+
+    @Transactional
+    @PreAuthorize("@projectAuthorizer.isProjectLeaderOf(#projectId, authentication.principal.memberId)")
+    public void updateStatus(Long projectId, ProjectStatus newStatus) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("404", "프로젝트를 찾을 수 없습니다."));
+
+        project.changeStatus(newStatus);
+    }
+
+    @Transactional
+    @PreAuthorize("@projectAuthorizer.isProjectLeaderOf(#projectId, authentication.principal.memberId)")
+    public void kickProjectMember(Long projectId, Long targetMemberId) {
+
+        // 방출할 대상 팀원이 해당 프로젝트에 실제로 ACTIVE한 상태로 존재하는지 조회
+        ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberIdAndMemberStatus(
+                        projectId,
+                        targetMemberId,
+                        ProjectMemberStatus.ACTIVE
+                )
+                .orElseThrow(() -> new ResourceNotFoundException("404", "해당 프로젝트에 참여 중인 활성화된 멤버를 찾을 수 없습니다."));
+
+        projectMember.kickMember();
+
+        // 알림 연동 - 방출당한 사람에게 알림 슛
+        notificationService.notify(
+                projectMember.getMember(),
+                NotificationType.SYSTEM,
+                "프로젝트 탈퇴 처리",
+                "[" + projectMember.getProject().getTitle() + "] 프로젝트에서 방출되었습니다.",
+                null,
+                null
+        );
+    }
+
+    @Transactional
+    @PreAuthorize("@projectAuthorizer.isProjectLeaderOf(#projectId, authentication.principal.memberId)")
+    public void updateMemberRole(Long projectId, Long targetMemberId, ProjectRole newRole) {
+
+        // 권한을 변경할 대상 팀원이 프로젝트에 실제로 존재하는지 조회
+        ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberIdAndMemberStatus(
+                        projectId,
+                        targetMemberId,
+                        ProjectMemberStatus.ACTIVE
+                )
+                .orElseThrow(() -> new ResourceNotFoundException("404", "해당 프로젝트에 참여 중인 멤버를 찾을 수 없습니다."));
+
+
+        projectMember.updateRole(newRole);
+
+        notificationService.notify(
+                projectMember.getMember(),
+                NotificationType.SYSTEM,
+                "프로젝트 권한 변경",
+                "[" + projectMember.getProject().getTitle() + "] 프로젝트에서의 권한이 " + newRole.name() + "(으)로 변경되었습니다.",
+                "/projects/" + projectId,
+                null
+        );
     }
 
 }

@@ -190,8 +190,9 @@ public class Project {
         this.updatedAt = LocalDateTime.now();
     }
 
-    /*
-      더미데이터 만드는 용
+    /**
+     *
+     * 6. 프로젝트 상태 변경
      */
     public void changeStatus(ProjectStatus projectStatus) {
         this.status = projectStatus;
