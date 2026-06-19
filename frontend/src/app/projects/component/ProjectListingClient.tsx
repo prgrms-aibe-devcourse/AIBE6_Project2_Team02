@@ -124,6 +124,7 @@ export default function ProjectListingClient() {
 
   useEffect(() => {
     setContentLoading(true)
+    const requestStatus = selectedStatus === 'All' ? 'VISIBLE' : selectedStatus
 
     fetchProjects({
       page,
@@ -131,25 +132,18 @@ export default function ProjectListingClient() {
       search: searchTerm,
       category: selectedCategory,
       tech: selectedTech,
-      status: selectedStatus,
+      status: requestStatus,
     })
       .then((pageData) => {
         if (pageData && pageData.content) {
-          const visibleProjects =
-            selectedStatus === 'All'
-              ? pageData.content.filter((project) =>
-                  ['RECRUITING', 'CLOSED'].includes(project.recruitmentStatus),
-                )
-              : pageData.content
-
-          setPaginatedProjects(visibleProjects)
+          setPaginatedProjects(pageData.content)
           setPageCount(pageData.totalPages)
           setTotalElements(pageData.totalElements)
 
 
           setFeaturedProjects(
             selectedStatus === 'RECRUITING'
-              ? visibleProjects.filter(
+              ? pageData.content.filter(
                   (p) => p.featured && p.recruitmentStatus === 'RECRUITING',
                 )
               : [],
