@@ -2,6 +2,7 @@ package com.backend.common.domain.project.project.service;
 
 import com.backend.common.domain.notification.entity.NotificationType;
 import com.backend.common.domain.notification.service.NotificationService;
+import com.backend.common.domain.portfolio.proposals.repository.ProjectProposalRepository;
 import com.backend.common.domain.project.application.entity.ProjectApplication;
 import com.backend.common.domain.project.application.repository.ProjectApplicationRepository;
 import com.backend.common.domain.project.enums.SelectionStatus;
@@ -33,6 +34,7 @@ public class MyPageProjectService {
     private final ProjectViewRepository projectViewRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final NotificationService notificationService;
+    private final ProjectProposalRepository projectProposalRepository;
 
     // ================= 마이페이지 프로젝트 조회 5종 =================
 
@@ -80,40 +82,36 @@ public class MyPageProjectService {
     @Transactional
     @PreAuthorize("@mypageAuthorizer.isProjectLeader(#applicationId, authentication.principal.memberId)")
     public void handleApplicationAction(Long memberId, Long applicationId, boolean isAccept) {
-
         ProjectApplication application = projectApplicationRepository.findById(applicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("404", "존재하지 않는 지원서입니다."));
 
         if (isAccept) {
             application.accept();
 
-            ProjectMember projectMember = ProjectMember.builder()
-                    .project(application.getProject())
-                    .member(application.getApplicant())
-                    .position(application.getPosition())
-                    .role(ProjectRole.MEMBER)
-                    .build();
-            projectMemberRepository.save(projectMember);
+            boolean isAlreadyMember = projectMemberRepository.existsByProjectIdAndMemberId(application.getProject().getId(), application.getApplicant().getId());
+            if (!isAlreadyMember) {
+                ProjectMember projectMember = ProjectMember.builder()
+                        .project(application.getProject())
+                        .member(application.getApplicant())
+                        .position(application.getPosition())
+                        .role(ProjectRole.MEMBER)
+                        .build();
+                projectMemberRepository.save(projectMember);
+            }
 
-            notificationService.notify(
-                    application.getApplicant(),
-                    NotificationType.APPLICATION_ACCEPTED,
-                    "지원이 수락되었습니다.",
-                    application.getProject().getTitle() + " 프로젝트 지원이 수락되었습니다.",
-                    "/projects/" + application.getProject().getId(),
-                    application.getId()
+            // 벌크 삭제 쿼리로 안전하게 동기화 락 해제
+            projectProposalRepository.deleteMatchingProposals(
+                    application.getProject().getId(),
+                    application.getApplicant().getId(),
+                    SelectionStatus.PENDING
             );
+
+            notificationService.notify(application.getApplicant(), NotificationType.APPLICATION_ACCEPTED, "지원이 수락되었습니다.", application.getProject().getTitle() + " 프로젝트 지원이 수락되었습니다.", "/projects/" + application.getProject().getId(), application.getId());
+
+            projectApplicationRepository.delete(application);
         } else {
             projectApplicationRepository.delete(application);
-
-            notificationService.notify(
-                    application.getApplicant(),
-                    NotificationType.APPLICATION_REJECTED,
-                    "지원이 거절되었습니다.",
-                    application.getProject().getTitle() + " 프로젝트 지원이 거절되었습니다.",
-                    null,
-                    application.getId()
-            );
+            notificationService.notify(application.getApplicant(), NotificationType.APPLICATION_REJECTED, "지원이 거절되었습니다.", application.getProject().getTitle() + " 프로젝트 지원이 거절되었습니다.", null, application.getId());
         }
     }
 
