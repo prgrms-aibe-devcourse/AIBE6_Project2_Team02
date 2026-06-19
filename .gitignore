@@ -53,6 +53,7 @@ yarn-error.log*
 backend/.gradle/
 backend/.local-jdk/
 backend/build/
+backend/src/main/generated
 backend/out/
 
 backend/*.mv.db

@@ -1,8 +1,8 @@
-'use client'
+﻿'use client'
 
 import { motion } from 'framer-motion';
 import type { MouseEvent } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BookmarkPlus, Clock, Search, Sparkles, Users } from 'lucide-react';
@@ -23,7 +23,12 @@ import type { Project } from '../../../types';
 import { useAuth } from '../../providers';
 
 const categoryMap: Record<string, string> = {
-  All: '전체', Web: '웹', Mobile: '모바일', AI: 'AI', Game: '게임', Other: '기타',
+  All: '전체',
+  Web: '웹',
+  Mobile: '모바일',
+  AI: 'AI',
+  Game: '게임',
+  Other: '기타',
 }
 const statusMap: Record<string, string> = {
   All: '전체',
@@ -40,15 +45,16 @@ export default function ProjectListingClient() {
   const router = useRouter()
   const { user: authUser, loading: authLoading } = useAuth()
   const initialTech = searchParams.get('tech')
+  const projectRequestIdRef = useRef(0)
 
   // 🎯 [수정] 서버 페이징 상태 관리를 위한 최적화 명시
   const [paginatedProjects, setPaginatedProjects] = useState<Project[]>([])
-  const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]) // 추천 프로젝트 분리 보관
+  const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]) // 異붿쿇 ?꾨줈?앺듃 遺꾨━ 蹂닿?
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
 
   const [page, setPage] = useState(0)
   const [pageCount, setPageCount] = useState(0)
-  const [totalElements, setTotalElements] = useState(0) // 총 프로젝트 개수 표시용
+  const [totalElements, setTotalElements] = useState(0) // 珥??꾨줈?앺듃 媛쒖닔 ?쒖떆??
   const [contentLoading, setContentLoading] = useState(false)
   const [bookmarkedProjectIds, setBookmarkedProjectIds] = useState<Set<string>>(new Set())
   const [bookmarkingProjectIds, setBookmarkingProjectIds] = useState<Set<string>>(new Set())
@@ -124,7 +130,8 @@ export default function ProjectListingClient() {
 
   useEffect(() => {
     setContentLoading(true)
-    const requestStatus = selectedStatus === 'All' ? 'VISIBLE' : selectedStatus
+    const requestId = ++projectRequestIdRef.current
+    const requestStatus = selectedStatus === 'All' ? 'RECRUITING,CLOSED' : selectedStatus
 
     fetchProjects({
       page,
@@ -135,6 +142,7 @@ export default function ProjectListingClient() {
       status: requestStatus,
     })
       .then((pageData) => {
+        if (requestId !== projectRequestIdRef.current) return
         if (pageData && pageData.content) {
           setPaginatedProjects(pageData.content)
           setPageCount(pageData.totalPages)
@@ -156,13 +164,18 @@ export default function ProjectListingClient() {
         }
       })
       .catch((err) => {
+        if (requestId !== projectRequestIdRef.current) return
         console.error('프로젝트 로드 에러:', err)
         setPaginatedProjects([])
         setPageCount(0)
         setTotalElements(0)
         setFeaturedProjects([])
       })
-      .finally(() => setContentLoading(false))
+      .finally(() => {
+        if (requestId === projectRequestIdRef.current) {
+          setContentLoading(false)
+        }
+      })
   }, [page, searchTerm, selectedCategory, selectedTech, selectedStatus])
 
   useEffect(() => {
@@ -279,8 +292,8 @@ export default function ProjectListingClient() {
                         onClick={(event) => handleToggleBookmark(event, project.id)}
                         aria-label={
                           bookmarkedProjectIds.has(project.id)
-                            ? '북마크 해제'
-                            : '북마크 추가'
+                              ? '북마크 해제'
+                              : '북마크 추가'
                         }
                       >
                         <BookmarkPlus className="h-3.5 w-3.5" />
@@ -332,9 +345,9 @@ export default function ProjectListingClient() {
         </div>
 
         {contentLoading ? (
-          <div className="text-center py-24 text-slate-400 font-medium">
-            조건에 맞는 프로젝트 로드 중...
-          </div>
+            <div className="text-center py-24 text-slate-400 font-medium">
+              조건에 맞는 프로젝트 로드 중...
+            </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {paginatedProjects.length > 0 ? (
@@ -372,8 +385,8 @@ export default function ProjectListingClient() {
                           onClick={(event) => handleToggleBookmark(event, project.id)}
                           aria-label={
                             bookmarkedProjectIds.has(project.id)
-                              ? '북마크 해제'
-                              : '북마크 추가'
+                                ? '북마크 해제'
+                                : '북마크 추가'
                           }
                         >
                           <BookmarkPlus className="h-3.5 w-3.5" />

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import type { MouseEvent } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import Link from 'next/link'
 
@@ -33,6 +33,7 @@ const roleOptions = [
 
 export default function TalentListingPage() {
   const { user: authUser, loading: authLoading } = useAuth()
+  const portfolioRequestIdRef = useRef(0)
   const [paginatedTalents, setPaginatedTalents] = useState<User[]>([])
   const [featuredTalents, setFeaturedTalents] = useState<User[]>([])
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
@@ -55,6 +56,7 @@ export default function TalentListingPage() {
 
   useEffect(() => {
     setContentLoading(true)
+    const requestId = ++portfolioRequestIdRef.current
 
     fetchPortfolios({
       page,
@@ -64,6 +66,7 @@ export default function TalentListingPage() {
       tech: selectedTech,
     })
       .then((pageData) => {
+        if (requestId !== portfolioRequestIdRef.current) return
         if (pageData && pageData.content) {
           setPaginatedTalents(pageData.content)
           setPageCount(pageData.totalPages)
@@ -77,12 +80,17 @@ export default function TalentListingPage() {
         }
       })
       .catch(() => {
+        if (requestId !== portfolioRequestIdRef.current) return
         setPaginatedTalents([])
         setPageCount(0)
         setTotalElements(0)
         setFeaturedTalents([])
       })
-      .finally(() => setContentLoading(false))
+      .finally(() => {
+        if (requestId === portfolioRequestIdRef.current) {
+          setContentLoading(false)
+        }
+      })
   }, [page, searchTerm, selectedRole, selectedTech])
 
   useEffect(() => {
