@@ -28,6 +28,7 @@ import com.backend.common.domain.techstack.entity.TechStack;
 import com.backend.common.domain.techstack.repository.TechStackRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -85,10 +86,13 @@ public class ProjectService {
         ProjectStatus qStatus = toStatusFilter(status);
         String qSearchPosition = toPositionSearchCode(qSearch);
 
-        Page<Project> projectPage = projectRepository.findAll(
-                projectFilter(qSearch, qSearchPosition, qCategory, qTech, qStatus),
-                latestFirst(pageable)
-        );
+        Specification<Project> specification = projectFilter(qSearch, qSearchPosition, qCategory, qTech, qStatus);
+
+        if (qStatus == ProjectStatus.RECRUITING) {
+            return getOpenRecruitingProjects(specification, pageable);
+        }
+
+        Page<Project> projectPage = projectRepository.findAll(specification, latestFirst(pageable));
 
         List<Project> projects = projectPage.getContent();
         Set<Long> featuredProjectIds = featuredProjectIds(projects);
@@ -101,6 +105,39 @@ public class ProjectService {
                 featuredProjectIds.contains(project.getId()),
                 featuredMemberIds
         ));
+    }
+
+    private Page<ProjectResponse> getOpenRecruitingProjects(Specification<Project> specification, Pageable pageable) {
+        List<Project> candidates = projectRepository.findAll(specification, latestFirstSort());
+        Map<Long, List<ProjectMember>> membersByProject = loadMembersByProject(candidates);
+
+        List<Project> openProjects = candidates.stream()
+                .filter(project -> {
+                    List<ProjectMember> members = membersByProject.getOrDefault(project.getId(), List.of());
+                    List<PositionResponse> positions = buildPositions(project, members);
+                    return calculateRecruitmentStatus(project, positions) == RecruitmentStatus.RECRUITING;
+                })
+                .toList();
+
+        Set<Long> featuredProjectIds = openProjects.stream()
+                .limit(3)
+                .map(Project::getId)
+                .collect(Collectors.toCollection(HashSet::new));
+        Set<Long> featuredMemberIds = featuredMemberIds();
+
+        int start = Math.min((int) pageable.getOffset(), openProjects.size());
+        int end = Math.min(start + pageable.getPageSize(), openProjects.size());
+
+        List<ProjectResponse> content = openProjects.subList(start, end).stream()
+                .map(project -> toProjectResponse(
+                        project,
+                        membersByProject.getOrDefault(project.getId(), List.of()),
+                        featuredProjectIds.contains(project.getId()),
+                        featuredMemberIds
+                ))
+                .toList();
+
+        return new PageImpl<>(content, latestFirst(pageable), openProjects.size());
     }
 
     private String toPositionSearchCode(String search) {
@@ -123,9 +160,12 @@ public class ProjectService {
     }
 
     private Pageable latestFirst(Pageable pageable) {
-        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt")
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), latestFirstSort());
+    }
+
+    private Sort latestFirstSort() {
+        return Sort.by(Sort.Direction.DESC, "createdAt")
                 .and(Sort.by(Sort.Direction.DESC, "id"));
-        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
     }
 
     private Specification<Project> projectFilter(
@@ -594,7 +634,7 @@ public class ProjectService {
         boolean hasAvailablePosition = positions.stream()
                 .anyMatch(position -> position.filled() < position.total());
 
-        return hasAvailablePosition ? RecruitmentStatus.OPEN : RecruitmentStatus.CLOSED;
+        return hasAvailablePosition ? RecruitmentStatus.RECRUITING : RecruitmentStatus.CLOSED;
     }
 
     private UserResponse toUserResponse(Member member, boolean featured) {
@@ -837,7 +877,7 @@ public class ProjectService {
                 splitGoals(project.getGoal()),
                 projectTechStackNames(project),
                 buildPositions(project, members),
-                project.isRecruitmentOpen() ? RecruitmentStatus.OPEN : RecruitmentStatus.CLOSED,
+                project.isRecruitmentOpen() ? RecruitmentStatus.RECRUITING : RecruitmentStatus.CLOSED,
                 project.getCategory() == null ? inferCategory(project) : project.getCategory(),
                 leader,
                 teamMembers,
