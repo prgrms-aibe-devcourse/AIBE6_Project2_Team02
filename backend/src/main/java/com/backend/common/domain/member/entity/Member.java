@@ -65,6 +65,18 @@ public class Member {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void suspend(int days) {
+        this.status = "SUSPENDED";
+        this.suspensionUntil = LocalDateTime.now().plusDays(days);
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void activate() {
+        this.status = "ACTIVE";
+        this.suspensionUntil = null;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void updateNickName(String nickname){
         this.nickname = nickname;
     }

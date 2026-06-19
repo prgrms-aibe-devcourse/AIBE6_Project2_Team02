@@ -3,14 +3,10 @@
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { 
-  FolderX,
-  Search, 
-  X,
-  AlertCircle,
-  Undo2
-} from 'lucide-react'
+
 import Link from 'next/link'
+
+import { AlertCircle, FolderX, Search, Undo2, X } from 'lucide-react'
 
 import { Badge, Button, Card } from '../../../components/ui'
 import { fetchHiddenProjects, unhideProject } from '../../../lib/api'
@@ -40,7 +36,12 @@ export default function AdminProjectsPage() {
   }, [])
 
   const handleUnhide = async (projectId: string) => {
-    if (!confirm('해당 프로젝트의 숨김을 해제하시겠습니까?\n해제 시 일반 유저들에게 다시 노출됩니다.')) return
+    if (
+      !confirm(
+        '해당 프로젝트의 숨김을 해제하시겠습니까?\n해제 시 일반 유저들에게 다시 노출됩니다.',
+      )
+    )
+      return
 
     try {
       await unhideProject(projectId)
@@ -52,9 +53,10 @@ export default function AdminProjectsPage() {
     }
   }
 
-  const filteredProjects = projects.filter(p => 
-    p.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-    p.leader.name.toLowerCase().includes(searchKeyword.toLowerCase())
+  const filteredProjects = projects.filter(
+    (p) =>
+      p.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+      p.leader.name.toLowerCase().includes(searchKeyword.toLowerCase()),
   )
 
   if (loading) {
@@ -81,7 +83,8 @@ export default function AdminProjectsPage() {
 
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm font-medium text-slate-600 bg-slate-100 px-4 py-2 rounded-lg">
-          숨겨진 프로젝트: <span className="text-orange-600 font-bold">{projects.length}</span>건
+          숨겨진 프로젝트:{' '}
+          <span className="text-orange-600 font-bold">{projects.length}</span>건
         </div>
 
         <div className="relative flex items-center w-full max-w-xs">
@@ -113,7 +116,9 @@ export default function AdminProjectsPage() {
             <AlertCircle size={32} />
           </div>
           <p className="text-slate-500 font-medium">
-            {searchKeyword ? '검색 결과가 없습니다.' : '현재 숨겨진 프로젝트가 없습니다.'}
+            {searchKeyword
+              ? '검색 결과가 없습니다.'
+              : '현재 숨겨진 프로젝트가 없습니다.'}
           </p>
         </div>
       ) : (
@@ -128,7 +133,10 @@ export default function AdminProjectsPage() {
                 <div className="h-1.5 w-full bg-orange-400" />
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-4">
-                    <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-100">
+                    <Badge
+                      variant="outline"
+                      className="bg-orange-50 text-orange-700 border-orange-100"
+                    >
                       HIDDEN
                     </Badge>
                     <span className="text-[10px] text-slate-400 font-medium">
@@ -151,7 +159,11 @@ export default function AdminProjectsPage() {
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow-sm">
                         {project.leader.avatar ? (
-                          <img src={project.leader.avatar} alt="" className="w-full h-full object-cover" />
+                          <img
+                            src={project.leader.avatar}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400">
                             <Undo2 size={14} />

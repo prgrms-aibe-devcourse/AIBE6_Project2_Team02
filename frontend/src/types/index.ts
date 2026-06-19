@@ -9,6 +9,8 @@ export type User = {
   name: string
   avatar: string
   role: string
+  status: string
+  suspensionUntil?: string | null
   bio?: string
   techStack?: string[]
   github?: string

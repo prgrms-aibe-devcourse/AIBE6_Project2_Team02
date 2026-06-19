@@ -1,5 +1,8 @@
 package com.backend.common.global.security;
 
+import com.backend.common.domain.member.entity.Member;
+import com.backend.common.domain.member.repository.MemberRepository;
+import com.backend.common.global.rsdata.RsData;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,34 +14,64 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final MemberRepository memberRepository;
+    private final JsonMapper jsonMapper;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+
         String token = extractTokenFromCookie(request);
 
         if (token != null && jwtTokenProvider.isValid(token)) {
-            Long memberId = jwtTokenProvider.getMemberId(token);
-            String nickname = jwtTokenProvider.getNickname(token);
-            String role = jwtTokenProvider.getRole(token);
 
-            if (role == null || role.isBlank()) {
+            Long memberId = jwtTokenProvider.getMemberId(token);
+
+            Member member = memberRepository.findById(memberId)
+                    .orElse(null);
+
+            // 탈퇴했거나 존재하지 않는 회원
+            if (member == null) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            CustomMemberDetails principal = new CustomMemberDetails(memberId, nickname, "ACTIVE", role);
+            // 정지 회원 체크
+            if ("SUSPENDED".equals(member.getStatus())
+                    && member.getSuspensionUntil() != null
+                    && member.getSuspensionUntil().isAfter(LocalDateTime.now())) {
+
+                sendSuspendedResponse(response, member);
+                return;
+            }
+
+            // 관리자 권한 변경 등 최신 정보를 DB 기준으로 사용
+            CustomMemberDetails principal =
+                    new CustomMemberDetails(
+                            member.getId(),
+                            member.getNickname(),
+                            member.getStatus(),
+                            member.getRole().name()
+                    );
+
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+                    new UsernamePasswordAuthenticationToken(
+                            principal,
+                            null,
+                            principal.getAuthorities()
+                    );
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
@@ -46,13 +79,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    private void sendSuspendedResponse(HttpServletResponse response,
+                                       Member member) throws IOException {
+
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType("application/json;charset=UTF-8");
+
+        String message = "정지된 회원입니다.";
+
+        if (member.getSuspensionUntil() != null) {
+            message += " (정지 기한: "
+                    + member.getSuspensionUntil()
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                    + ")";
+        }
+
+        RsData<Void> rsData = RsData.of("403", message);
+
+        response.getWriter().write(
+                jsonMapper.writeValueAsString(rsData)
+        );
+    }
+
     private String extractTokenFromCookie(HttpServletRequest request) {
-        if (request.getCookies() == null) return null;
+        if (request.getCookies() == null) {
+            return null;
+        }
+
         for (Cookie cookie : request.getCookies()) {
             if ("access_token".equals(cookie.getName())) {
                 return cookie.getValue();
             }
         }
+
         return null;
     }
 }

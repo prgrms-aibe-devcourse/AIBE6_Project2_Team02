@@ -11,6 +11,7 @@ import {
   History,
   LayoutDashboard,
   ShieldAlert,
+  UserX,
 } from 'lucide-react'
 
 import { useAuth } from '../providers'
@@ -64,6 +65,12 @@ export default function AdminLayout({
       icon: <FolderX className="w-5 h-5" />,
       href: '/admin/projects',
       description: '숨김 처리된 프로젝트 관리',
+    },
+    {
+      title: '유저 관리',
+      icon: <UserX className="w-5 h-5" />,
+      href: '/admin/users',
+      description: '유저 활동 제한 및 관리',
     },
   ]
 
