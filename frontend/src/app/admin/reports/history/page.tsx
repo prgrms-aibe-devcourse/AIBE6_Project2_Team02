@@ -17,6 +17,10 @@ import {
 } from 'lucide-react'
 
 import { Badge, Card } from '../../../../components/ui'
+import {
+  getReportReasonLabel,
+  getReportTargetLabel,
+} from '../../../../constants/report'
 import { fetchProjectReports, fetchUserReports } from '../../../../lib/api'
 import { formatDate } from '../../../../lib/date'
 import type { ReportResponse } from '../../../../types'
@@ -25,7 +29,9 @@ export default function AdminReportsHistoryPage() {
   const [userReports, setUserReports] = useState<ReportResponse[]>([])
   const [projectReports, setProjectReports] = useState<ReportResponse[]>([])
   const [loading, setLoading] = useState(true)
-  const [statusTab, setStatusTab] = useState<'resolved' | 'rejected'>('resolved')
+  const [statusTab, setStatusTab] = useState<'resolved' | 'rejected'>(
+    'resolved',
+  )
   const [targetTab, setTargetTab] = useState<'user' | 'project'>('user')
   const [searchKeyword, setSearchKeyword] = useState('')
 
@@ -73,15 +79,24 @@ export default function AdminReportsHistoryPage() {
   }
 
   // Filter logic based on dual tabs
-  const currentTargetReports = targetTab === 'user' ? userReports : projectReports
+  const currentTargetReports =
+    targetTab === 'user' ? userReports : projectReports
   const reportsToShow = currentTargetReports
-    .filter((r) => r.status === (statusTab === 'resolved' ? 'RESOLVED' : 'REJECTED'))
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .filter(
+      (r) => r.status === (statusTab === 'resolved' ? 'RESOLVED' : 'REJECTED'),
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )
 
   // Count helper for tabs
-  const getCount = (target: 'user' | 'project', status: 'RESOLVED' | 'REJECTED') => {
+  const getCount = (
+    target: 'user' | 'project',
+    status: 'RESOLVED' | 'REJECTED',
+  ) => {
     const list = target === 'user' ? userReports : projectReports
-    return list.filter(r => r.status === status).length
+    return list.filter((r) => r.status === status).length
   }
 
   if (loading) {
@@ -143,7 +158,11 @@ export default function AdminReportsHistoryPage() {
           </div>
           <input
             type="text"
-            placeholder={targetTab === 'user' ? '닉네임으로 검색' : '프로젝트 제목으로 검색'}
+            placeholder={
+              targetTab === 'user'
+                ? '닉네임으로 검색'
+                : '프로젝트 제목으로 검색'
+            }
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             className="w-full pl-10 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-sm"
@@ -219,7 +238,7 @@ export default function AdminReportsHistoryPage() {
                       variant="outline"
                       className={`text-[10px] font-bold uppercase tracking-wider ${getReasonBadgeColor(report.reasonType)}`}
                     >
-                      {report.reasonType}
+                      {getReportReasonLabel(report.reasonType)}
                     </Badge>
                     <span className="text-[10px] text-slate-400 font-medium">
                       {formatDate(report.createdAt)}
@@ -263,9 +282,7 @@ export default function AdminReportsHistoryPage() {
                             <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
                           <div className="text-[10px] text-slate-500 truncate">
-                            {report.targetType === 'PORTFOLIO'
-                              ? '포트폴리오'
-                              : '프로젝트'}
+                            {getReportTargetLabel(report.targetType)}
                           </div>
                         </div>
                       </Link>

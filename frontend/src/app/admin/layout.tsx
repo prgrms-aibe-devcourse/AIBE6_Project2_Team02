@@ -1,8 +1,19 @@
 'use client'
 
-import { LayoutDashboard, History, ShieldAlert, ChevronRight, FolderX } from 'lucide-react'
+import { useEffect } from 'react'
+
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+
+import {
+  ChevronRight,
+  FolderX,
+  History,
+  LayoutDashboard,
+  ShieldAlert,
+} from 'lucide-react'
+
+import { useAuth } from '../providers'
 
 export default function AdminLayout({
   children,
@@ -10,26 +21,50 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { user, loading } = useAuth()
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.replace('/login')
+      } else if (user.role !== 'ROLE_ADMIN') {
+        router.replace('/')
+      }
+    }
+  }, [user, loading, router])
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-slate-50/50">
+        <div className="text-slate-500 font-semibold">인증 확인 중...</div>
+      </div>
+    )
+  }
+
+  if (!user || user.role !== 'ROLE_ADMIN') {
+    return null
+  }
 
   const menuItems = [
     {
       title: '신고 관리',
       icon: <ShieldAlert className="w-5 h-5" />,
       href: '/admin/reports',
-      description: '대기 중인 신고 내역 처리'
+      description: '대기 중인 신고 내역 처리',
     },
     {
       title: '관리 기록',
       icon: <History className="w-5 h-5" />,
       href: '/admin/reports/history',
-      description: '처리/기각 완료된 내역'
+      description: '처리/기각 완료된 내역',
     },
     {
       title: '프로젝트 관리',
       icon: <FolderX className="w-5 h-5" />,
       href: '/admin/projects',
-      description: '숨김 처리된 프로젝트 관리'
-    }
+      description: '숨김 처리된 프로젝트 관리',
+    },
   ]
 
   return (
@@ -57,35 +92,34 @@ export default function AdminLayout({
                       : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  <div className={`${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-900'}`}>
+                  <div
+                    className={`${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-900'}`}
+                  >
                     {item.icon}
                   </div>
                   <div className="flex-1">
-                    <div className="font-semibold text-sm leading-none mb-1">{item.title}</div>
-                    <div className={`text-[10px] ${isActive ? 'text-slate-400' : 'text-slate-400'}`}>
+                    <div className="font-semibold text-sm leading-none mb-1">
+                      {item.title}
+                    </div>
+                    <div
+                      className={`text-[10px] ${isActive ? 'text-slate-400' : 'text-slate-400'}`}
+                    >
                       {item.description}
                     </div>
                   </div>
-                  <ChevronRight className={`w-4 h-4 transition-transform ${isActive ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100'}`} />
+                  <ChevronRight
+                    className={`w-4 h-4 transition-transform ${isActive ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100'}`}
+                  />
                 </Link>
               )
             })}
           </nav>
         </div>
-
-        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-slate-100">
-          <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-xs text-slate-500 mb-1">현재 계정</div>
-            <div className="font-semibold text-slate-900 text-sm truncate">Administrator</div>
-          </div>
-        </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 overflow-hidden">
-        <div className="h-full p-4 md:p-8">
-          {children}
-        </div>
+        <div className="h-full p-4 md:p-8">{children}</div>
       </main>
     </div>
   )
