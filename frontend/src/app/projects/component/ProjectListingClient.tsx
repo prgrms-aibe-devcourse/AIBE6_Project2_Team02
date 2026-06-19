@@ -49,12 +49,12 @@ export default function ProjectListingClient() {
 
   // 🎯 [수정] 서버 페이징 상태 관리를 위한 최적화 명시
   const [paginatedProjects, setPaginatedProjects] = useState<Project[]>([])
-  const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]) // 異붿쿇 ?꾨줈?앺듃 遺꾨━ 蹂닿?
+  const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]) // 추천 프로젝트 분리 보관
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
 
   const [page, setPage] = useState(0)
   const [pageCount, setPageCount] = useState(0)
-  const [totalElements, setTotalElements] = useState(0) // 珥??꾨줈?앺듃 媛쒖닔 ?쒖떆??
+  const [totalElements, setTotalElements] = useState(0) // 총 프로젝트 개수 표시용
   const [contentLoading, setContentLoading] = useState(false)
   const [bookmarkedProjectIds, setBookmarkedProjectIds] = useState<Set<string>>(new Set())
   const [bookmarkingProjectIds, setBookmarkingProjectIds] = useState<Set<string>>(new Set())
