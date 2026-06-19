@@ -154,6 +154,22 @@ export function removeProjectBookmark(projectId: string) {
   })
 }
 
+export function fetchPortfolioBookmark(memberId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/portfolios/${memberId}`)
+}
+
+export function addPortfolioBookmark(memberId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/portfolios/${memberId}`, {
+    method: 'POST',
+  })
+}
+
+export function removePortfolioBookmark(memberId: string) {
+  return fetchRsDataJson<boolean>(`/bookmarks/portfolios/${memberId}`, {
+    method: 'DELETE',
+  })
+}
+
 export function cancelProjectApplication(applicationId: number) {
   return fetchRsDataJson<void>(
     `/mypage/projects/applications/${applicationId}/cancel`,

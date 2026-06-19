@@ -1,50 +1,19 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-
-
-
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-
-
-
-import { Calendar, Code2, Github, Globe, MapPin, MessageSquare, ShieldAlert } from 'lucide-react';
-
-
-
+import { BookmarkPlus, Calendar, Code2, Github, Globe, MapPin, MessageSquare, ShieldAlert } from 'lucide-react';
 import { LoginModal } from '../../../components/LoginModal';
 import { ReportModal } from '../../../components/ReportModal';
 import { Badge, Button, Card, Modal } from '../../../components/ui';
 import { formatPositionLabel } from '../../../constants/project';
-import { cancelProjectProposal, checkAlreadyReported, createProjectProposal, fetchMember, fetchPendingSentProjectProposals, fetchProjects, fetchProposalProjects, fetchReviews } from '../../../lib/api';
+import { addPortfolioBookmark, cancelProjectProposal, checkAlreadyReported, createProjectProposal, fetchMember, fetchPendingSentProjectProposals, fetchPortfolioBookmark, fetchProjects, fetchProposalProjects, fetchReviews, removePortfolioBookmark } from '../../../lib/api';
 import { formatDate } from '../../../lib/date';
 import type { Project, ReviewResponse, User } from '../../../types';
 import type { ProposalProject, SentProjectProposal } from '../../../types/dto/proposal';
 import { useAuth } from '../../providers';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 const statusMap: Record<string, string> = {
   Open: '모집중',
@@ -73,6 +42,8 @@ export default function DeveloperProfilePage() {
   const [reviews, setReviews] = useState<ReviewResponse[]>([])
   const [activeTab, setActiveTab] = useState<ProfileTab>('projects')
   const [loading, setLoading] = useState(true)
+  const [isBookmarked, setIsBookmarked] = useState(false)
+  const [isBookmarking, setIsBookmarking] = useState(false)
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false)
   const [isCancelProposalModalOpen, setIsCancelProposalModalOpen] =
     useState(false)
@@ -128,6 +99,17 @@ export default function DeveloperProfilePage() {
       .catch(() => setPendingSentProposals([]))
   }, [id, authUser, isMyProfile])
 
+  useEffect(() => {
+    if (!id || authLoading || !authUser || isMyProfile) {
+      setIsBookmarked(false)
+      return
+    }
+
+    fetchPortfolioBookmark(id)
+      .then(setIsBookmarked)
+      .catch(() => setIsBookmarked(false))
+  }, [id, authLoading, authUser, isMyProfile])
+
   const createdProjects = projects.filter((p) => p.leader.id === id)
   const participatedProjects = projects.filter((p) =>
     p.teamMembers.some((m) => m.id === id),
@@ -177,6 +159,33 @@ export default function DeveloperProfilePage() {
     } catch (error) {
       console.error('Failed to check report status:', error)
       toast.error('신고 상태를 확인하는 중 오류가 발생했습니다.')
+    }
+  }
+
+  const handleToggleBookmark = async () => {
+    if (authLoading || isBookmarking) return
+    if (!authUser) {
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    setIsBookmarking(true)
+    try {
+      const nextBookmarked = isBookmarked
+        ? await removePortfolioBookmark(id)
+        : await addPortfolioBookmark(id)
+      setIsBookmarked(nextBookmarked)
+      toast.success(
+        nextBookmarked ? '포트폴리오를 북마크했습니다.' : '북마크를 해제했습니다.',
+      )
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : '북마크 처리 중 오류가 발생했습니다.',
+      )
+    } finally {
+      setIsBookmarking(false)
     }
   }
 
@@ -327,6 +336,21 @@ export default function DeveloperProfilePage() {
                   제안 취소하기
                 </Button>
               )}
+              {!isMyProfile && (
+                <Button
+                  variant="outline"
+                  className={`w-full ${
+                    isBookmarked
+                      ? 'border-blue-200 bg-blue-50 text-blue-600'
+                      : ''
+                  }`}
+                  onClick={handleToggleBookmark}
+                  disabled={authLoading || isBookmarking}
+                >
+                  <BookmarkPlus className="h-4 w-4" />
+                  {isBookmarked ? '북마크 해제' : '북마크 추가'}
+                </Button>
+              )}
             </div>
 
             <div className="space-y-3 text-sm text-slate-600 text-left border-t border-slate-100 pt-6">
@@ -464,7 +488,7 @@ export default function DeveloperProfilePage() {
                                 <Code2 className="w-4 h-4" />
                                 {categoryMap[project.category]}
                               </span>
-                              <span>•</span>
+                              <span>·</span>
                               <span>
                                 {project.techStack.slice(0, 3).join(', ')}
                               </span>
@@ -731,3 +755,5 @@ export default function DeveloperProfilePage() {
     </div>
   )
 }
+
+

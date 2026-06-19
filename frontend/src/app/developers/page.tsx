@@ -1,12 +1,14 @@
-'use client'
+﻿'use client'
 
 import { motion } from 'framer-motion'
+import type { MouseEvent } from 'react'
 import { useEffect, useState } from 'react'
 
 import Link from 'next/link'
 
-import { Clock, MapPin, Search, Sparkles } from 'lucide-react'
+import { BookmarkPlus, Clock, MapPin, Search, Sparkles } from 'lucide-react'
 
+import { LoginModal } from '../../components/LoginModal'
 import { PaginationControls } from '../../components/PaginationControls'
 import { SearchField } from '../../components/SearchField'
 import { Badge, Button, Card } from '../../components/ui'
@@ -14,8 +16,15 @@ import {
   formatPositionLabel,
   leaderPositionOptions,
 } from '../../constants/project'
-import { fetchPopularTechStacks, fetchPortfolios } from '../../lib/api'
+import {
+  addPortfolioBookmark,
+  fetchPopularTechStacks,
+  fetchPortfolioBookmark,
+  fetchPortfolios,
+  removePortfolioBookmark,
+} from '../../lib/api'
 import type { User } from '../../types'
+import { useAuth } from '../providers'
 
 const roleOptions = [
   { value: 'All', label: '전체' },
@@ -23,6 +32,7 @@ const roleOptions = [
 ]
 
 export default function TalentListingPage() {
+  const { user: authUser, loading: authLoading } = useAuth()
   const [paginatedTalents, setPaginatedTalents] = useState<User[]>([])
   const [featuredTalents, setFeaturedTalents] = useState<User[]>([])
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
@@ -33,6 +43,9 @@ export default function TalentListingPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>('All')
+  const [bookmarkedPortfolioIds, setBookmarkedPortfolioIds] = useState<Set<string>>(new Set())
+  const [bookmarkingPortfolioIds, setBookmarkingPortfolioIds] = useState<Set<string>>(new Set())
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
 
   useEffect(() => {
     fetchPopularTechStacks()
@@ -72,6 +85,34 @@ export default function TalentListingPage() {
       .finally(() => setContentLoading(false))
   }, [page, searchTerm, selectedRole, selectedTech])
 
+  useEffect(() => {
+    if (authLoading || !authUser) {
+      setBookmarkedPortfolioIds(new Set())
+      return
+    }
+
+    const memberIds = Array.from(
+      new Set([...paginatedTalents, ...featuredTalents].map((user) => user.id)),
+    )
+
+    if (memberIds.length === 0) {
+      setBookmarkedPortfolioIds(new Set())
+      return
+    }
+
+    Promise.all(
+      memberIds.map((memberId) =>
+        fetchPortfolioBookmark(memberId)
+          .then((bookmarked) => [memberId, bookmarked] as const)
+          .catch(() => [memberId, false] as const),
+      ),
+    ).then((entries) => {
+      setBookmarkedPortfolioIds(
+        new Set(entries.filter(([, bookmarked]) => bookmarked).map(([memberId]) => memberId)),
+      )
+    })
+  }, [authLoading, authUser, paginatedTalents, featuredTalents])
+
   const changeSearchTerm = (value: string) => {
     setPage(0)
     setSearchTerm(value)
@@ -85,6 +126,41 @@ export default function TalentListingPage() {
   const changeTech = (value: string) => {
     setPage(0)
     setSelectedTech(value)
+  }
+
+  const handleToggleBookmark = async (
+    event: MouseEvent<HTMLButtonElement>,
+    memberId: string,
+  ) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (authLoading || bookmarkingPortfolioIds.has(memberId)) return
+    if (!authUser) {
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    setBookmarkingPortfolioIds((current) => new Set(current).add(memberId))
+    try {
+      const isBookmarked = bookmarkedPortfolioIds.has(memberId)
+      const nextBookmarked = isBookmarked
+        ? await removePortfolioBookmark(memberId)
+        : await addPortfolioBookmark(memberId)
+
+      setBookmarkedPortfolioIds((current) => {
+        const next = new Set(current)
+        if (nextBookmarked) next.add(memberId)
+        else next.delete(memberId)
+        return next
+      })
+    } finally {
+      setBookmarkingPortfolioIds((current) => {
+        const next = new Set(current)
+        next.delete(memberId)
+        return next
+      })
+    }
   }
 
   const containerVariants = {
@@ -184,6 +260,19 @@ export default function TalentListingPage() {
                     />
 
                     <div className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
+                    <button
+                      type="button"
+                      className={`absolute -top-1 -right-1 rounded-md border bg-white p-1.5 transition-colors ${
+                        bookmarkedPortfolioIds.has(user.id)
+                          ? 'border-blue-200 text-blue-600'
+                          : 'border-slate-200 text-slate-400 hover:text-blue-600'
+                      }`}
+                      disabled={bookmarkingPortfolioIds.has(user.id)}
+                      onClick={(event) => handleToggleBookmark(event, user.id)}
+                      aria-label={bookmarkedPortfolioIds.has(user.id) ? '북마크 해제' : '북마크 추가'}
+                    >
+                      <BookmarkPlus className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                   <h3 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                     {user.name}
@@ -227,7 +316,7 @@ export default function TalentListingPage() {
 
         {contentLoading ? (
           <div className="text-center py-24 text-slate-400 font-medium">
-            조건에 맞는 포트폴리오 로드 중...
+            조건에 맞는 포트폴리오를 불러오는 중...
           </div>
         ) : (
         <motion.div
@@ -259,6 +348,19 @@ export default function TalentListingPage() {
                           >
                             참여 가능
                           </Badge>
+                          <button
+                            type="button"
+                            className={`ml-2 rounded-md border p-1.5 transition-colors ${
+                              bookmarkedPortfolioIds.has(user.id)
+                                ? 'border-blue-200 bg-blue-50 text-blue-600'
+                                : 'border-slate-200 text-slate-400 hover:text-blue-600'
+                            }`}
+                            disabled={bookmarkingPortfolioIds.has(user.id)}
+                            onClick={(event) => handleToggleBookmark(event, user.id)}
+                            aria-label={bookmarkedPortfolioIds.has(user.id) ? '북마크 해제' : '북마크 추가'}
+                          >
+                            <BookmarkPlus className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                         <p className="text-sm text-blue-600 font-medium">
                           {formatPositionLabel(user.role)}
@@ -329,6 +431,10 @@ export default function TalentListingPage() {
           onPageChange={setPage}
         />
       </div>
+      {isLoginModalOpen && (
+        <LoginModal onClose={() => setIsLoginModalOpen(false)} />
+      )}
     </div>
   )
 }
+
