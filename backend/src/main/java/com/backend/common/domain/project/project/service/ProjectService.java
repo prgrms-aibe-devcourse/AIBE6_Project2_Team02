@@ -1042,10 +1042,35 @@ public class ProjectService {
         // 알림 연동 - 방출당한 사람에게 알림 슛
         notificationService.notify(
                 projectMember.getMember(),
-                NotificationType.SYSTEM, // 팀 컨벤션에 맞는 타입 지정
+                NotificationType.SYSTEM,
                 "프로젝트 탈퇴 처리",
                 "[" + projectMember.getProject().getTitle() + "] 프로젝트에서 방출되었습니다.",
                 null,
+                null
+        );
+    }
+
+    @Transactional
+    @PreAuthorize("@projectAuthorizer.isProjectLeaderOf(#projectId, authentication.principal.memberId)")
+    public void updateMemberRole(Long projectId, Long targetMemberId, ProjectRole newRole) {
+
+        // 권한을 변경할 대상 팀원이 프로젝트에 실제로 존재하는지 조회
+        ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberIdAndMemberStatus(
+                        projectId,
+                        targetMemberId,
+                        ProjectMemberStatus.ACTIVE
+                )
+                .orElseThrow(() -> new ResourceNotFoundException("404", "해당 프로젝트에 참여 중인 멤버를 찾을 수 없습니다."));
+
+
+        projectMember.updateRole(newRole);
+
+        notificationService.notify(
+                projectMember.getMember(),
+                NotificationType.SYSTEM,
+                "프로젝트 권한 변경",
+                "[" + projectMember.getProject().getTitle() + "] 프로젝트에서의 권한이 " + newRole.name() + "(으)로 변경되었습니다.",
+                "/projects/" + projectId,
                 null
         );
     }

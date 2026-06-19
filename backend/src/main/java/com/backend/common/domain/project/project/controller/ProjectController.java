@@ -271,4 +271,17 @@ public class ProjectController {
         return RsData.of("200", "해당 팀원이 프로젝트에서 방출되었습니다.");
     }
 
+    @PatchMapping("/{projectId}/members/{memberId}/role")
+    public ResponseEntity<RsData<Void>> updateMemberRole(
+            @PathVariable Long projectId,
+            @PathVariable("memberId") Long targetMemberId,
+            @Valid @RequestBody ProjectRoleUpdateRequest request) {
+
+        projectService.updateMemberRole(projectId, targetMemberId, request.role());
+
+        return ResponseEntity.ok(
+                RsData.of("200", "팀원의 권한 등급이 성공적으로 수정되었습니다.")
+        );
+    }
+
 }

@@ -73,4 +73,19 @@ public class ProjectMember {
         this.leftAt = LocalDateTime.now();
     }
 
+    /**
+     *  프로젝트 멤버 권한 수정 도메인 로직
+     */
+    public void updateRole(ProjectRole newRole) {
+        if (this.memberStatus != ProjectMemberStatus.ACTIVE) {
+            throw new IllegalStateException("현재 활성화 상태가 아닌 멤버의 권한은 수정할 수 없습니다.");
+        }
+        if (newRole == null) {
+            throw new IllegalArgumentException("변경할 권한 값이 유효하지 않습니다.");
+        }
+
+        // 권한 등급 덮어쓰기
+        this.role = newRole;
+    }
+
 }
