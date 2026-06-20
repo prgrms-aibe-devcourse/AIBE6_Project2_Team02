@@ -24,7 +24,7 @@ public class Member {
     private String fcmToken;
 
     @Column(length = 20)
-    private String status = "ACTIVE"; // ACTIVE, SUSPENDED, BANNED
+    private String status = "ACTIVE"; // ACTIVE, SUSPENDED, BANNED, WITHDRAWN
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
@@ -66,8 +66,12 @@ public class Member {
     }
 
     public void suspend(int days) {
-        this.status = "SUSPENDED";
-        this.suspensionUntil = LocalDateTime.now().plusDays(days);
+        if(days == 999)
+            this.status = "BANNED";
+        else {
+            this.status = "SUSPENDED";
+            this.suspensionUntil = LocalDateTime.now().plusDays(days);
+        }
         this.updatedAt = LocalDateTime.now();
     }
 

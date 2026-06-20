@@ -36,13 +36,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
     fetchMe().then((me) => {
       setUser(me)
       setLoading(false)
-      if (
-        me &&
-        me.role === 'ROLE_ADMIN' &&
-        (pathname === '/' || pathname === '/login')
-      ) {
-        router.replace('/admin/reports')
-      }
     })
   }, [pathname, router])
 

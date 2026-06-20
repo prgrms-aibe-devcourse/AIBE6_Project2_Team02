@@ -226,9 +226,6 @@ export default function AdminUsersPage() {
                       >
                         {suspended ? '활동 제한 중' : '정상 활동'}
                       </Badge>
-                      <span className="text-[10px] text-slate-400 font-medium">
-                        ID: {user.id}
-                      </span>
                     </div>
 
                     <div className="flex items-center gap-4 mb-6">
@@ -295,7 +292,7 @@ export default function AdminUsersPage() {
                           onClick={() => handleSuspend(user.id)}
                         >
                           <ShieldAlert size={14} className="mr-1.5" />
-                          {suspended ? '기한 연장' : '활동 제한'}
+                          {suspended ? '기한 변경' : '활동 제한'}
                         </Button>
                       </div>
 

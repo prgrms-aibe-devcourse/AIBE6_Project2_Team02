@@ -48,12 +48,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
+            // 영구정지 회원 체크
+            if ("BANNED".equals(member.getStatus())) {
+
+                SecurityContextHolder.clearContext();
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             // 정지 회원 체크
             if ("SUSPENDED".equals(member.getStatus())
                     && member.getSuspensionUntil() != null
                     && member.getSuspensionUntil().isAfter(LocalDateTime.now())) {
 
-                sendSuspendedResponse(response, member);
+                SecurityContextHolder.clearContext();
+                filterChain.doFilter(request, response);
                 return;
             }
 
@@ -77,6 +86,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void sendBannedResponse(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType("application/json;charset=UTF-8");
+
+        String message = "영구정지된 회원입니다.";
+
+        RsData<Void> rsData = RsData.of("403", message);
+
+        response.getWriter().write(
+                jsonMapper.writeValueAsString(rsData)
+        );
     }
 
     private void sendSuspendedResponse(HttpServletResponse response,

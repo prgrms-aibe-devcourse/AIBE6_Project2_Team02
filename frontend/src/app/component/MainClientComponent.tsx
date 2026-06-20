@@ -1,16 +1,19 @@
 'use client'
 
-import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowRight, Ban, Clock, Code, Rocket, Users } from 'lucide-react';
-import { PaginationControls } from '../../components/PaginationControls';
-import { Badge, Button, Card } from '../../components/ui';
-import { fetchPopularTechStacks, fetchProjects } from '../../lib/api';
-import { formatDate } from '../../lib/date';
-import { formatProjectMemberCount } from '../../lib/project';
-import type { Project } from '../../types';
+import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+
+import { ArrowRight, Ban, Clock, Code, Rocket, Users } from 'lucide-react'
+
+import { PaginationControls } from '../../components/PaginationControls'
+import { Badge, Button, Card } from '../../components/ui'
+import { fetchPopularTechStacks, fetchProjects } from '../../lib/api'
+import { formatDate } from '../../lib/date'
+import { formatProjectMemberCount } from '../../lib/project'
+import type { Project } from '../../types'
 
 const statusMap: Record<string, string> = {
   All: '전체',
@@ -35,10 +38,21 @@ const errorMessageMap: Record<string, string> = {
 export default function MainClientComponent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [errorMsg, setErrorMsg] = useState<string | null>(
-    errorMessageMap[searchParams.get('error') ?? ''] ?? null,
-  )
-
+  const errorKey = searchParams.get('error') ?? ''
+  const untilParam = searchParams.get('until') ?? ''
+  const buildInitialError = () => {
+    const base = errorMessageMap[errorKey] ?? null
+    if (!base) return null
+    if (errorKey === 'SUSPENDED' && untilParam) {
+      const parsed = new Date(untilParam)
+      if (!isNaN(parsed.getTime())) {
+        // use existing formatDate helper to format the date string
+        return `${formatDate(parsed.toISOString())}까지 ${base}`
+      }
+    }
+    return base
+  }
+  const [errorMsg, setErrorMsg] = useState<string | null>(buildInitialError())
 
   const [latestProjects, setLatestProjects] = useState<Project[]>([]) // 현재 페이지의 프로젝트 데이터 6개
   const [projectPageCount, setProjectPageCount] = useState(0) // 백엔드가 준 전체 페이지 수 (totalPages)
@@ -62,7 +76,7 @@ export default function MainClientComponent() {
 
   useEffect(() => {
     setContentLoading(true)
-    
+
     fetchProjects({
       page: projectPage,
       size: 6,
