@@ -310,15 +310,28 @@ export function unhideProject(projectId: string) {
   })
 }
 
+export function fetchHiddenPortfolios() {
+  return fetchRsDataJson<Portfolio[]>('/admin/portfolios/hidden')
+}
+
+export function unhidePortfolio(portfolioId: number) {
+  return fetchRsDataJson<void>(`/admin/portfolios/${portfolioId}/unhide`, {
+    method: 'PATCH',
+  })
+}
+
 export function searchMembers(nickname?: string) {
   const query = nickname ? `?nickname=${encodeURIComponent(nickname)}` : ''
   return fetchRsDataJson<any[]>(`/admin/members${query}`)
 }
 
 export function suspendMember(memberId: string, days: number) {
-  return fetchRsDataJson<void>(`/admin/members/${memberId}/suspend?days=${days}`, {
-    method: 'PATCH',
-  })
+  return fetchRsDataJson<void>(
+    `/admin/members/${memberId}/suspend?days=${days}`,
+    {
+      method: 'PATCH',
+    },
+  )
 }
 
 export function activateMember(memberId: string) {
@@ -420,11 +433,18 @@ export function deleteProject(projectId: string) {
   })
 }
 
-export function updateMemberRole(projectId: string, memberId: string, role: string) {
-  return fetchRsDataJson<void>(`/projects/${projectId}/members/${memberId}/role`, {
-    method: 'PATCH',
-    body: JSON.stringify({ role }),
-  })
+export function updateMemberRole(
+  projectId: string,
+  memberId: string,
+  role: string,
+) {
+  return fetchRsDataJson<void>(
+    `/projects/${projectId}/members/${memberId}/role`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    },
+  )
 }
 
 export function checkReviewAccess(projectId: number, revieweeId: number) {

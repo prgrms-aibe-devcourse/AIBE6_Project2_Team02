@@ -98,10 +98,13 @@ public class AdminReportService {
 
         report.resolve(admin);
 
-        // 프로젝트 신고 처리 시 해당 프로젝트 숨김 처리
+        // 프로젝트/포트폴리오 신고 처리 시 해당 글 숨김 처리
         if (report.getTargetType() == ReportTargetType.PROJECT) {
             projectRepository.findById(report.getTargetId())
                     .ifPresent(com.backend.common.domain.project.project.entity.Project::hide);
+        } else if (report.getTargetType() == ReportTargetType.PORTFOLIO) {
+            portfolioRepository.findById(report.getTargetId())
+                    .ifPresent(com.backend.common.domain.portfolio.portfolio.entity.Portfolio::hide);
         }
     }
 

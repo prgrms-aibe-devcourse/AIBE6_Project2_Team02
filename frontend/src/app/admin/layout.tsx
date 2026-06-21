@@ -61,6 +61,12 @@ export default function AdminLayout({
       description: '처리/기각 완료된 내역',
     },
     {
+      title: '포트폴리오 관리',
+      icon: <FolderX className="w-5 h-5" />,
+      href: '/admin/portfolios',
+      description: '숨김 처리된 포트폴리오 관리',
+    },
+    {
       title: '프로젝트 관리',
       icon: <FolderX className="w-5 h-5" />,
       href: '/admin/projects',
