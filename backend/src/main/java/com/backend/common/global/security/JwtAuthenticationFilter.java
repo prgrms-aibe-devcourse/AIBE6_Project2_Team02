@@ -2,7 +2,6 @@ package com.backend.common.global.security;
 
 import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.member.repository.MemberRepository;
-import com.backend.common.global.rsdata.RsData;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,7 +17,6 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Component
 @RequiredArgsConstructor
@@ -48,12 +46,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
+            // 영구정지 회원 체크
+            if ("BANNED".equals(member.getStatus())) {
+
+                SecurityContextHolder.clearContext();
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             // 정지 회원 체크
             if ("SUSPENDED".equals(member.getStatus())
                     && member.getSuspensionUntil() != null
                     && member.getSuspensionUntil().isAfter(LocalDateTime.now())) {
 
-                sendSuspendedResponse(response, member);
+                SecurityContextHolder.clearContext();
+                filterChain.doFilter(request, response);
                 return;
             }
 
@@ -77,28 +84,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    private void sendSuspendedResponse(HttpServletResponse response,
-                                       Member member) throws IOException {
-
-        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        response.setContentType("application/json;charset=UTF-8");
-
-        String message = "정지된 회원입니다.";
-
-        if (member.getSuspensionUntil() != null) {
-            message += " (정지 기한: "
-                    + member.getSuspensionUntil()
-                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
-                    + ")";
-        }
-
-        RsData<Void> rsData = RsData.of("403", message);
-
-        response.getWriter().write(
-                jsonMapper.writeValueAsString(rsData)
-        );
     }
 
     private String extractTokenFromCookie(HttpServletRequest request) {

@@ -96,10 +96,12 @@ export default function AdminUsersPage() {
 
   const filteredUsers = users.filter((user) => {
     if (activeTab === 'all') return true
-    return user.status === 'SUSPENDED'
+    return user.status === 'SUSPENDED' || user.status === 'BANNED'
   })
 
-  const suspendedCount = users.filter((u) => u.status === 'SUSPENDED').length
+  const suspendedCount = users.filter(
+    (u) => u.status === 'SUSPENDED' || u.status === 'BANNED',
+  ).length
 
   if (loading && users.length === 0) {
     return (
@@ -205,6 +207,7 @@ export default function AdminUsersPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredUsers.map((user) => {
             const suspended = user.status === 'SUSPENDED'
+            const banned = user.status === 'BANNED'
             return (
               <motion.div
                 key={user.id}
@@ -212,23 +215,20 @@ export default function AdminUsersPage() {
                 animate={{ opacity: 1, y: 0 }}
               >
                 <Card
-                  className={`overflow-hidden border-slate-200 hover:shadow-md transition-all h-full flex flex-col ${suspended ? 'border-red-200 bg-red-50/30' : ''}`}
+                  className={`overflow-hidden border-slate-200 hover:shadow-md transition-all h-full flex flex-col ${suspended || banned ? 'border-red-200 bg-red-50/30' : ''}`}
                 >
                   <div className="p-5 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-4">
                       <Badge
-                        variant={suspended ? 'outline' : 'secondary'}
+                        variant={suspended || banned ? 'outline' : 'secondary'}
                         className={
-                          suspended
+                          suspended || banned
                             ? 'bg-red-50 text-red-700 border-red-100'
                             : 'bg-slate-100 text-slate-600'
                         }
                       >
-                        {suspended ? '활동 제한 중' : '정상 활동'}
+                        {suspended || banned ? '활동 제한 중' : '정상 활동'}
                       </Badge>
-                      <span className="text-[10px] text-slate-400 font-medium">
-                        ID: {user.id}
-                      </span>
                     </div>
 
                     <div className="flex items-center gap-4 mb-6">
@@ -269,6 +269,20 @@ export default function AdminUsersPage() {
                       </div>
                     )}
 
+                    {banned && (
+                      <div className="mb-6 p-3 bg-red-50 rounded-xl border border-red-100 flex items-center gap-3">
+                        <Calendar className="w-4 h-4 text-red-500 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <div className="text-[10px] text-red-600 font-bold uppercase tracking-wider">
+                            제한 기한
+                          </div>
+                          <div className="text-xs text-red-700 font-semibold truncate">
+                            영구정지
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="mt-auto space-y-3">
                       <div className="flex items-center gap-2">
                         <select
@@ -286,20 +300,20 @@ export default function AdminUsersPage() {
                           <option value={7}>7일 정지</option>
                           <option value={14}>14일 정지</option>
                           <option value={30}>30일 정지</option>
-                          <option value={999}>영구 정지 수준 (999일)</option>
+                          <option value={999}>영구 정지</option>
                         </select>
                         <Button
-                          variant={suspended ? 'outline' : 'default'}
+                          variant={suspended || banned ? 'outline' : 'default'}
                           size="sm"
-                          className={`h-9 px-4 text-xs font-bold ${suspended ? 'border-red-200 text-red-600 hover:bg-red-50' : 'bg-red-600 hover:bg-red-700 text-white border-none'}`}
+                          className={`h-9 px-4 text-xs font-bold ${suspended || banned ? 'border-red-200 text-red-600 hover:bg-red-50' : 'bg-red-600 hover:bg-red-700 text-white border-none'}`}
                           onClick={() => handleSuspend(user.id)}
                         >
                           <ShieldAlert size={14} className="mr-1.5" />
-                          {suspended ? '기한 연장' : '활동 제한'}
+                          {suspended || banned ? '기한 변경' : '활동 제한'}
                         </Button>
                       </div>
 
-                      {suspended && (
+                      {(suspended || banned) && (
                         <Button
                           variant="ghost"
                           size="sm"

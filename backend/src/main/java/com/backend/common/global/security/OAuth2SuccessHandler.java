@@ -67,7 +67,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         if (!isNew[0] && !member.getStatus().equals("ACTIVE")) {
             getRedirectStrategy().sendRedirect(request, response,
-                    frontendUrl + "?error=" + member.getStatus());
+                    frontendUrl + "?error=" + member.getStatus() + "&until=" + member.getSuspensionUntil());
             return;
         }
 
