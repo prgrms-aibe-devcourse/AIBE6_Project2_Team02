@@ -18,6 +18,7 @@ public record ProjectResponse(
         List<UserResponse> teamMembers,
         String deadline,
         String createdAt,
-        boolean featured
+        boolean featured,
+        boolean isHidden
 ) {
 }
