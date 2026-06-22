@@ -15,6 +15,7 @@ import {
   Pencil,
   Share2,
   ShieldAlert,
+  Sparkles,
   Target,
   Users,
 } from 'lucide-react'
@@ -32,14 +33,18 @@ import {
   applyProject,
   cancelProjectApplication,
   checkAlreadyReported,
+  addProjectBookmark,
+  fetchMyPortfolio,
   fetchProject,
   fetchProjectBookmark,
   fetchProjectPermissions,
+  generateApplicationMotivation,
   removeProjectBookmark,
 } from '../../../lib/api'
 import { formatDate } from '../../../lib/date'
 import type { Project } from '../../../types'
 import { useAuth } from '../../providers'
+import { useAiDraft } from '../../../hooks/useAiDraft'
 
 const categoryMap: Record<string, string> = {
   Web: '웹',
@@ -81,6 +86,25 @@ export default function ProjectDetailPage() {
   const [isApplying, setIsApplying] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [isBookmarking, setIsBookmarking] = useState(false)
+  const motivationDraft = useAiDraft({
+    validate: () => {
+      if (!project) return '프로젝트 정보를 불러오는 중입니다.'
+      if (!selectedRole) return '먼저 포지션을 선택해주세요.'
+      return null
+    },
+    generate: async () => {
+      const myTechStacks = await fetchMyPortfolio()
+        .then((portfolio) => portfolio.techStacks ?? [])
+        .catch(() => [])
+      return generateApplicationMotivation(
+        project!.title,
+        project!.description,
+        selectedRole,
+        myTechStacks,
+      )
+    },
+    onResult: setApplyMessage,
+  })
 
   const handleOpenReport = async () => {
     try {
@@ -658,9 +682,20 @@ export default function ProjectDetailPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              왜 이 프로젝트에 적합한가요?
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-slate-700">
+                왜 이 프로젝트에 적합한가요?
+              </label>
+              <button
+                type="button"
+                onClick={motivationDraft.run}
+                disabled={motivationDraft.disabled}
+                className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {motivationDraft.label}
+              </button>
+            </div>
             <textarea
               className="form-textarea min-h-[100px]"
               placeholder="관련 경험과 이 프로젝트에 참여하고 싶은 이유를 간단히 적어주세요..."

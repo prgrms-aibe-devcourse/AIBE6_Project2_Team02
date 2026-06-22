@@ -3,14 +3,19 @@
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, CheckCircle2, Plus, X } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Plus, Sparkles, X } from 'lucide-react'
 import { Badge, Button, Card, Input } from '../../../components/ui'
 import { LoginModal } from '../../../components/LoginModal'
-import { createProject, fetchPopularTechStacks } from '../../../lib/api'
+import {
+  createProject,
+  fetchPopularTechStacks,
+  generateProjectDescription,
+} from '../../../lib/api'
 import { leaderPositionOptions } from '../../../constants/project'
 import type { ProjectCreateRequest } from '../../../types/dto/project'
 import type { PositionType } from '../../../types/enums/project'
 import { useAuth } from '../../providers'
+import { useAiDraft } from '../../../hooks/useAiDraft'
 
 export default function ProjectCreatePage() {
   const router = useRouter()
@@ -38,6 +43,12 @@ export default function ProjectCreatePage() {
   ])
   const [goals, setGoals] = useState([''])
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const descriptionDraft = useAiDraft({
+    validate: () => (title.trim() ? null : '먼저 프로젝트 제목을 입력해주세요.'),
+    generate: () => generateProjectDescription(title.trim()),
+    onResult: setDescription,
+  })
 
   useEffect(() => {
     fetchPopularTechStacks()
@@ -206,9 +217,20 @@ export default function ProjectCreatePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                프로젝트 설명 <span className="text-red-500">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-slate-700">
+                  프로젝트 설명 <span className="text-red-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={descriptionDraft.run}
+                  disabled={descriptionDraft.disabled}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {descriptionDraft.label}
+                </button>
+              </div>
               <textarea
                 className="form-textarea min-h-[150px]"
                 placeholder="프로젝트의 배경, 해결하고자 하는 문제, 주요 기능 등을 상세히 적어주세요."
