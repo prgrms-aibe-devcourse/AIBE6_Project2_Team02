@@ -267,7 +267,7 @@ export default function ProposalTabComponent({ user }: ProposalTabProps) {
                   >
                     <div className="flex justify-between items-center">
                 <span className="text-xs text-slate-400">
-                  제안자: {prop.proposerName} 리더
+                  제안자: {prop.proposerName}
                 </span>
                       <Badge
                           variant={

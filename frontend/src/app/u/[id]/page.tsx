@@ -621,7 +621,7 @@ export default function DeveloperProfilePage() {
               제안할 수 있는 모집 중 프로젝트가 없습니다.
             </p>
             <p className="text-xs text-slate-500">
-              리더 또는 매니저로 참여 중인 모집 프로젝트가 필요합니다.
+              참여 중인 모집 프로젝트가 필요합니다.
             </p>
             <Button
               type="button"

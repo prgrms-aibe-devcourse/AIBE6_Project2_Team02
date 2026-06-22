@@ -216,12 +216,8 @@ public class PortfolioService {
         ProjectMember proposerMembership = projectMemberRepository
                 .findByProjectIdAndMemberId(request.projectId(), proposerId)
                 .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE)
-                .filter(member ->
-                        member.getRole() == ProjectRole.LEADER
-                                || member.getRole() == ProjectRole.MANAGER
-                )
                 .orElseThrow(() -> new AccessDeniedException(
-                        "해당 프로젝트의 리더 또는 매니저만 제안할 수 있습니다."
+                        "해당 프로젝트의 멤버만 제안할 수 있습니다."
                 ));
 
         if (proposerMembership.getProject().getStatus() != ProjectStatus.RECRUITING
