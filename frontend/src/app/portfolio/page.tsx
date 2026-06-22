@@ -3,28 +3,27 @@
 import { motion } from 'framer-motion'
 import type { MouseEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-git
 import Link from 'next/link'
 
 import { BookmarkPlus, Clock, MapPin, Search, Sparkles } from 'lucide-react'
 
-import { LoginModal } from '../../components/LoginModal.tsx'
-import { PaginationControls } from '../../components/PaginationControls.tsx'
-import { SearchField } from '../../components/SearchField.tsx'
-import { Badge, Button, Card } from '../../components/ui.tsx'
+import { LoginModal } from '../../components/LoginModal'
+import { PaginationControls } from '../../components/PaginationControls'
+import { SearchField } from '../../components/SearchField'
+import { Badge, Button, Card } from '../../components/ui'
 import {
   formatPositionLabel,
   leaderPositionOptions,
-} from '../../constants/project.ts'
+} from '../../constants/project'
 import {
   addPortfolioBookmark,
   fetchPopularTechStacks,
   fetchPortfolioBookmark,
   fetchPortfolios,
   removePortfolioBookmark,
-} from '../../lib/api.ts'
+} from '../../lib/api'
 import type { User } from '../../types'
-import { useAuth } from '../providers.tsx'
+import { useAuth } from '../providers'
 
 const roleOptions = [
   { value: 'All', label: '전체' },
