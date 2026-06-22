@@ -46,6 +46,7 @@ export default function ProjectListingClient() {
   const { user: authUser, loading: authLoading } = useAuth()
   const initialTech = searchParams.get('tech')
   const projectRequestIdRef = useRef(0)
+  const featuredProjectRequestIdRef = useRef(0)
 
   // 🎯 [수정] 서버 페이징 상태 관리를 위한 최적화 명시
   const [paginatedProjects, setPaginatedProjects] = useState<Project[]>([])
@@ -149,18 +150,10 @@ export default function ProjectListingClient() {
           setTotalElements(pageData.totalElements)
 
 
-          setFeaturedProjects(
-            selectedStatus === 'RECRUITING'
-              ? pageData.content.filter(
-                  (p) => p.featured && p.recruitmentStatus === 'RECRUITING',
-                )
-              : [],
-          )
         } else {
           setPaginatedProjects([])
           setPageCount(0)
           setTotalElements(0)
-          setFeaturedProjects([])
         }
       })
       .catch((err) => {
@@ -169,7 +162,6 @@ export default function ProjectListingClient() {
         setPaginatedProjects([])
         setPageCount(0)
         setTotalElements(0)
-        setFeaturedProjects([])
       })
       .finally(() => {
         if (requestId === projectRequestIdRef.current) {
@@ -177,6 +169,33 @@ export default function ProjectListingClient() {
         }
       })
   }, [page, searchTerm, selectedCategory, selectedTech, selectedStatus])
+
+  useEffect(() => {
+    const requestId = ++featuredProjectRequestIdRef.current
+
+    if (selectedStatus === 'CLOSED') {
+      setFeaturedProjects([])
+      return
+    }
+
+    fetchProjects({
+      page: 0,
+      size: 3,
+      search: searchTerm,
+      category: selectedCategory,
+      tech: selectedTech,
+      status: 'RECRUITING',
+    })
+      .then((pageData) => {
+        if (requestId !== featuredProjectRequestIdRef.current) return
+        setFeaturedProjects(pageData?.content ?? [])
+      })
+      .catch((err) => {
+        if (requestId !== featuredProjectRequestIdRef.current) return
+        console.error('추천 프로젝트 로드 에러:', err)
+        setFeaturedProjects([])
+      })
+  }, [searchTerm, selectedCategory, selectedTech, selectedStatus])
 
   useEffect(() => {
     if (authLoading || !authUser) {

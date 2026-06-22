@@ -253,7 +253,7 @@ class PortfolioServiceTest {
         given(portfolio.getMember()).willReturn(portfolioOwner);
         given(projectMemberRepository.findByProjectIdAndMemberId(10L, 1L)).willReturn(Optional.of(proposerMembership));
         given(proposerMembership.getMemberStatus()).willReturn(ProjectMemberStatus.ACTIVE);
-        given(proposerMembership.getRole()).willReturn(ProjectRole.LEADER);
+        given(proposerMembership.getRole()).willReturn(ProjectRole.MEMBER);
         given(proposerMembership.getProject()).willReturn(project);
         given(project.getStatus()).willReturn(ProjectStatus.RECRUITING);
         given(project.isRecruitmentOpen()).willReturn(true);

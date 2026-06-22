@@ -19,6 +19,7 @@ import {
   Users,
 } from 'lucide-react'
 
+import { useDialog } from '../../../components/DialogProvider'
 import { LoginModal } from '../../../components/LoginModal'
 import { ReportModal } from '../../../components/ReportModal'
 import { Badge, Button, Card, Modal } from '../../../components/ui'
@@ -62,6 +63,7 @@ export default function ProjectDetailPage() {
   const id = params?.id as string
   const router = useRouter()
   const { user: authUser, loading: authLoading } = useAuth()
+  const { confirmDialog } = useDialog()
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
@@ -261,7 +263,14 @@ export default function ProjectDetailPage() {
   const handleCancelApplication = async () => {
     if (!pendingApplicationId || isCancellingApplication) return
 
-    const confirmed = window.confirm('프로젝트 지원 신청을 취소하시겠습니까?')
+    const confirmed = await confirmDialog(
+      '프로젝트 지원 신청을 취소하시겠습니까?',
+      {
+        title: '지원 신청 취소',
+        confirmText: '신청 취소',
+        destructive: true,
+      },
+    )
     if (!confirmed) return
 
     setIsCancellingApplication(true)

@@ -93,6 +93,8 @@ export default function DeveloperProfilePage() {
   const [cancellingProposalId, setCancellingProposalId] = useState<
     number | null
   >(null)
+  const [proposalToCancel, setProposalToCancel] =
+    useState<SentProjectProposal | null>(null)
 
   useEffect(() => {
     if (!authLoading && !loading && user) {
@@ -292,7 +294,6 @@ export default function DeveloperProfilePage() {
 
   const handleCancelProposal = async (proposalId: number) => {
     if (cancellingProposalId) return
-    if (!confirm('프로젝트 제안을 취소하시겠습니까?')) return
 
     setCancellingProposalId(proposalId)
     try {
@@ -300,6 +301,7 @@ export default function DeveloperProfilePage() {
       setPendingSentProposals((prev) =>
         prev.filter((proposal) => proposal.proposalId !== proposalId),
       )
+      setProposalToCancel(null)
       toast.success('프로젝트 제안을 취소했습니다.')
     } catch (error) {
       toast.error(
@@ -674,7 +676,7 @@ export default function DeveloperProfilePage() {
               제안할 수 있는 모집 중 프로젝트가 없습니다.
             </p>
             <p className="text-xs text-slate-500">
-              리더 또는 매니저로 참여 중인 모집 프로젝트가 필요합니다.
+              참여 중인 모집 프로젝트가 필요합니다.
             </p>
             <Button
               type="button"
@@ -780,7 +782,7 @@ export default function DeveloperProfilePage() {
                   size="sm"
                   className="shrink-0 border-red-200 text-red-500 hover:bg-red-50"
                   disabled={cancellingProposalId === proposal.proposalId}
-                  onClick={() => handleCancelProposal(proposal.proposalId)}
+                  onClick={() => setProposalToCancel(proposal)}
                 >
                   {cancellingProposalId === proposal.proposalId
                     ? '취소 중...'
@@ -790,6 +792,48 @@ export default function DeveloperProfilePage() {
             ))}
           </div>
         )}
+      </Modal>
+
+      <Modal
+        isOpen={proposalToCancel !== null}
+        onClose={() => {
+          if (!cancellingProposalId) setProposalToCancel(null)
+        }}
+        title="프로젝트 제안 취소"
+      >
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-slate-900">
+              프로젝트 제안을 취소하시겠습니까?
+            </p>
+            <p className="text-sm text-slate-600">
+              {proposalToCancel?.projectTitle}에 보낸 제안이 취소됩니다.
+            </p>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setProposalToCancel(null)}
+              disabled={cancellingProposalId !== null}
+            >
+              닫기
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-red-200 text-red-500 hover:bg-red-50"
+              onClick={() => {
+                if (proposalToCancel) {
+                  handleCancelProposal(proposalToCancel.proposalId)
+                }
+              }}
+              disabled={cancellingProposalId !== null}
+            >
+              {cancellingProposalId ? '취소 중...' : '제안 취소'}
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       {isLoginModalOpen && (
