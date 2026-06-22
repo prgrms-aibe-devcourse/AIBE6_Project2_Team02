@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 
 import { Badge, Button, Card } from '../../../../components/ui'
+import { useDialog } from '../../../../components/DialogProvider'
 import {
   deleteProject,
   fetchApplicant,
@@ -91,6 +92,7 @@ export default function ProjectManagementPage() {
   const id = params?.id as string
   const router = useRouter()
   const { user: authUser } = useAuth()
+  const { confirmDialog } = useDialog()
   const [project, setProject] = useState<Project_manage | null>(null)
   const [applicants, setApplicants] = useState<Applicant[]>([])
   const [loading, setLoading] = useState(true)
@@ -199,8 +201,15 @@ export default function ProjectManagementPage() {
       .finally(() => setApprovingId(null))
   }
 
-  const handleKick = (memberId: string, memberName: string) => {
-    if (!confirm(`${memberName}님을 프로젝트에서 방출하시겠습니까?`)) return
+  const handleKick = async (memberId: string, memberName: string) => {
+    if (
+      !(await confirmDialog(`${memberName}님을 프로젝트에서 방출하시겠습니까?`, {
+        title: '프로젝트 멤버 방출',
+        confirmText: '방출',
+        destructive: true,
+      }))
+    )
+      return
     setKickingId(memberId)
     kickProjectMember(id, memberId)
       .then(() => {
@@ -211,8 +220,15 @@ export default function ProjectManagementPage() {
       .finally(() => setKickingId(null))
   }
 
-  const handleDelete = () => {
-    if (!confirm('프로젝트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return
+  const handleDelete = async () => {
+    if (
+      !(await confirmDialog('프로젝트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.', {
+        title: '프로젝트 삭제',
+        confirmText: '삭제',
+        destructive: true,
+      }))
+    )
+      return
     setDeleting(true)
     deleteProject(id)
       .then(() => {
@@ -223,8 +239,15 @@ export default function ProjectManagementPage() {
       .finally(() => setDeleting(false))
   }
 
-  const handleLeave = () => {
-    if (!confirm('프로젝트에서 탈퇴하시겠습니까?')) return
+  const handleLeave = async () => {
+    if (
+      !(await confirmDialog('프로젝트에서 탈퇴하시겠습니까?', {
+        title: '프로젝트 탈퇴',
+        confirmText: '탈퇴',
+        destructive: true,
+      }))
+    )
+      return
     setLeaving(true)
     leaveProject(id)
       .then(() => {

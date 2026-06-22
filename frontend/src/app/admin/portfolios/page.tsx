@@ -8,11 +8,13 @@ import Link from 'next/link'
 
 import { AlertCircle, FolderX, Search, Undo2, X } from 'lucide-react'
 
+import { useDialog } from '../../../components/DialogProvider'
 import { Badge, Button, Card } from '../../../components/ui'
 import { fetchHiddenPortfolios, unhidePortfolio } from '../../../lib/api'
 import type { Portfolio } from '../../../types'
 
 export default function AdminPortfoliosPage() {
+  const { confirmDialog } = useDialog()
   const [portfolios, setPortfolios] = useState<Portfolio[]>([])
   const [loading, setLoading] = useState(true)
   const [searchKeyword, setSearchKeyword] = useState('')
@@ -36,9 +38,10 @@ export default function AdminPortfoliosPage() {
 
   const handleUnhide = async (portfolioId: number) => {
     if (
-      !confirm(
+      !(await confirmDialog(
         '해당 포트폴리오의 숨김을 해제하시겠습니까?\n해제 시 일반 유저들에게 다시 노출됩니다.',
-      )
+        { title: '포트폴리오 숨김 해제' },
+      ))
     )
       return
 

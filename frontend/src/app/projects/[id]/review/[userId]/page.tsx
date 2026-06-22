@@ -9,6 +9,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Send } from 'lucide-react'
 
 import { Button, Card } from '../../../../../components/ui'
+import { useDialog } from '../../../../../components/DialogProvider'
 import {
   checkReviewAccess,
   createReview,
@@ -22,6 +23,7 @@ export default function ReviewWritePage() {
   const projectId = params?.id as string
   const userId = params?.userId as string
   const router = useRouter()
+  const { alertDialog } = useDialog()
 
   const [project, setProject] = useState<Project | null>(null)
   const [targetUser, setTargetUser] = useState<User | null>(null)
@@ -51,7 +53,7 @@ export default function ReviewWritePage() {
         setLoading(false)
       } catch (err: any) {
         // 권한 거부 등 의도된 에러인 경우 alert 후 리다이렉트
-        alert(err.message || '리뷰 작성 권한이 없거나 오류가 발생했습니다.')
+        await alertDialog(err.message || '리뷰 작성 권한이 없거나 오류가 발생했습니다.')
         router.push('/')
         // 에러 시에는 setLoading(false)를 하지 않거나,
         // 페이지가 이동될 때까지 계속 로딩 상태(혹은 비어있는 상태)를 유지하여 추가 fetch 시도를 막음

@@ -8,12 +8,14 @@ import Link from 'next/link'
 
 import { AlertCircle, FolderX, Search, Undo2, X } from 'lucide-react'
 
+import { useDialog } from '../../../components/DialogProvider'
 import { Badge, Button, Card } from '../../../components/ui'
 import { fetchHiddenProjects, unhideProject } from '../../../lib/api'
 import { formatDate } from '../../../lib/date'
 import type { Project } from '../../../types'
 
 export default function AdminProjectsPage() {
+  const { confirmDialog } = useDialog()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [searchKeyword, setSearchKeyword] = useState('')
@@ -37,9 +39,10 @@ export default function AdminProjectsPage() {
 
   const handleUnhide = async (projectId: string) => {
     if (
-      !confirm(
+      !(await confirmDialog(
         '해당 프로젝트의 숨김을 해제하시겠습니까?\n해제 시 일반 유저들에게 다시 노출됩니다.',
-      )
+        { title: '프로젝트 숨김 해제' },
+      ))
     )
       return
 
