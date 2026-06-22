@@ -609,7 +609,7 @@ export default function ProjectDetailPage() {
                 </p>
                 <div className="flex items-center gap-4">
                   <Link
-                    href={`/u/${project.leader.id}`}
+                    href={`/portfolio/${project.leader.id}`}
                     className="hover:opacity-80 transition-opacity"
                   >
                     <img
@@ -620,7 +620,7 @@ export default function ProjectDetailPage() {
                   </Link>
                   <div>
                     <Link
-                      href={`/u/${project.leader.id}`}
+                      href={`/portfolio/${project.leader.id}`}
                       className="font-medium text-slate-900 hover:text-blue-600 transition-colors"
                     >
                       {project.leader.name}
@@ -638,7 +638,7 @@ export default function ProjectDetailPage() {
                   {project.teamMembers.map((member) => (
                     <Link
                       key={member.id}
-                      href={`/u/${member.id}`}
+                      href={`/portfolio/${member.id}`}
                       className="hover:opacity-80 transition-opacity"
                     >
                       <img
