@@ -53,6 +53,19 @@ public class ProjectController {
         try {
             ProjectResponse response = projectService.getProject(id);
 
+            if (response.isHidden()) {
+                if (userDetails == null) {
+                    throw new org.springframework.security.access.AccessDeniedException("로그인이 필요한 서비스입니다.");
+                }
+                boolean isAdmin = "ROLE_ADMIN".equals(userDetails.getRole());
+                boolean isMember = response.leader().id().equals(String.valueOf(userDetails.getMemberId()))
+                        || response.teamMembers().stream().anyMatch(m -> m.id().equals(String.valueOf(userDetails.getMemberId())));
+
+                if (!isAdmin && !isMember) {
+                    throw new org.springframework.security.access.AccessDeniedException("프로젝트 참여자 또는 관리자만 조회할 수 있습니다.");
+                }
+            }
+
             if (userDetails != null && userDetails.getMemberId() != null) {
                 projectService.makeProjectView(id, userDetails.getMemberId());
             }

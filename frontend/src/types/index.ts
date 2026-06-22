@@ -40,6 +40,7 @@ export type Project = {
   deadline: string
   createdAt: string
   featured?: boolean
+  isHidden?: boolean
 }
 export type PM = {
   id: string

@@ -531,7 +531,8 @@ public class ProjectService {
                 teamMembers,
                 project.getDeadline().toString(),
                 project.getCreatedAt().toLocalDate().toString(),
-                featured
+                featured,
+                project.isHidden()
         );
     }
 
