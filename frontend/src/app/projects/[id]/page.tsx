@@ -33,7 +33,6 @@ import {
   applyProject,
   cancelProjectApplication,
   checkAlreadyReported,
-  addProjectBookmark,
   fetchMyPortfolio,
   fetchProject,
   fetchProjectBookmark,
