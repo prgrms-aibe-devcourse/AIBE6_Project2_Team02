@@ -17,6 +17,7 @@ export type User = {
   portfolio?: string
   location?: string
   featured?: boolean
+  isHidden?: boolean
 }
 
 export type Project = {

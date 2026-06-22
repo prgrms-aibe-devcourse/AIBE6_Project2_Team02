@@ -1,19 +1,46 @@
-﻿'use client'
+'use client'
 
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { BookmarkPlus, Calendar, Code2, Github, Globe, MapPin, MessageSquare, ShieldAlert } from 'lucide-react';
-import { LoginModal } from '../../../components/LoginModal';
-import { ReportModal } from '../../../components/ReportModal';
-import { Badge, Button, Card, Modal } from '../../../components/ui';
-import { formatPositionLabel } from '../../../constants/project';
-import { addPortfolioBookmark, cancelProjectProposal, checkAlreadyReported, createProjectProposal, fetchMember, fetchPendingSentProjectProposals, fetchPortfolioBookmark, fetchProjects, fetchProposalProjects, fetchReviews, removePortfolioBookmark } from '../../../lib/api';
-import { formatDate } from '../../../lib/date';
-import type { Project, ReviewResponse, User } from '../../../types';
-import type { ProposalProject, SentProjectProposal } from '../../../types/dto/proposal';
-import { useAuth } from '../../providers';
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+
+import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
+
+import {
+  BookmarkPlus,
+  Calendar,
+  Code2,
+  Github,
+  Globe,
+  MapPin,
+  MessageSquare,
+  ShieldAlert,
+} from 'lucide-react'
+
+import { LoginModal } from '../../../components/LoginModal'
+import { ReportModal } from '../../../components/ReportModal'
+import { Badge, Button, Card, Modal } from '../../../components/ui'
+import { formatPositionLabel } from '../../../constants/project'
+import {
+  addPortfolioBookmark,
+  cancelProjectProposal,
+  checkAlreadyReported,
+  createProjectProposal,
+  fetchMember,
+  fetchPendingSentProjectProposals,
+  fetchPortfolioBookmark,
+  fetchProjects,
+  fetchProposalProjects,
+  fetchReviews,
+  removePortfolioBookmark,
+} from '../../../lib/api'
+import { formatDate } from '../../../lib/date'
+import type { Project, ReviewResponse, User } from '../../../types'
+import type {
+  ProposalProject,
+  SentProjectProposal,
+} from '../../../types/dto/proposal'
+import { useAuth } from '../../providers'
 
 const statusMap: Record<string, string> = {
   RECRUITING: '모집중',
@@ -35,8 +62,11 @@ type ProfileTab = 'projects' | 'peerReviews'
 export default function DeveloperProfilePage() {
   const params = useParams()
   const id = params.id as string
+  const router = useRouter()
   const { user: authUser, loading: authLoading } = useAuth()
   const isMyProfile = authUser !== null && String(authUser.memberId) === id
+  const isAdmin = authUser !== null && authUser.role === 'ROLE_ADMIN'
+  const hasAccess = isMyProfile || isAdmin
   const [user, setUser] = useState<User | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [reviews, setReviews] = useState<ReviewResponse[]>([])
@@ -65,11 +95,25 @@ export default function DeveloperProfilePage() {
   >(null)
 
   useEffect(() => {
+    if (!authLoading && !loading && user) {
+      if (user.isHidden) {
+        if (!authUser) {
+          toast.error('로그인이 필요한 서비스입니다.')
+          router.push('/login')
+        } else if (!hasAccess) {
+          toast.error('본인 또는 관리자만 조회할 수 있습니다.')
+          router.back()
+        }
+      }
+    }
+  }, [authLoading, loading, user, authUser, hasAccess, router])
+
+  useEffect(() => {
     if (!id) {
       setLoading(false)
       return
     }
-    
+
     Promise.all([
       fetchMember(id),
       fetchProjects({ page: 0, size: 100 }),
@@ -148,9 +192,12 @@ export default function DeveloperProfilePage() {
       setIsLoginModalOpen(true)
       return
     }
-    
+
     try {
-      const isAlreadyReported = await checkAlreadyReported('PORTFOLIO', Number(id))
+      const isAlreadyReported = await checkAlreadyReported(
+        'PORTFOLIO',
+        Number(id),
+      )
       if (isAlreadyReported) {
         toast.error('이미 신고하신 대상입니다.')
         return
@@ -176,7 +223,9 @@ export default function DeveloperProfilePage() {
         : await addPortfolioBookmark(id)
       setIsBookmarked(nextBookmarked)
       toast.success(
-        nextBookmarked ? '포트폴리오를 북마크했습니다.' : '북마크를 해제했습니다.',
+        nextBookmarked
+          ? '포트폴리오를 북마크했습니다.'
+          : '북마크를 해제했습니다.',
       )
     } catch (error) {
       toast.error(
@@ -263,12 +312,16 @@ export default function DeveloperProfilePage() {
     }
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="container mx-auto px-4 py-20 text-center text-slate-500">
         프로필을 불러오는 중...
       </div>
     )
+  }
+
+  if (user?.isHidden && (!authUser || !hasAccess)) {
+    return null
   }
 
   if (!user) {
@@ -755,5 +808,3 @@ export default function DeveloperProfilePage() {
     </div>
   )
 }
-
-

@@ -584,7 +584,8 @@ public class ProjectService {
                         .filter(l -> "DEPLOY".equals(l.getLinkType()))
                         .map(l -> l.getUrl()).findFirst().orElse(null) : null,
                 null,
-                featured
+                featured,
+                portfolio != null && portfolio.isHidden()
         );
     }
 
