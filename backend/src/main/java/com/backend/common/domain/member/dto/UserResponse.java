@@ -12,6 +12,7 @@ public record UserResponse(
         String github,
         String portfolio,
         String location,
-        boolean featured
+        boolean featured,
+        boolean isHidden
 ) {
 }
