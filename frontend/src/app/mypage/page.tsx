@@ -10,7 +10,6 @@ import {
   Briefcase,
   Bookmark,
   BookOpen,
-  Briefcase,
   ChevronRight,
   ExternalLink,
   Figma,
