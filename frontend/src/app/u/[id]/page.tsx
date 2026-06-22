@@ -615,7 +615,14 @@ export default function DeveloperProfilePage() {
                     {reviews.map((review) => (
                       <Card key={review.reviewId} className="p-5">
                         <div className="mb-4 flex items-start justify-between gap-3">
-                          <Badge variant="outline">{review.projectTitle}</Badge>
+                          <Link
+                            href={`/projects/${review.projectId}`}
+                            className="inline-block"
+                          >
+                            <Badge variant="outline">
+                              {review.projectTitle}
+                            </Badge>
+                          </Link>
                           <span className="text-xs text-slate-400">
                             {formatDate(review.createdAt)}
                           </span>
