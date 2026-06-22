@@ -452,3 +452,39 @@ export function checkReviewAccess(projectId: number, revieweeId: number) {
     `/reviews/check-access?projectId=${projectId}&revieweeId=${revieweeId}`,
   )
 }
+
+// AI 초안 생성
+export function generateProjectDescription(title: string) {
+  return fetchRsDataJson<string>('/ai/projectDescription', {
+    method: 'POST',
+    body: JSON.stringify({ title }),
+  })
+}
+
+export function generatePortfolioIntroduction(
+  title: string,
+  position: string,
+  techStacks: string[],
+) {
+  return fetchRsDataJson<string>('/ai/portfolioIntroduction', {
+    method: 'POST',
+    body: JSON.stringify({ title, position, techStacks }),
+  })
+}
+
+export function generateApplicationMotivation(
+  projectTitle: string,
+  projectDescription: string,
+  position: string,
+  myTechStacks: string[],
+) {
+  return fetchRsDataJson<string>('/ai/applicationMotivation', {
+    method: 'POST',
+    body: JSON.stringify({
+      projectTitle,
+      projectDescription,
+      position,
+      myTechStacks,
+    }),
+  })
+}
