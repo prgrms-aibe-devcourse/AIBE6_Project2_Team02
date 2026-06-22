@@ -15,11 +15,13 @@ import {
 } from 'lucide-react'
 
 import { Badge, Button, Card } from '../../../components/ui'
+import { useDialog } from '../../../components/DialogProvider'
 import { activateMember, searchMembers, suspendMember } from '../../../lib/api'
 import { formatDate } from '../../../lib/date'
 import type { User } from '../../../types'
 
 export default function AdminUsersPage() {
+  const { confirmDialog } = useDialog()
   const [users, setUsers] = useState<User[]>([])
   const [hasSearched, setHasSearched] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -69,7 +71,14 @@ export default function AdminUsersPage() {
 
   const handleSuspend = async (userId: string) => {
     const days = suspensionDays[userId] || 7
-    if (!confirm(`${days}일간 해당 유저의 활동을 제한하시겠습니까?`)) return
+    if (
+      !(await confirmDialog(`${days}일간 해당 유저의 활동을 제한하시겠습니까?`, {
+        title: '활동 제한',
+        confirmText: '제한',
+        destructive: true,
+      }))
+    )
+      return
 
     try {
       await suspendMember(userId, days)
@@ -82,7 +91,13 @@ export default function AdminUsersPage() {
   }
 
   const handleActivate = async (userId: string) => {
-    if (!confirm('해당 유저의 정지 기한을 초기화하시겠습니까?')) return
+    if (
+      !(await confirmDialog('해당 유저의 정지 기한을 초기화하시겠습니까?', {
+        title: '활동 제한 해제',
+        confirmText: '해제',
+      }))
+    )
+      return
 
     try {
       await activateMember(userId)
