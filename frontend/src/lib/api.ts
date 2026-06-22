@@ -171,6 +171,18 @@ export function removePortfolioBookmark(memberId: string) {
   })
 }
 
+export function fetchBookmarkedProjects() {
+  return fetchRsDataJson<Array<{ bookmarkedAt: string; project: Project }>>(
+    '/bookmarks/projects',
+  )
+}
+
+export function fetchBookmarkedPortfolios() {
+  return fetchRsDataJson<Array<{ bookmarkedAt: string; portfolio: User }>>(
+    '/bookmarks/portfolios',
+  )
+}
+
 export function cancelProjectApplication(applicationId: number) {
   return fetchRsDataJson<void>(
     `/mypage/projects/applications/${applicationId}/cancel`,

@@ -12,8 +12,12 @@ export const leaderPositionOptions: Array<{
 ]
 
 export function formatPositionLabel(value: string | null | undefined) {
+  const normalizedValue = value?.trim().toUpperCase().replace(/[\s-]+/g, '_')
+
   return (
-    leaderPositionOptions.find((option) => option.value === value)?.label ??
+    leaderPositionOptions.find(
+      (option) => option.value === value || option.value === normalizedValue,
+    )?.label ??
     value ??
     ''
   )

@@ -1,5 +1,7 @@
 package com.backend.common.domain.bookmark.controller;
 
+import com.backend.common.domain.bookmark.dto.BookmarkedPortfolioResponse;
+import com.backend.common.domain.bookmark.dto.BookmarkedProjectResponse;
 import com.backend.common.domain.bookmark.service.BookmarkService;
 import com.backend.common.global.rsdata.RsData;
 import com.backend.common.global.security.userdetails.CustomMemberDetails;
@@ -13,12 +15,44 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/bookmarks")
 @RequiredArgsConstructor
 public class BookmarkController {
 
     private final BookmarkService bookmarkService;
+
+    @GetMapping("/projects")
+    public RsData<List<BookmarkedProjectResponse>> getBookmarkedProjects(
+            @AuthenticationPrincipal CustomMemberDetails principal
+    ) {
+        if (principal == null) {
+            throw new InsufficientAuthenticationException("Login is required");
+        }
+
+        return RsData.of(
+                "200",
+                "프로젝트 북마크 목록 조회 성공",
+                bookmarkService.getBookmarkedProjects(principal.getMemberId())
+        );
+    }
+
+    @GetMapping("/portfolios")
+    public RsData<List<BookmarkedPortfolioResponse>> getBookmarkedPortfolios(
+            @AuthenticationPrincipal CustomMemberDetails principal
+    ) {
+        if (principal == null) {
+            throw new InsufficientAuthenticationException("Login is required");
+        }
+
+        return RsData.of(
+                "200",
+                "포트폴리오 북마크 목록 조회 성공",
+                bookmarkService.getBookmarkedPortfolios(principal.getMemberId())
+        );
+    }
 
     @GetMapping("/projects/{projectId}")
     public RsData<Boolean> isProjectBookmarked(
