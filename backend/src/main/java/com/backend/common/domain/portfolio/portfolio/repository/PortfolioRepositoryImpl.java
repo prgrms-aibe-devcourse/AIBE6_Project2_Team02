@@ -37,6 +37,7 @@ public class PortfolioRepositoryImpl implements PortfolioRepositoryCustom {
                 .leftJoin(portfolio.portfolioTechStacks, portfolioTechStack)
                 .where(
                         portfolio.isPublished.isTrue(),
+                        portfolio.isHidden.isFalse(),
                         roleEq(role),
                         techEq(tech),
                         searchCondition(search)
@@ -53,6 +54,7 @@ public class PortfolioRepositoryImpl implements PortfolioRepositoryCustom {
                 .leftJoin(portfolio.portfolioTechStacks, portfolioTechStack)
                 .where(
                         portfolio.isPublished.isTrue(),
+                        portfolio.isHidden.isFalse(),
                         roleEq(role),
                         techEq(tech),
                         searchCondition(search)

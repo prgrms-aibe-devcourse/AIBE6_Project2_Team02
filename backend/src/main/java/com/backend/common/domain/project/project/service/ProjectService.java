@@ -531,7 +531,8 @@ public class ProjectService {
                 teamMembers,
                 project.getDeadline().toString(),
                 project.getCreatedAt().toLocalDate().toString(),
-                featured
+                featured,
+                project.isHidden()
         );
     }
 
@@ -584,7 +585,8 @@ public class ProjectService {
                         .filter(l -> "DEPLOY".equals(l.getLinkType()))
                         .map(l -> l.getUrl()).findFirst().orElse(null) : null,
                 null,
-                featured
+                featured,
+                portfolio != null && portfolio.isHidden()
         );
     }
 

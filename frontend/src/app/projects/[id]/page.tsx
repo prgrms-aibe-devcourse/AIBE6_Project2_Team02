@@ -19,16 +19,19 @@ import {
   Users,
 } from 'lucide-react'
 
-import { LoginModal } from '../../../components/LoginModal'
 import { useDialog } from '../../../components/DialogProvider'
-import { Badge, Button, Card, Modal } from '../../../components/ui'
+import { LoginModal } from '../../../components/LoginModal'
 import { ReportModal } from '../../../components/ReportModal'
-import { formatPositionLabel, toPositionValue } from '../../../constants/project'
+import { Badge, Button, Card, Modal } from '../../../components/ui'
 import {
+  formatPositionLabel,
+  toPositionValue,
+} from '../../../constants/project'
+import {
+  addProjectBookmark,
   applyProject,
   cancelProjectApplication,
   checkAlreadyReported,
-  addProjectBookmark,
   fetchProject,
   fetchProjectBookmark,
   fetchProjectPermissions,
@@ -70,9 +73,10 @@ export default function ProjectDetailPage() {
   const [applyMessage, setApplyMessage] = useState('')
   const [canEdit, setCanEdit] = useState(false)
   const [isMember, setIsMember] = useState(false)
-  const [pendingApplicationId, setPendingApplicationId] = useState<number | null>(
-    null,
-  )
+  const [pendingApplicationId, setPendingApplicationId] = useState<
+    number | null
+  >(null)
+  const [permissionsLoading, setPermissionsLoading] = useState(true)
   const [isCancellingApplication, setIsCancellingApplication] = useState(false)
   const [isApplying, setIsApplying] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
@@ -80,7 +84,10 @@ export default function ProjectDetailPage() {
 
   const handleOpenReport = async () => {
     try {
-      const isAlreadyReported = await checkAlreadyReported('PROJECT', Number(id))
+      const isAlreadyReported = await checkAlreadyReported(
+        'PROJECT',
+        Number(id),
+      )
       if (isAlreadyReported) {
         toast.error('이미 신고하신 대상입니다.')
         return
@@ -105,7 +112,10 @@ export default function ProjectDetailPage() {
   }, [id])
 
   useEffect(() => {
-    if (!id) return
+    if (!id) {
+      setPermissionsLoading(false)
+      return
+    }
 
     fetchProjectPermissions(id)
       .then((permission) => {
@@ -118,7 +128,35 @@ export default function ProjectDetailPage() {
         setIsMember(false)
         setPendingApplicationId(null)
       })
+      .finally(() => {
+        setPermissionsLoading(false)
+      })
   }, [id])
+
+  const isAdmin = authUser !== null && authUser.role === 'ROLE_ADMIN'
+  const hasAccess = isMember || isAdmin
+
+  useEffect(() => {
+    if (!authLoading && !loading && !permissionsLoading && project) {
+      if (project.isHidden) {
+        if (!authUser) {
+          toast.error('로그인이 필요한 서비스입니다.')
+          router.push('/login')
+        } else if (!hasAccess) {
+          toast.error('프로젝트 참여자 또는 관리자만 조회할 수 있습니다.')
+          router.back()
+        }
+      }
+    }
+  }, [
+    authLoading,
+    loading,
+    permissionsLoading,
+    project,
+    authUser,
+    hasAccess,
+    router,
+  ])
 
   useEffect(() => {
     if (!id || authLoading || !authUser) {
@@ -131,12 +169,16 @@ export default function ProjectDetailPage() {
       .catch(() => setIsBookmarked(false))
   }, [id, authLoading, authUser])
 
-  if (loading) {
+  if (loading || permissionsLoading || authLoading) {
     return (
       <div className="container mx-auto px-4 py-20 text-center text-slate-500">
         프로젝트를 불러오는 중...
       </div>
     )
+  }
+
+  if (project?.isHidden && (!authUser || !hasAccess)) {
+    return null
   }
 
   if (!project) {
@@ -221,11 +263,14 @@ export default function ProjectDetailPage() {
   const handleCancelApplication = async () => {
     if (!pendingApplicationId || isCancellingApplication) return
 
-    const confirmed = await confirmDialog('프로젝트 지원 신청을 취소하시겠습니까?', {
-      title: '지원 신청 취소',
-      confirmText: '신청 취소',
-      destructive: true,
-    })
+    const confirmed = await confirmDialog(
+      '프로젝트 지원 신청을 취소하시겠습니까?',
+      {
+        title: '지원 신청 취소',
+        confirmText: '신청 취소',
+        destructive: true,
+      },
+    )
     if (!confirmed) return
 
     setIsCancellingApplication(true)
@@ -258,7 +303,9 @@ export default function ProjectDetailPage() {
         : await addProjectBookmark(id)
       setIsBookmarked(nextBookmarked)
       toast.success(
-        nextBookmarked ? '프로젝트를 북마크했습니다.' : '북마크를 해제했습니다.',
+        nextBookmarked
+          ? '프로젝트를 북마크했습니다.'
+          : '북마크를 해제했습니다.',
       )
     } catch (error) {
       toast.error(
@@ -295,7 +342,8 @@ export default function ProjectDetailPage() {
                         : 'secondary'
                   }
                 >
-                  {statusMap[project.recruitmentStatus] ?? project.recruitmentStatus}
+                  {statusMap[project.recruitmentStatus] ??
+                    project.recruitmentStatus}
                 </Badge>
                 <Badge variant="purple">{categoryMap[project.category]}</Badge>
               </div>
@@ -354,7 +402,11 @@ export default function ProjectDetailPage() {
               )}
               {isMember && (
                 <Link href={`/projects/${id}/management`}>
-                  <Button size="lg" variant="outline" className="w-full md:w-48">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full md:w-48"
+                  >
                     프로젝트 관리
                   </Button>
                 </Link>
