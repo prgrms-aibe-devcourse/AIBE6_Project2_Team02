@@ -210,7 +210,7 @@ export default function ProposalTabComponent({ user }: ProposalTabProps) {
 
                         {/* 🎯 교정 완료: `app.applicationId` 대신 이번에 새로 내려준 유저 고유 식별자인 `app.applicantId`를 바인딩하여 포폴/상세조회 억까 해제! */}
                         <div
-                            onClick={() => router.push(`/u/${app.applicantId}`)}
+                            onClick={() => router.push(`/portfolio/${app.applicantId}`)}
                             className="bg-slate-50 hover:bg-slate-100 transition-colors p-3 rounded-lg cursor-pointer flex items-start gap-2.5"
                         >
                           <User className="w-4 h-4 text-slate-400 mt-0.5" />

@@ -13,7 +13,7 @@ export function Layout() {
   },
   {
     name: '포트폴리오 찾기',
-    path: '/developers'
+    path: '/portfolio'
   },
   {
     name: '마이페이지',

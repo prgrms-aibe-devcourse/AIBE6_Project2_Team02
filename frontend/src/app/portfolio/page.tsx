@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion'
 import type { MouseEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-
 import Link from 'next/link'
 
 import { BookmarkPlus, Clock, MapPin, Search, Sparkles } from 'lucide-react'
@@ -258,7 +257,7 @@ export default function TalentListingPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredTalents.slice(0, 4).map((user) => (
-              <Link key={user.id} href={`/u/${user.id}`}>
+              <Link key={user.id} href={`/portfolio/${user.id}`}>
                 <Card className="listing-card group flex text-center hover:border-blue-300 hover:shadow-md">
                   <div className="relative inline-block mx-auto mb-4">
                     <img
@@ -336,7 +335,7 @@ export default function TalentListingPage() {
           {paginatedTalents.length > 0 ? (
             paginatedTalents.map((user) => (
               <motion.div key={user.id} variants={itemVariants}>
-                <Link href={`/u/${user.id}`}>
+                <Link href={`/portfolio/${user.id}`}>
                   <Card className="listing-card group flex">
                     <div className="flex items-start gap-4 mb-4">
                       <div className="relative shrink-0">

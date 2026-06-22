@@ -432,7 +432,7 @@ export default function ProjectListingClient() {
 
                       <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                         <div className="flex items-center gap-2">
-                          <Link href={`/u/${project.leader.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                          <Link href={`/portfolio/${project.leader.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity" onClick={(e) => e.stopPropagation()}>
                             <img src={project.leader.avatar} alt={project.leader.name} className="w-6 h-6 rounded-full" />
                             <span className="text-sm font-medium text-slate-700 hover:text-blue-600">{project.leader.name}</span>
                           </Link>

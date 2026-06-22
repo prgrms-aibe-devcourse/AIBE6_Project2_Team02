@@ -19,7 +19,7 @@ export function Header() {
 
   const navLinks = [
     { name: '프로젝트 찾기', path: '/projects' },
-    { name: '포트폴리오 찾기', path: '/developers' },
+    { name: '포트폴리오 찾기', path: '/portfolio' },
     ...(!loading && user ? [{ name: '마이페이지', path: '/mypage' }] : []),
     ...(!loading && user?.role === 'ROLE_ADMIN' ? [{ name: '관리페이지', path: '/admin/reports' }] : [])
   ];

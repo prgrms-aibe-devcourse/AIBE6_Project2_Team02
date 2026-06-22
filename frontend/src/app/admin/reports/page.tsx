@@ -222,7 +222,7 @@ export default function AdminReportsPage() {
                             신고당한 포트폴리오 (유저)
                           </div>
                           <Link
-                            href={`/u/${report.targetId}`}
+                            href={`/portfolio/${report.targetId}`}
                             className="flex items-center gap-3 group"
                           >
                             <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 bg-white">
