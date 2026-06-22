@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation'
 
 import { type AuthUser, fetchMe, logout as logoutApi } from '../lib/auth'
 import { useScreenInit } from '../useScreenInit'
+import { DialogProvider } from '../components/DialogProvider'
 
 interface AuthContextValue {
   user: AuthUser | null
@@ -47,8 +48,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, loading, logout }}>
-      <Toaster position="bottom-right" />
-      {children}
+      <DialogProvider>
+        <Toaster position="bottom-right" />
+        {children}
+      </DialogProvider>
     </AuthContext.Provider>
   )
 }

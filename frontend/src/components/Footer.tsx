@@ -2,8 +2,10 @@
 
 import { Code2, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
+import { useDialog } from './DialogProvider';
 
 export function Footer() {
+  const { alertDialog } = useDialog()
 
   const handleTestLogin = async () => {
     try {
@@ -12,13 +14,13 @@ export function Footer() {
         credentials: 'include',
       });
       if (res.ok) {
-        alert('테스트 계정(아무개)으로 로그인이 완료되었습니다.');
+        await alertDialog('테스트 계정(아무개)으로 로그인이 완료되었습니다.');
         window.location.href = '/mypage';
       } else {
-        alert('백엔드 더미 데이터 세팅 상태를 확인해 주세요.');
+        await alertDialog('백엔드 더미 데이터 세팅 상태를 확인해 주세요.');
       }
     } catch (err) {
-      alert('테스트 로그인 서버 통신 실패');
+      await alertDialog('테스트 로그인 서버 통신 실패');
     }
   };
 

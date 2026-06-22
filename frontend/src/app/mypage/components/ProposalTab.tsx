@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Briefcase, Check, MessageSquare, User, X } from 'lucide-react';
+import { useDialog } from '../../../components/DialogProvider';
 import { PaginationControls } from '../../../components/PaginationControls';
 import { Badge, Card } from '../../../components/ui';
 
@@ -37,6 +38,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
 export default function ProposalTabComponent({ user }: ProposalTabProps) {
   const router = useRouter()
+  const { alertDialog, confirmDialog } = useDialog()
   const [activeProposalFilter, setActiveProposalFilter] =
       useState<ProposalFilter>('applications')
   const [applications, setApplications] = useState<MyPageApplicationResponse[]>(
@@ -102,7 +104,13 @@ export default function ProposalTabComponent({ user }: ProposalTabProps) {
       applicationId: number,
       accept: boolean,
   ) => {
-    if (!confirm(`해당 지원서를 ${accept ? '수락' : '거절'}하시겠습니까?`))
+    if (
+      !(await confirmDialog(`해당 지원서를 ${accept ? '수락' : '거절'}하시겠습니까?`, {
+        title: accept ? '지원서 수락' : '지원서 거절',
+        confirmText: accept ? '수락' : '거절',
+        destructive: !accept,
+      }))
+    )
       return
     try {
       const res = await fetch(
@@ -114,13 +122,13 @@ export default function ProposalTabComponent({ user }: ProposalTabProps) {
       )
       const result = await res.json()
       if (result.code === '200') {
-        alert(result.message)
+        await alertDialog(result.message)
         setApplications((prev) =>
             prev.filter((app) => app.applicationId !== applicationId),
         )
       }
     } catch (err) {
-      alert('처리에 실패했습니다.')
+      await alertDialog('처리에 실패했습니다.')
     }
   }
 
@@ -129,7 +137,11 @@ export default function ProposalTabComponent({ user }: ProposalTabProps) {
       accept: boolean,
   ) => {
     if (
-        !confirm(`해당 프로젝트 제안을 ${accept ? '수락' : '거절'}하시겠습니까?`)
+      !(await confirmDialog(`해당 프로젝트 제안을 ${accept ? '수락' : '거절'}하시겠습니까?`, {
+        title: accept ? '프로젝트 제안 수락' : '프로젝트 제안 거절',
+        confirmText: accept ? '수락' : '거절',
+        destructive: !accept,
+      }))
     )
       return
     try {
@@ -142,13 +154,13 @@ export default function ProposalTabComponent({ user }: ProposalTabProps) {
       )
       const result = await res.json()
       if (result.code === '200') {
-        alert(result.message)
+        await alertDialog(result.message)
         setProposals((prev) =>
             prev.filter((prop) => prop.proposalId !== proposalId),
         )
       }
     } catch (err) {
-      alert('처리에 실패했습니다.')
+      await alertDialog('처리에 실패했습니다.')
     }
   }
 
