@@ -148,7 +148,7 @@ export default function AdminPortfoliosPage() {
                   </div>
 
                   <div className="mb-4">
-                    <Link href={`/u/${portfolio.id}`} className="group">
+                    <Link href={`/portfolio/${portfolio.id}`} className="group">
                       <h3 className="font-bold text-slate-900 mb-1 line-clamp-1 group-hover:text-orange-600 transition-colors">
                         {portfolio.title}
                       </h3>

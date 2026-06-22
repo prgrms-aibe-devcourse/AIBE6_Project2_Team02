@@ -15,36 +15,28 @@ import {
   Pencil,
   Share2,
   ShieldAlert,
-  Sparkles,
   Target,
   Users,
 } from 'lucide-react'
 
-import { useDialog } from '../../../components/DialogProvider'
 import { LoginModal } from '../../../components/LoginModal'
-import { ReportModal } from '../../../components/ReportModal'
+import { useDialog } from '../../../components/DialogProvider'
 import { Badge, Button, Card, Modal } from '../../../components/ui'
+import { ReportModal } from '../../../components/ReportModal'
+import { formatPositionLabel, toPositionValue } from '../../../constants/project'
 import {
-  formatPositionLabel,
-  toPositionValue,
-} from '../../../constants/project'
-import {
-  addProjectBookmark,
   applyProject,
   cancelProjectApplication,
   checkAlreadyReported,
   addProjectBookmark,
-  fetchMyPortfolio,
   fetchProject,
   fetchProjectBookmark,
   fetchProjectPermissions,
-  generateApplicationMotivation,
   removeProjectBookmark,
 } from '../../../lib/api'
 import { formatDate } from '../../../lib/date'
 import type { Project } from '../../../types'
 import { useAuth } from '../../providers'
-import { useAiDraft } from '../../../hooks/useAiDraft'
 
 const categoryMap: Record<string, string> = {
   Web: '웹',
@@ -78,40 +70,17 @@ export default function ProjectDetailPage() {
   const [applyMessage, setApplyMessage] = useState('')
   const [canEdit, setCanEdit] = useState(false)
   const [isMember, setIsMember] = useState(false)
-  const [pendingApplicationId, setPendingApplicationId] = useState<
-    number | null
-  >(null)
-  const [permissionsLoading, setPermissionsLoading] = useState(true)
+  const [pendingApplicationId, setPendingApplicationId] = useState<number | null>(
+    null,
+  )
   const [isCancellingApplication, setIsCancellingApplication] = useState(false)
   const [isApplying, setIsApplying] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [isBookmarking, setIsBookmarking] = useState(false)
-  const motivationDraft = useAiDraft({
-    validate: () => {
-      if (!project) return '프로젝트 정보를 불러오는 중입니다.'
-      if (!selectedRole) return '먼저 포지션을 선택해주세요.'
-      return null
-    },
-    generate: async () => {
-      const myTechStacks = await fetchMyPortfolio()
-        .then((portfolio) => portfolio.techStacks ?? [])
-        .catch(() => [])
-      return generateApplicationMotivation(
-        project!.title,
-        project!.description,
-        selectedRole,
-        myTechStacks,
-      )
-    },
-    onResult: setApplyMessage,
-  })
 
   const handleOpenReport = async () => {
     try {
-      const isAlreadyReported = await checkAlreadyReported(
-        'PROJECT',
-        Number(id),
-      )
+      const isAlreadyReported = await checkAlreadyReported('PROJECT', Number(id))
       if (isAlreadyReported) {
         toast.error('이미 신고하신 대상입니다.')
         return
@@ -136,10 +105,7 @@ export default function ProjectDetailPage() {
   }, [id])
 
   useEffect(() => {
-    if (!id) {
-      setPermissionsLoading(false)
-      return
-    }
+    if (!id) return
 
     fetchProjectPermissions(id)
       .then((permission) => {
@@ -152,35 +118,7 @@ export default function ProjectDetailPage() {
         setIsMember(false)
         setPendingApplicationId(null)
       })
-      .finally(() => {
-        setPermissionsLoading(false)
-      })
   }, [id])
-
-  const isAdmin = authUser !== null && authUser.role === 'ROLE_ADMIN'
-  const hasAccess = isMember || isAdmin
-
-  useEffect(() => {
-    if (!authLoading && !loading && !permissionsLoading && project) {
-      if (project.isHidden) {
-        if (!authUser) {
-          toast.error('로그인이 필요한 서비스입니다.')
-          router.push('/login')
-        } else if (!hasAccess) {
-          toast.error('프로젝트 참여자 또는 관리자만 조회할 수 있습니다.')
-          router.back()
-        }
-      }
-    }
-  }, [
-    authLoading,
-    loading,
-    permissionsLoading,
-    project,
-    authUser,
-    hasAccess,
-    router,
-  ])
 
   useEffect(() => {
     if (!id || authLoading || !authUser) {
@@ -193,16 +131,12 @@ export default function ProjectDetailPage() {
       .catch(() => setIsBookmarked(false))
   }, [id, authLoading, authUser])
 
-  if (loading || permissionsLoading || authLoading) {
+  if (loading) {
     return (
       <div className="container mx-auto px-4 py-20 text-center text-slate-500">
         프로젝트를 불러오는 중...
       </div>
     )
-  }
-
-  if (project?.isHidden && (!authUser || !hasAccess)) {
-    return null
   }
 
   if (!project) {
@@ -287,14 +221,11 @@ export default function ProjectDetailPage() {
   const handleCancelApplication = async () => {
     if (!pendingApplicationId || isCancellingApplication) return
 
-    const confirmed = await confirmDialog(
-      '프로젝트 지원 신청을 취소하시겠습니까?',
-      {
-        title: '지원 신청 취소',
-        confirmText: '신청 취소',
-        destructive: true,
-      },
-    )
+    const confirmed = await confirmDialog('프로젝트 지원 신청을 취소하시겠습니까?', {
+      title: '지원 신청 취소',
+      confirmText: '신청 취소',
+      destructive: true,
+    })
     if (!confirmed) return
 
     setIsCancellingApplication(true)
@@ -327,9 +258,7 @@ export default function ProjectDetailPage() {
         : await addProjectBookmark(id)
       setIsBookmarked(nextBookmarked)
       toast.success(
-        nextBookmarked
-          ? '프로젝트를 북마크했습니다.'
-          : '북마크를 해제했습니다.',
+        nextBookmarked ? '프로젝트를 북마크했습니다.' : '북마크를 해제했습니다.',
       )
     } catch (error) {
       toast.error(
@@ -366,8 +295,7 @@ export default function ProjectDetailPage() {
                         : 'secondary'
                   }
                 >
-                  {statusMap[project.recruitmentStatus] ??
-                    project.recruitmentStatus}
+                  {statusMap[project.recruitmentStatus] ?? project.recruitmentStatus}
                 </Badge>
                 <Badge variant="purple">{categoryMap[project.category]}</Badge>
               </div>
@@ -426,11 +354,7 @@ export default function ProjectDetailPage() {
               )}
               {isMember && (
                 <Link href={`/projects/${id}/management`}>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="w-full md:w-48"
-                  >
+                  <Button size="lg" variant="outline" className="w-full md:w-48">
                     프로젝트 관리
                   </Button>
                 </Link>
@@ -600,7 +524,7 @@ export default function ProjectDetailPage() {
                 </p>
                 <div className="flex items-center gap-4">
                   <Link
-                    href={`/u/${project.leader.id}`}
+                    href={`/portfolio/${project.leader.id}`}
                     className="hover:opacity-80 transition-opacity"
                   >
                     <img
@@ -611,7 +535,7 @@ export default function ProjectDetailPage() {
                   </Link>
                   <div>
                     <Link
-                      href={`/u/${project.leader.id}`}
+                      href={`/portfolio/${project.leader.id}`}
                       className="font-medium text-slate-900 hover:text-blue-600 transition-colors"
                     >
                       {project.leader.name}
@@ -629,7 +553,7 @@ export default function ProjectDetailPage() {
                   {project.teamMembers.map((member) => (
                     <Link
                       key={member.id}
-                      href={`/u/${member.id}`}
+                      href={`/portfolio/${member.id}`}
                       className="hover:opacity-80 transition-opacity"
                     >
                       <img
@@ -682,20 +606,9 @@ export default function ProjectDetailPage() {
             </select>
           </div>
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-slate-700">
-                왜 이 프로젝트에 적합한가요?
-              </label>
-              <button
-                type="button"
-                onClick={motivationDraft.run}
-                disabled={motivationDraft.disabled}
-                className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                {motivationDraft.label}
-              </button>
-            </div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              왜 이 프로젝트에 적합한가요?
+            </label>
             <textarea
               className="form-textarea min-h-[100px]"
               placeholder="관련 경험과 이 프로젝트에 참여하고 싶은 이유를 간단히 적어주세요..."

@@ -255,7 +255,7 @@ export default function MainClientComponent() {
                       <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                         <div className="flex items-center gap-2">
                           <Link
-                            href={`/u/${project.leader.id}`}
+                            href={`/portfolio/${project.leader.id}`}
                             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                             onClick={(e) => e.stopPropagation()}
                           >

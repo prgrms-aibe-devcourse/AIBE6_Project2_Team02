@@ -19,6 +19,10 @@ public class GeminiService {
             ="https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent";
 
     private String call(String prompt){
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException("GEMINI_API_KEY가 설정되어 있지 않습니다.");
+        }
+
         RestClient client = RestClient.create();
 
         Map<String, Object> body = Map.of(

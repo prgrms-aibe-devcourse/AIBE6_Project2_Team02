@@ -8,23 +8,23 @@ import Link from 'next/link'
 
 import { BookmarkPlus, Clock, MapPin, Search, Sparkles } from 'lucide-react'
 
-import { LoginModal } from '../../components/LoginModal'
-import { PaginationControls } from '../../components/PaginationControls'
-import { SearchField } from '../../components/SearchField'
-import { Badge, Button, Card } from '../../components/ui'
+import { LoginModal } from '../../components/LoginModal.tsx'
+import { PaginationControls } from '../../components/PaginationControls.tsx'
+import { SearchField } from '../../components/SearchField.tsx'
+import { Badge, Button, Card } from '../../components/ui.tsx'
 import {
   formatPositionLabel,
   leaderPositionOptions,
-} from '../../constants/project'
+} from '../../constants/project.ts'
 import {
   addPortfolioBookmark,
   fetchPopularTechStacks,
   fetchPortfolioBookmark,
   fetchPortfolios,
   removePortfolioBookmark,
-} from '../../lib/api'
+} from '../../lib/api.ts'
 import type { User } from '../../types'
-import { useAuth } from '../providers'
+import { useAuth } from '../providers.tsx'
 
 const roleOptions = [
   { value: 'All', label: '전체' },
@@ -258,7 +258,7 @@ export default function TalentListingPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredTalents.slice(0, 4).map((user) => (
-              <Link key={user.id} href={`/u/${user.id}`}>
+              <Link key={user.id} href={`/portfolio/${user.id}`}>
                 <Card className="listing-card group flex text-center hover:border-blue-300 hover:shadow-md">
                   <div className="relative inline-block mx-auto mb-4">
                     <img
@@ -336,7 +336,7 @@ export default function TalentListingPage() {
           {paginatedTalents.length > 0 ? (
             paginatedTalents.map((user) => (
               <motion.div key={user.id} variants={itemVariants}>
-                <Link href={`/u/${user.id}`}>
+                <Link href={`/portfolio/${user.id}`}>
                   <Card className="listing-card group flex">
                     <div className="flex items-start gap-4 mb-4">
                       <div className="relative shrink-0">
