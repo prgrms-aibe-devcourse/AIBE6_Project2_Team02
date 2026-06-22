@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import type { MouseEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-
+git
 import Link from 'next/link'
 
 import { BookmarkPlus, Clock, MapPin, Search, Sparkles } from 'lucide-react'
