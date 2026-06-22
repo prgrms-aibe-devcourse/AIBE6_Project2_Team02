@@ -28,6 +28,7 @@ import {
   formatPositionLabel,
   toPositionValue,
 } from '../../../constants/project'
+import { useAiDraft } from '../../../hooks/useAiDraft'
 import {
   addProjectBookmark,
   applyProject,
@@ -43,7 +44,6 @@ import {
 import { formatDate } from '../../../lib/date'
 import type { Project } from '../../../types'
 import { useAuth } from '../../providers'
-import { useAiDraft } from '../../../hooks/useAiDraft'
 
 const categoryMap: Record<string, string> = {
   Web: '웹',
@@ -343,6 +343,16 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="bg-slate-50 min-h-screen pb-20">
+      {project.isHidden && (
+        <div className="bg-amber-50 border-b border-amber-100">
+          <div className="container mx-auto px-4 max-w-5xl py-3 flex items-center gap-3 text-amber-800">
+            <ShieldAlert className="w-5 h-5" />
+            <p className="text-sm font-medium">
+              관리자에 의해 숨김 처리되었습니다.
+            </p>
+          </div>
+        </div>
+      )}
       {/* Header Banner */}
       <div className="bg-white border-b border-slate-200 pt-8 pb-12">
         <div className="container mx-auto px-4 max-w-5xl">
@@ -599,7 +609,7 @@ export default function ProjectDetailPage() {
                 </p>
                 <div className="flex items-center gap-4">
                   <Link
-                    href={`/u/${project.leader.id}`}
+                    href={`/portfolio/${project.leader.id}`}
                     className="hover:opacity-80 transition-opacity"
                   >
                     <img
@@ -610,7 +620,7 @@ export default function ProjectDetailPage() {
                   </Link>
                   <div>
                     <Link
-                      href={`/u/${project.leader.id}`}
+                      href={`/portfolio/${project.leader.id}`}
                       className="font-medium text-slate-900 hover:text-blue-600 transition-colors"
                     >
                       {project.leader.name}
@@ -628,7 +638,7 @@ export default function ProjectDetailPage() {
                   {project.teamMembers.map((member) => (
                     <Link
                       key={member.id}
-                      href={`/u/${member.id}`}
+                      href={`/portfolio/${member.id}`}
                       className="hover:opacity-80 transition-opacity"
                     >
                       <img

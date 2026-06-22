@@ -224,12 +224,17 @@ public class PortfolioService {
                 || !proposerMembership.getProject().isRecruitmentOpen()) {
             throw new IllegalArgumentException("모집 중인 프로젝트만 제안할 수 있습니다.");
         }
-        if (projectMemberRepository.existsByProjectIdAndMemberId(
-                request.projectId(),
-                targetMemberId
-        )) {
-            throw new IllegalArgumentException("이미 프로젝트에 참여 중인 회원입니다.");
-        }
+        // ACTIVE는 이미 참여 중이라 차단, REMOVED(방출)는 재영입 불가로 차단,
+        // LEFT(탈퇴)는 재영입 허용이므로 통과시킨다.
+        projectMemberRepository.findByProjectIdAndMemberId(request.projectId(), targetMemberId)
+                .ifPresent(pm -> {
+                    if (pm.getMemberStatus() == ProjectMemberStatus.ACTIVE) {
+                        throw new IllegalArgumentException("이미 프로젝트에 참여 중인 회원입니다.");
+                    }
+                    if (pm.getMemberStatus() == ProjectMemberStatus.REMOVED) {
+                        throw new IllegalArgumentException("방출된 회원에게는 다시 제안할 수 없습니다.");
+                    }
+                });
         if (projectProposalRepository.existsByProjectIdAndPortfolioId(
                 request.projectId(),
                 portfolio.getId()
@@ -296,16 +301,25 @@ public class PortfolioService {
                     proposal.getPortfolio().getDesiredPosition()
             );
 
-            boolean isAlreadyMember = projectMemberRepository.existsByProjectIdAndMemberId(proposal.getProject().getId(), proposal.getPortfolio().getMember().getId());
-            if (!isAlreadyMember) {
-                ProjectMember projectMember = ProjectMember.builder()
-                        .project(proposal.getProject())
-                        .member(proposal.getPortfolio().getMember())
-                        .position(positionEnum)
-                        .role(ProjectRole.MEMBER)
-                        .build();
-                projectMemberRepository.save(projectMember);
-            }
+            // 이전 참여 이력이 있으면(LEFT/REMOVED) 기존 행을 재사용한다.
+            // (project_id, member_id) 유니크 제약이 있어 새 행을 만들면 안 됨.
+            // 방출(REMOVED)된 회원은 rejoin() 내부에서 예외 발생 -> 재영입 차단.
+            Long projectId = proposal.getProject().getId();
+            Long targetMemberId = proposal.getPortfolio().getMember().getId();
+            projectMemberRepository.findByProjectIdAndMemberId(projectId, targetMemberId)
+                    .ifPresentOrElse(
+                            existing -> {
+                                if (existing.getMemberStatus() != ProjectMemberStatus.ACTIVE) {
+                                    existing.rejoin(positionEnum, ProjectRole.MEMBER);
+                                }
+                            },
+                            () -> projectMemberRepository.save(ProjectMember.builder()
+                                    .project(proposal.getProject())
+                                    .member(proposal.getPortfolio().getMember())
+                                    .position(positionEnum)
+                                    .role(ProjectRole.MEMBER)
+                                    .build())
+                    );
             closeRecruitmentIfNoVacancy(proposal.getProject());
 
             notificationService.notify(

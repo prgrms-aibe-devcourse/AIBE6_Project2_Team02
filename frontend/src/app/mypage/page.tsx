@@ -1,8 +1,5 @@
 'use client'
 
-// 이 페이지는 빌드할 때 미리 굽지 말고, 무조건 실서버에서 동적으로 렌더링하라고 강제하는 설정
-export const dynamic = 'force-dynamic'
-
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 
@@ -11,7 +8,9 @@ import { useRouter } from 'next/navigation'
 
 import {
   Briefcase,
+  Bookmark,
   BookOpen,
+  Briefcase,
   ChevronRight,
   ExternalLink,
   Figma,
@@ -24,25 +23,30 @@ import {
 } from 'lucide-react'
 
 import { Badge, Button, Card } from '../../components/ui'
-import type { Portfolio } from '../../types'
 import { formatPositionLabel } from '../../constants/project'
-import { fetchMyPortfolio, withdrawMember } from '../../lib/api'
+import { fetchMyPortfolio, fetchReviews, withdrawMember } from '../../lib/api'
+import { formatDate } from '../../lib/date'
+import type { Portfolio, ReviewResponse } from '../../types'
 import { useAuth } from '../providers'
 import ProjectTab from './components/ProjectTab'
 import ProposalTab from './components/ProposalTab'
+import BookmarkTab from './components/BookmarkTab'
+
+// 이 페이지는 빌드할 때 미리 굽지 말고, 무조건 실서버에서 동적으로 렌더링하라고 강제하는 설정
+export const dynamic = 'force-dynamic'
 
 const LINK_META: Record<string, { label: string; icon: React.ReactNode }> = {
-  GITHUB:        { label: 'GitHub',       icon: <Github className="w-4 h-4" /> },
-  BLOG:          { label: '블로그',        icon: <BookOpen className="w-4 h-4" /> },
-  DEPLOY:        { label: '배포 URL',      icon: <Globe className="w-4 h-4" /> },
-  FIGMA:         { label: 'Figma',        icon: <Figma className="w-4 h-4" /> },
-  BEHANCE:       { label: 'Behance',      icon: <Globe className="w-4 h-4" /> },
-  PORTFOLIO_URL: { label: '포폴 URL',     icon: <Globe className="w-4 h-4" /> },
-  NOTION:        { label: '노션',          icon: <Globe className="w-4 h-4" /> },
-  LINKEDIN:      { label: '링크드인',      icon: <Linkedin className="w-4 h-4" /> },
+  GITHUB: { label: 'GitHub', icon: <Github className="w-4 h-4" /> },
+  BLOG: { label: '블로그', icon: <BookOpen className="w-4 h-4" /> },
+  DEPLOY: { label: '배포 URL', icon: <Globe className="w-4 h-4" /> },
+  FIGMA: { label: 'Figma', icon: <Figma className="w-4 h-4" /> },
+  BEHANCE: { label: 'Behance', icon: <Globe className="w-4 h-4" /> },
+  PORTFOLIO_URL: { label: '포폴 URL', icon: <Globe className="w-4 h-4" /> },
+  NOTION: { label: '노션', icon: <Globe className="w-4 h-4" /> },
+  LINKEDIN: { label: '링크드인', icon: <Linkedin className="w-4 h-4" /> },
 }
 
-type Tab = 'portfolio' | 'project' | 'proposal'
+type Tab = 'portfolio' | 'project' | 'proposal' | 'bookmark'
 type PortfolioSubTab = 'portfolio' | 'peerReview'
 
 export default function MyPage() {
@@ -59,6 +63,8 @@ export default function MyPage() {
 
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null)
   const [portfolioLoading, setPortfolioLoading] = useState(true)
+  const [reviews, setReviews] = useState<ReviewResponse[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
   const [avatarError, setAvatarError] = useState(false)
   const [showWithdrawModal, setShowWithdrawModal] = useState(false)
   const [withdrawing, setWithdrawing] = useState(false)
@@ -127,6 +133,20 @@ export default function MyPage() {
     }
   }, [authLoading, user, router])
 
+  useEffect(() => {
+    if (activePortfolioSubTab !== 'peerReview') return
+    if (!user) {
+      setReviews([])
+      return
+    }
+
+    setReviewsLoading(true)
+    fetchReviews(String((user as any).memberId))
+      .then((data) => setReviews(data))
+      .catch(() => setReviews([]))
+      .finally(() => setReviewsLoading(false))
+  }, [activePortfolioSubTab, user])
+
   if (authLoading)
     return (
       <div className="container mx-auto px-4 py-20 text-center text-slate-500">
@@ -160,7 +180,9 @@ export default function MyPage() {
           </h1>
           {portfolio && (
             <>
-              <p className="text-slate-500 mb-3">{formatPositionLabel(portfolio.desiredPosition)}</p>
+              <p className="text-slate-500 mb-3">
+                {formatPositionLabel(portfolio.desiredPosition)}
+              </p>
               {portfolio.techStacks.length > 0 && (
                 <div className="flex flex-wrap justify-center md:justify-start gap-2">
                   {portfolio.techStacks.map((stack) => (
@@ -174,7 +196,15 @@ export default function MyPage() {
           )}
         </div>
         <div className="flex gap-3 w-full md:w-auto">
-          <Button variant="outline" className="flex-1 md:flex-none gap-2" onClick={() => { setNewNickname(''); setNicknameError(''); setShowProfileModal(true) }}>
+          <Button
+            variant="outline"
+            className="flex-1 md:flex-none gap-2"
+            onClick={() => {
+              setNewNickname('')
+              setNicknameError('')
+              setShowProfileModal(true)
+            }}
+          >
             <Pencil className="w-4 h-4" /> 프로필 수정
           </Button>
         </div>
@@ -213,6 +243,15 @@ export default function MyPage() {
                 </span>
                 <ChevronRight className="w-4 h-4 hidden md:block opacity-50" />
               </button>
+              <button
+                onClick={() => handleTabChange('bookmark')}
+                className={`flex-1 md:w-full text-left px-6 py-4 font-medium flex items-center justify-between ${activeTab === 'bookmark' ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                <span className="flex items-center gap-2">
+                  <Bookmark className="w-4 h-4" /> 북마크
+                </span>
+                <ChevronRight className="w-4 h-4 hidden md:block opacity-50" />
+              </button>
             </div>
           </div>
         </div>
@@ -242,20 +281,71 @@ export default function MyPage() {
                   </button>
                 </div>
                 {activePortfolioSubTab === 'peerReview' && (
-                  <Card className="p-12 text-center border-dashed">
-                    <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-slate-900 mb-2">
-                      피어리뷰 확인하기
-                    </h3>
-                    <p className="text-slate-500 mb-6">
-                      프로젝트 동료들이 남겨준 소중한 피드백들을 확인해보세요.
-                    </p>
-                    <Link href="/mypage/reviews">
-                      <Button variant="outline" className="gap-2">
-                        내 리뷰 목록 보기 <ChevronRight className="w-4 h-4" />
-                      </Button>
-                    </Link>
-                  </Card>
+                  <>
+                    <div className="mb-4 flex items-center justify-between">
+                      <h2 className="text-lg font-medium text-slate-900">
+                        내게 달린 피어리뷰
+                      </h2>
+                      <Badge variant="secondary">{reviews.length}</Badge>
+                    </div>
+
+                    {reviewsLoading ? (
+                      <div className="text-center py-12 text-slate-400">
+                        로딩 중...
+                      </div>
+                    ) : reviews.length > 0 ? (
+                      <div className="space-y-4">
+                        {reviews.map((review) => (
+                          <Card key={review.reviewId} className="p-5">
+                            <div className="mb-4 flex items-start justify-between gap-3">
+                              <Link
+                                href={`/projects/${review.projectId}`}
+                                className="inline-block"
+                              >
+                                <Badge variant="outline">
+                                  {review.projectTitle}
+                                </Badge>
+                              </Link>
+                              <span className="text-xs text-slate-400">
+                                {formatDate(review.createdAt)}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                                <h3 className="mb-2 text-xs font-bold text-blue-600">
+                                  좋은 점
+                                </h3>
+                                <p className="text-sm leading-relaxed text-slate-700">
+                                  {review.content.a1 || '-'}
+                                </p>
+                              </div>
+                              <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-4">
+                                <h3 className="mb-2 text-xs font-bold text-amber-600">
+                                  아쉬운 점
+                                </h3>
+                                <p className="text-sm leading-relaxed text-slate-700">
+                                  {review.content.a2 || '-'}
+                                </p>
+                              </div>
+                              <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
+                                <h3 className="mb-2 text-xs font-bold text-emerald-600">
+                                  감사한 점
+                                </h3>
+                                <p className="text-sm leading-relaxed text-slate-700">
+                                  {review.content.a3 || '-'}
+                                </p>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="empty-state">
+                        <MessageSquare className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                        아직 받은 피어리뷰가 없어요.
+                      </div>
+                    )}
+                  </>
                 )}
                 {activePortfolioSubTab === 'portfolio' &&
                   (portfolioLoading ? (
@@ -266,39 +356,59 @@ export default function MyPage() {
                     <Card className="p-6 space-y-5">
                       <div className="flex items-start justify-between">
                         <div>
-                          <h2 className="text-xl font-bold text-slate-900">{portfolio.title}</h2>
+                          <h2 className="text-xl font-bold text-slate-900">
+                            {portfolio.title}
+                          </h2>
                           {portfolio.desiredPosition && (
-                            <p className="text-sm text-blue-600 mt-1">{formatPositionLabel(portfolio.desiredPosition)}</p>
+                            <p className="text-sm text-blue-600 mt-1">
+                              {formatPositionLabel(portfolio.desiredPosition)}
+                            </p>
                           )}
                         </div>
                         <Link href="/mypage/portfolio/edit">
-                          <Button size="sm" variant="outline" className="gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5"
+                          >
                             <Pencil className="w-3.5 h-3.5" /> 수정
                           </Button>
                         </Link>
                       </div>
 
                       {portfolio.introduction && (
-                        <p className="text-slate-600 text-sm leading-relaxed">{portfolio.introduction}</p>
+                        <p className="text-slate-600 text-sm leading-relaxed">
+                          {portfolio.introduction}
+                        </p>
                       )}
 
-                      {portfolio.techStacks && portfolio.techStacks.length > 0 && (
-                        <div className="space-y-2">
-                          <h4 className="text-xs font-semibold text-slate-500">기술 스택</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {portfolio.techStacks.map((stack) => (
-                              <Badge key={stack} variant="secondary">{stack}</Badge>
-                            ))}
+                      {portfolio.techStacks &&
+                        portfolio.techStacks.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="text-xs font-semibold text-slate-500">
+                              기술 스택
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              {portfolio.techStacks.map((stack) => (
+                                <Badge key={stack} variant="secondary">
+                                  {stack}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {portfolio.links && portfolio.links.length > 0 && (
                         <div className="space-y-2">
-                          <h4 className="text-xs font-semibold text-slate-500">링크</h4>
+                          <h4 className="text-xs font-semibold text-slate-500">
+                            링크
+                          </h4>
                           <div className="flex flex-wrap gap-4">
                             {portfolio.links.map((link) => {
-                              const meta = LINK_META[link.linkType] ?? { label: link.linkType, icon: <Globe className="w-4 h-4" /> }
+                              const meta = LINK_META[link.linkType] ?? {
+                                label: link.linkType,
+                                icon: <Globe className="w-4 h-4" />,
+                              }
                               return (
                                 <a
                                   key={link.linkType}
@@ -345,6 +455,7 @@ export default function MyPage() {
 
             {activeTab === 'project' && <ProjectTab user={user} />}
             {activeTab === 'proposal' && <ProposalTab user={user} />}
+            {activeTab === 'bookmark' && <BookmarkTab />}
           </AnimatePresence>
 
           <div className="mt-12 pt-8 border-t border-slate-200 text-center md:text-right">
@@ -360,8 +471,12 @@ export default function MyPage() {
       {showProfileModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4">
-            <h2 className="text-lg font-bold text-slate-900 mb-2">프로필 수정</h2>
-            <p className="text-sm text-slate-500 mb-4">변경할 닉네임을 입력해주세요.</p>
+            <h2 className="text-lg font-bold text-slate-900 mb-2">
+              프로필 수정
+            </h2>
+            <p className="text-sm text-slate-500 mb-4">
+              변경할 닉네임을 입력해주세요.
+            </p>
             <input
               type="text"
               value={newNickname}
@@ -374,7 +489,11 @@ export default function MyPage() {
               <p className="text-xs text-red-500 mb-3">{nicknameError}</p>
             )}
             <div className="flex gap-3 justify-end mt-4">
-              <Button variant="outline" onClick={() => setShowProfileModal(false)} disabled={nicknameLoading}>
+              <Button
+                variant="outline"
+                onClick={() => setShowProfileModal(false)}
+                disabled={nicknameLoading}
+              >
                 취소
               </Button>
               <Button onClick={handleProfileEdit} disabled={nicknameLoading}>
@@ -389,7 +508,8 @@ export default function MyPage() {
           <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4">
             <h2 className="text-lg font-bold text-slate-900 mb-2">회원 탈퇴</h2>
             <p className="text-sm text-slate-500 mb-6">
-              탈퇴하면 모든 데이터가 삭제되며 복구할 수 없습니다. 정말 탈퇴하시겠습니까?
+              탈퇴하면 모든 데이터가 삭제되며 복구할 수 없습니다. 정말
+              탈퇴하시겠습니까?
             </p>
             <div className="flex gap-3 justify-end">
               <Button

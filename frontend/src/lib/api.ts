@@ -171,6 +171,18 @@ export function removePortfolioBookmark(memberId: string) {
   })
 }
 
+export function fetchBookmarkedProjects() {
+  return fetchRsDataJson<Array<{ bookmarkedAt: string; project: Project }>>(
+    '/bookmarks/projects',
+  )
+}
+
+export function fetchBookmarkedPortfolios() {
+  return fetchRsDataJson<Array<{ bookmarkedAt: string; portfolio: User }>>(
+    '/bookmarks/portfolios',
+  )
+}
+
 export function cancelProjectApplication(applicationId: number) {
   return fetchRsDataJson<void>(
     `/mypage/projects/applications/${applicationId}/cancel`,
@@ -222,6 +234,10 @@ export function fetchPortfolios(params: PortfolioFilterParams = {}) {
 
 export function fetchMember(id: string) {
   return fetchRsDataJson<User>(`/members/${id}`)
+}
+
+export function fetchPortfolio(memberId: string) {
+  return fetchRsDataJson<Portfolio>(`/portfolios/${memberId}`)
 }
 
 export function fetchPopularTechStacks() {

@@ -253,7 +253,7 @@ export default function AdminReportsHistoryPage() {
                       <Link
                         href={
                           report.targetType === 'PORTFOLIO'
-                            ? `/u/${report.targetId}`
+                            ? `/portfolio/${report.targetId}`
                             : `/projects/${report.targetId}`
                         }
                         className="flex items-center gap-2 group"

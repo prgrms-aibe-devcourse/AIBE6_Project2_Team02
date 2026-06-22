@@ -292,6 +292,14 @@ public class ProjectService {
         Member applicant = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberNotFoundException("404", "Member not found"));
 
+        // 방출(REMOVED)된 회원은 재지원할 수 없다. (탈퇴 LEFT는 재지원 허용)
+        // 모집 상태 검사보다 먼저 두어 방출 회원에게 정확한 메시지를 보여준다.
+        boolean removed = projectMemberRepository.findByProjectIdAndMemberId(projectId, memberId)
+                .map(pm -> pm.getMemberStatus() == ProjectMemberStatus.REMOVED)
+                .orElse(false);
+        if (removed) {
+            throw new IllegalStateException("방출된 프로젝트에는 다시 지원할 수 없습니다.");
+        }
         if (!project.isRecruitmentOpen() || project.getStatus() != ProjectStatus.RECRUITING) {
             throw new IllegalStateException("현재 모집 중인 프로젝트에만 지원할 수 있습니다.");
         }
@@ -470,7 +478,7 @@ public class ProjectService {
     private Map<Long, List<ProjectMember>> loadMembersByProject(List<Project> projects) {
         Map<Long, List<ProjectMember>> membersByProject = new HashMap<>();
         for (Project project : projects) {
-            membersByProject.put(project.getId(), projectMemberRepository.findByProjectId(project.getId()));
+            membersByProject.put(project.getId(), projectMemberRepository.findByProjectIdAndMemberStatus(project.getId(), ProjectMemberStatus.ACTIVE));
         }
         return membersByProject;
     }
@@ -566,10 +574,11 @@ public class ProjectService {
 
     private UserResponse toUserResponse(Member member, boolean featured, String roleOverride) {
         Portfolio portfolio = portfolioRepository.findByMemberId(member.getId()).orElse(null);
-        List<String> techStack = memberTechStackRepository.findByMemberId(member.getId()).stream()
-                .map(MemberTechStack::getTechStack)
-                .map(TechStack::getName)
-                .toList();
+        List<String> techStack = portfolio != null
+                ? portfolio.getPortfolioTechStacks().stream()
+                        .map(pts -> pts.getTechStack().getName())
+                        .toList()
+                : List.of();
 
         return new UserResponse(
                 String.valueOf(member.getId()),
@@ -864,6 +873,7 @@ public class ProjectService {
         return projectRepository.findById(id).get();
     }
 
+    @Transactional
     public ProjectMember addMember(Long id, Long projectID) {
 
 
@@ -876,9 +886,19 @@ public class ProjectService {
             throw new RuntimeException("지원자 찾기가 실패하였습니다.");
         }
 
-        ProjectMember projectMember = new ProjectMember(project, projectApplication.getApplicant(), projectApplication.getPosition(), ProjectRole.MEMBER);
+        // 이전 참여 이력이 있으면(LEFT/REMOVED) 기존 행을 재사용한다.
+        // (project_id, member_id) 유니크 제약이 있어 새 행을 만들면 안 됨.
+        // REMOVED 회원은 rejoin() 내부에서 예외 발생 -> 재참여 차단.
+        ProjectMember projectMember = projectMemberRepository
+                .findByProjectIdAndMemberId(projectID, id)
+                .map(existing -> {
+                    existing.rejoin(projectApplication.getPosition(), ProjectRole.MEMBER);
+                    return existing;
+                })
+                .orElseGet(() -> projectMemberRepository.save(
+                        new ProjectMember(project, projectApplication.getApplicant(), projectApplication.getPosition(), ProjectRole.MEMBER)
+                ));
         try {
-            projectMemberRepository.save(projectMember);
             notificationService.notify(
                     projectApplication.getApplicant(),
                     NotificationType.APPLICATION_ACCEPTED,

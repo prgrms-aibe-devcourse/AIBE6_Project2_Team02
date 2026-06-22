@@ -28,6 +28,7 @@ import {
   createProjectProposal,
   fetchMember,
   fetchPendingSentProjectProposals,
+  fetchPortfolio,
   fetchPortfolioBookmark,
   fetchProjects,
   fetchProposalProjects,
@@ -68,6 +69,9 @@ export default function DeveloperProfilePage() {
   const isAdmin = authUser !== null && authUser.role === 'ROLE_ADMIN'
   const hasAccess = isMyProfile || isAdmin
   const [user, setUser] = useState<User | null>(null)
+  const [portfolio, setPortfolio] = useState<
+    import('../../../types').Portfolio | null
+  >(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [reviews, setReviews] = useState<ReviewResponse[]>([])
   const [activeTab, setActiveTab] = useState<ProfileTab>('projects')
@@ -118,16 +122,19 @@ export default function DeveloperProfilePage() {
 
     Promise.all([
       fetchMember(id),
+      fetchPortfolio(id).catch(() => null),
       fetchProjects({ page: 0, size: 100 }),
       fetchReviews(id),
     ])
-      .then(([member, pageData, reviewData]) => {
+      .then(([member, portfolioData, pageData, reviewData]) => {
         setUser(member)
+        setPortfolio(portfolioData)
         setProjects(pageData?.content || [])
         setReviews(reviewData)
       })
       .catch(() => {
         setUser(null)
+        setPortfolio(null)
         setProjects([])
         setReviews([])
       })
@@ -342,8 +349,22 @@ export default function DeveloperProfilePage() {
     )
   }
 
+  const displayTechs = portfolio?.techStacks ?? []
+
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
+      {/** normalize tech stacks coming from different APIs */}
+
+      {user?.isHidden && (
+        <div className="bg-amber-50 border-b border-amber-100 mb-6">
+          <div className="py-3 flex items-center gap-3 text-amber-800">
+            <ShieldAlert className="w-5 h-5" />
+            <p className="text-sm font-medium">
+              관리자에 의해 숨김 처리되었습니다.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Profile Info */}
         <div className="lg:col-span-1 space-y-6">
@@ -465,12 +486,12 @@ export default function DeveloperProfilePage() {
               기술 스택
             </h3>
             <div className="flex flex-wrap gap-2">
-              {user.techStack?.map((tech) => (
+              {displayTechs.map((tech) => (
                 <Badge key={tech} variant="secondary">
                   {tech}
                 </Badge>
               ))}
-              {(!user.techStack || user.techStack.length === 0) && (
+              {displayTechs.length === 0 && (
                 <span className="text-sm text-slate-500">
                   등록된 기술 스택이 없어요.
                 </span>
@@ -615,7 +636,14 @@ export default function DeveloperProfilePage() {
                     {reviews.map((review) => (
                       <Card key={review.reviewId} className="p-5">
                         <div className="mb-4 flex items-start justify-between gap-3">
-                          <Badge variant="outline">{review.projectTitle}</Badge>
+                          <Link
+                            href={`/projects/${review.projectId}`}
+                            className="inline-block"
+                          >
+                            <Badge variant="outline">
+                              {review.projectTitle}
+                            </Badge>
+                          </Link>
                           <span className="text-xs text-slate-400">
                             {formatDate(review.createdAt)}
                           </span>
