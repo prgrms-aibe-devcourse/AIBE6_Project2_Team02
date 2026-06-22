@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Check, Code2, Globe, Github, BookOpen, Figma, Linkedin } from 'lucide-react'
+import { ArrowLeft, Check, Code2, Globe, Github, BookOpen, Figma, Linkedin, Sparkles } from 'lucide-react'
 import { Button, Card, Input } from '../../../../components/ui'
-import { fetchAllTechStacks, fetchMyPortfolio, updateMyPortfolio } from '../../../../lib/api'
+import { fetchAllTechStacks, fetchMyPortfolio, generatePortfolioIntroduction, updateMyPortfolio } from '../../../../lib/api'
 import type { TechStackItem } from '../../../../types/tech-stack'
 import { useAuth } from '../../../providers'
 import { leaderPositionOptions, toPositionValue } from '../../../../constants/project'
+import { useAiDraft } from '../../../../hooks/useAiDraft'
 
 type LinkFields = {
   label: string
@@ -98,6 +99,18 @@ export default function PortfolioEditPage() {
       prev.includes(name) ? prev.filter((v) => v !== name) : [...prev, name]
     )
   }
+
+  const introductionDraft = useAiDraft({
+    validate: () =>
+      form.title.trim() ? null : '먼저 포트폴리오 제목을 입력해주세요.',
+    generate: () =>
+      generatePortfolioIntroduction(
+        form.title.trim(),
+        form.desiredPosition,
+        selectedNames,
+      ),
+    onResult: (draft) => setForm((prev) => ({ ...prev, introduction: draft })),
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -230,36 +243,46 @@ export default function PortfolioEditPage() {
                   {errors.desiredPosition && <p className="text-xs text-red-500 mt-1">{errors.desiredPosition}</p>}
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700 mb-1.5 block">소개</label>
+                  <label className="text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-1.5">
+                    <Code2 className="w-4 h-4 text-blue-600" /> 기술 스택
+                  </label>
+                  <p className="text-xs text-slate-400 mb-2">사용할 수 있는 기술 스택을 선택해주세요.</p>
+                  <div className="flex flex-wrap gap-2">
+                    {techStacks.map((ts) => {
+                      const selected = selectedNames.includes(ts.name)
+                      return (
+                        <button key={ts.id} type="button" onClick={() => toggleTechStack(ts.name)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                            selected
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600'
+                          }`}
+                        >
+                          {selected && <Check className="w-3 h-3" />}
+                          {ts.name}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-sm font-medium text-slate-700">소개</label>
+                    <button
+                      type="button"
+                      onClick={introductionDraft.run}
+                      disabled={introductionDraft.disabled}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      {introductionDraft.label}
+                    </button>
+                  </div>
                   <textarea rows={5}
                     placeholder="자신을 소개해주세요."
                     className="form-textarea resize-none placeholder:text-slate-500 focus-visible:ring-2"
                     value={form.introduction} onChange={(e) => setForm({ ...form, introduction: e.target.value })} />
                 </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <h3 className="font-semibold text-slate-900 mb-1 flex items-center gap-2">
-                <Code2 className="w-4 h-4 text-blue-600" /> 기술 스택
-              </h3>
-              <p className="text-xs text-slate-400 mb-4">사용할 수 있는 기술 스택을 선택해주세요.</p>
-              <div className="flex flex-wrap gap-2">
-                {techStacks.map((ts) => {
-                  const selected = selectedNames.includes(ts.name)
-                  return (
-                    <button key={ts.id} type="button" onClick={() => toggleTechStack(ts.name)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                        selected
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600'
-                      }`}
-                    >
-                      {selected && <Check className="w-3 h-3" />}
-                      {ts.name}
-                    </button>
-                  )
-                })}
               </div>
             </Card>
 
