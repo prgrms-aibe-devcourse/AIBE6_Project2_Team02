@@ -488,7 +488,7 @@ export default function ProjectManagementPage() {
                             className="w-8 h-8 rounded-full border border-slate-200 object-cover"
                           />
                           <Link
-                            href={`/u/${member.id}`}
+                            href={`/portfolio/${member.id}`}
                             className="font-medium text-slate-900 hover:text-blue-600 transition-colors"
                           >
                             {member.name}
@@ -643,7 +643,7 @@ export default function ProjectManagementPage() {
                       </div>
                       <div className="flex flex-col gap-2 shrink-0">
                         <Link
-                          href={`/u/${applicant.id}`}
+                          href={`/portfolio/${applicant.id}`}
                           className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 px-3 py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />

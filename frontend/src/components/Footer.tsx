@@ -49,7 +49,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/developers" className="hover:text-blue-600">
+                <Link href="/portfolio" className="hover:text-blue-600">
                   포트폴리오
                 </Link>
               </li>
