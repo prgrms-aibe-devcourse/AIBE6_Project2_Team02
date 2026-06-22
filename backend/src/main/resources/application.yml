@@ -70,6 +70,6 @@ app:
     secure: true
     same-site: None
 
-gemini:
+Gemini:
   api:
     key: ${GEMINI_API_KEY:}

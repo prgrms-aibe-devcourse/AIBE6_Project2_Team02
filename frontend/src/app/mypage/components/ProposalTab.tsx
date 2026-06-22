@@ -158,6 +158,8 @@ export default function ProposalTabComponent({ user }: ProposalTabProps) {
         setProposals((prev) =>
             prev.filter((prop) => prop.proposalId !== proposalId),
         )
+      } else {
+        await alertDialog(result.message ?? '처리에 실패했습니다.')
       }
     } catch (err) {
       await alertDialog('처리에 실패했습니다.')

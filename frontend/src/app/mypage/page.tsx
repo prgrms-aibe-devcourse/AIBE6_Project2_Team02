@@ -7,6 +7,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import {
+  Briefcase,
+  Bookmark,
   BookOpen,
   Briefcase,
   ChevronRight,
@@ -28,6 +30,7 @@ import type { Portfolio, ReviewResponse } from '../../types'
 import { useAuth } from '../providers'
 import ProjectTab from './components/ProjectTab'
 import ProposalTab from './components/ProposalTab'
+import BookmarkTab from './components/BookmarkTab'
 
 // 이 페이지는 빌드할 때 미리 굽지 말고, 무조건 실서버에서 동적으로 렌더링하라고 강제하는 설정
 export const dynamic = 'force-dynamic'
@@ -43,7 +46,7 @@ const LINK_META: Record<string, { label: string; icon: React.ReactNode }> = {
   LINKEDIN: { label: '링크드인', icon: <Linkedin className="w-4 h-4" /> },
 }
 
-type Tab = 'portfolio' | 'project' | 'proposal'
+type Tab = 'portfolio' | 'project' | 'proposal' | 'bookmark'
 type PortfolioSubTab = 'portfolio' | 'peerReview'
 
 export default function MyPage() {
@@ -237,6 +240,15 @@ export default function MyPage() {
               >
                 <span className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" /> 제안/지원
+                </span>
+                <ChevronRight className="w-4 h-4 hidden md:block opacity-50" />
+              </button>
+              <button
+                onClick={() => handleTabChange('bookmark')}
+                className={`flex-1 md:w-full text-left px-6 py-4 font-medium flex items-center justify-between ${activeTab === 'bookmark' ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                <span className="flex items-center gap-2">
+                  <Bookmark className="w-4 h-4" /> 북마크
                 </span>
                 <ChevronRight className="w-4 h-4 hidden md:block opacity-50" />
               </button>
@@ -443,6 +455,7 @@ export default function MyPage() {
 
             {activeTab === 'project' && <ProjectTab user={user} />}
             {activeTab === 'proposal' && <ProposalTab user={user} />}
+            {activeTab === 'bookmark' && <BookmarkTab />}
           </AnimatePresence>
 
           <div className="mt-12 pt-8 border-t border-slate-200 text-center md:text-right">
