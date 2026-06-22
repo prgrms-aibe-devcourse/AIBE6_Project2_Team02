@@ -15,7 +15,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "http://127.0.0.1:3000", 
                         "https://devlink-frontend-qy4t.onrender.com", 
                         "https://devlink-frontend-jncb.onrender.com",
-                        "https://aibe6-project2-team02.vercel.app"  
+                        "https://devlink-amber.vercel.app"  
                 )
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
