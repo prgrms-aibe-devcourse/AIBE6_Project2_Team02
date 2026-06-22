@@ -51,7 +51,9 @@ yarn-error.log*
 # ==========================================
 
 backend/.gradle/
+backend/.local-jdk/
 backend/build/
+backend/src/main/generated
 backend/out/
 
 backend/*.mv.db
@@ -62,6 +64,8 @@ backend/src/main/resources/application-local.yml
 backend/src/main/resources/application-prod.yml
 backend/src/main/resources/application-secret.yml
 backend/src/main/resources/application-oauth.yml
+
+backend/src/main/resources/google/*.json
 
 # ==========================================
 # IDE
@@ -91,3 +95,4 @@ bin/
 *.keystore
 *.p12
 
+package-lock.json
