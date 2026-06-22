@@ -344,6 +344,16 @@ export default function DeveloperProfilePage() {
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
+      {user?.isHidden && (
+        <div className="bg-amber-50 border-b border-amber-100 mb-6">
+          <div className="py-3 flex items-center gap-3 text-amber-800">
+            <ShieldAlert className="w-5 h-5" />
+            <p className="text-sm font-medium">
+              관리자에 의해 숨김 처리되었습니다.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Profile Info */}
         <div className="lg:col-span-1 space-y-6">
