@@ -22,4 +22,6 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long>, Por
 
     @Query("SELECT p.id FROM Portfolio p JOIN p.member m WHERE LOWER(m.nickname) LIKE :pattern OR LOWER(p.title) LIKE :pattern")
     List<Long> findIdsByMemberNicknameOrTitle(@Param("pattern") String pattern);
+
+    List<Portfolio> findByIsHiddenTrueOrderByUpdatedAtDesc();
 }

@@ -26,7 +26,13 @@ export type Project = {
   goals: string[]
   techStack: string[]
   positions: Position[]
-  recruitmentStatus: 'RECRUITING' | 'CLOSED' | 'IN_PROGRESS' | 'COMPLETED' | 'DISBANDED' | 'CANCELLED'
+  recruitmentStatus:
+    | 'RECRUITING'
+    | 'CLOSED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'DISBANDED'
+    | 'CANCELLED'
   category: 'Web' | 'Mobile' | 'AI' | 'Game' | 'Other'
   leader: User
   teamMembers: User[]
@@ -55,7 +61,6 @@ export type Applicant = {
   techStacks: string[]
 }
 
-
 export type Project_manage = {
   id: string
   title: string
@@ -63,7 +68,13 @@ export type Project_manage = {
   goals: string[]
   techStack: string[]
   positions: Position[]
-  recruitmentStatus: 'RECRUITING' | 'CLOSED' | 'IN_PROGRESS' | 'COMPLETED' | 'DISBANDED' | 'CANCELLED'
+  recruitmentStatus:
+    | 'RECRUITING'
+    | 'CLOSED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'DISBANDED'
+    | 'CANCELLED'
   category: 'Web' | 'Mobile' | 'AI' | 'Game' | 'Other'
   leader: User
   teamMembers: User[]
@@ -93,6 +104,8 @@ export interface Portfolio {
   desiredPosition: string | null
   isPublished: boolean
   techStacks: string[]
+  userNickname: string
+  userProfileImageUrl: string | null
 }
 
 export interface PortfolioUpdateRequest {

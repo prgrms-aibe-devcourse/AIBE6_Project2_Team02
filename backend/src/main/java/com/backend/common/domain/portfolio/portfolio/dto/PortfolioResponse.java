@@ -12,7 +12,9 @@ public record PortfolioResponse(
         List<PortfolioLink> links,
         String desiredPosition,
         boolean isPublished,
-        List<String> techStacks
+        List<String> techStacks,
+        String userNickname,
+        String userProfileImageUrl
 ) {
     public static PortfolioResponse from(Portfolio portfolio) {
         List<String> stacks = portfolio.getPortfolioTechStacks().stream()
@@ -26,7 +28,9 @@ public record PortfolioResponse(
                 portfolio.getLinks(),
                 portfolio.getDesiredPosition(),
                 portfolio.isPublished(),
-                stacks
+                stacks,
+                portfolio.getMember().getNickname(),
+                portfolio.getMember().getProfileImageUrl()
         );
     }
 }

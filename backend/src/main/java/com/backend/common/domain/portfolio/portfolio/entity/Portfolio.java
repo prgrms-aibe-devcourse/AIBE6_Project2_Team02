@@ -44,6 +44,7 @@ public class Portfolio {
 
     private String desiredPosition;
     private boolean isPublished;
+    private boolean isHidden;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -62,6 +63,7 @@ public class Portfolio {
         this.links = portfolioLinks != null ? new ArrayList<>(portfolioLinks) : new ArrayList<>();
         this.desiredPosition = desiredPosition;
         this.isPublished = isPublished;
+        this.isHidden = false;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = this.createdAt;
     }
@@ -99,6 +101,16 @@ public class Portfolio {
     public void updateTechStacks(List<PortfolioTechStack> newStacks) {
         this.portfolioTechStacks.clear();
         this.portfolioTechStacks.addAll(newStacks);
+    }
+
+    public void hide() {
+        this.isHidden = true;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void unhide() {
+        this.isHidden = false;
+        this.updatedAt = LocalDateTime.now();
     }
 
 }

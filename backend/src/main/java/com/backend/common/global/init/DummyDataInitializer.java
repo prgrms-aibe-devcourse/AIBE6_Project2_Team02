@@ -1,7 +1,6 @@
 package com.backend.common.global.init;
 
 import com.backend.common.domain.member.entity.Member;
-import com.backend.common.domain.member.entity.MemberRole; // 🎯 권한 이넘 임포트
 import com.backend.common.domain.member.repository.MemberRepository;
 import com.backend.common.domain.member.repository.MemberTechStackRepository;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
