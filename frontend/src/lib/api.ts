@@ -236,6 +236,10 @@ export function fetchMember(id: string) {
   return fetchRsDataJson<User>(`/members/${id}`)
 }
 
+export function fetchPortfolio(memberId: string) {
+  return fetchRsDataJson<Portfolio>(`/portfolios/${memberId}`)
+}
+
 export function fetchPopularTechStacks() {
   return fetchRsDataJson<string[]>('/tech-stacks')
 }
