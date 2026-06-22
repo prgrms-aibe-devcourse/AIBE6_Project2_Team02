@@ -86,6 +86,25 @@ public class ProjectMember {
     }
 
     /**
+     * 탈퇴(LEFT)했던 회원의 재참여 처리.
+     * 방출(REMOVED)된 회원은 다시 참여할 수 없다.
+     */
+    public void rejoin(PositionType position, ProjectRole role) {
+        if (this.memberStatus == ProjectMemberStatus.REMOVED) {
+            throw new IllegalStateException("방출된 회원은 다시 참여할 수 없습니다.");
+        }
+        if (this.memberStatus == ProjectMemberStatus.ACTIVE) {
+            throw new IllegalStateException("이미 참여 중인 회원입니다.");
+        }
+
+        this.memberStatus = ProjectMemberStatus.ACTIVE;
+        this.position = position;
+        this.role = role;
+        this.joinedAt = LocalDateTime.now();
+        this.leftAt = null;
+    }
+
+    /**
      *  프로젝트 멤버 권한 수정 도메인 로직
      */
     public void updateRole(ProjectRole newRole) {
