@@ -197,7 +197,11 @@ export default function ProjectManagementPage() {
           },
         )
       })
-      .catch(() => toast.error('승인에 실패했습니다.'))
+      .catch((error) =>
+        toast.error(
+          error instanceof Error ? error.message : '승인에 실패했습니다.',
+        ),
+      )
       .finally(() => setApprovingId(null))
   }
 
