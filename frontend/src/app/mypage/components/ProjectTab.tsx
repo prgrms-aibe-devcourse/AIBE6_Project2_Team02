@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Briefcase, Trash2 } from 'lucide-react';
+import { useDialog } from '../../../components/DialogProvider';
 import { PaginationControls } from '../../../components/PaginationControls';
 import { Badge, Button, Card } from '../../../components/ui';
 
@@ -60,6 +61,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
 export default function ProjectTab({ user }: ProjectTabProps) {
   const router = useRouter()
+  const { alertDialog, confirmDialog } = useDialog()
   const [activeProjectSubTab, setActiveProjectSubTab] =
     useState<ProjectSubTab>('uploaded')
   const [projects, setProjects] = useState<MyPageProjectResponse[]>([])
@@ -114,7 +116,14 @@ export default function ProjectTab({ user }: ProjectTabProps) {
     e: React.MouseEvent,
   ) => {
     e.stopPropagation()
-    if (!confirm('최근 본 프로젝트 내역에서 삭제하시겠습니까?')) return
+    if (
+      !(await confirmDialog('최근 본 프로젝트 내역에서 삭제하시겠습니까?', {
+        title: '최근 본 프로젝트 삭제',
+        confirmText: '삭제',
+        destructive: true,
+      }))
+    )
+      return
     try {
       const res = await fetch(
         `${API_BASE}/mypage/projects/recent-views/${projectId}`,
@@ -128,7 +137,7 @@ export default function ProjectTab({ user }: ProjectTabProps) {
         setProjects((prev) => prev?.filter((p) => p.id !== projectId))
       }
     } catch (err) {
-      alert('삭제 처리에 실패했습니다.')
+      await alertDialog('삭제 처리에 실패했습니다.')
     }
   }
 
@@ -138,7 +147,14 @@ export default function ProjectTab({ user }: ProjectTabProps) {
     e: React.MouseEvent,
   ) => {
     e.stopPropagation()
-    if (!confirm('프로젝트 지원 신청을 취소하시겠습니까?')) return
+    if (
+      !(await confirmDialog('프로젝트 지원 신청을 취소하시겠습니까?', {
+        title: '지원 신청 취소',
+        confirmText: '신청 취소',
+        destructive: true,
+      }))
+    )
+      return
     try {
       const res = await fetch(
         `${API_BASE}/mypage/projects/applications/${applicationId}/cancel`,
@@ -149,11 +165,11 @@ export default function ProjectTab({ user }: ProjectTabProps) {
       )
       const result = await res.json()
       if (result.code === '200') {
-        alert(result.message)
+        await alertDialog(result.message)
         setProjects((prev) => prev?.filter((p) => p.id !== applicationId))
       }
     } catch (err) {
-      alert('지원 취소 처리에 실패했습니다.')
+      await alertDialog('지원 취소 처리에 실패했습니다.')
     }
   }
 
