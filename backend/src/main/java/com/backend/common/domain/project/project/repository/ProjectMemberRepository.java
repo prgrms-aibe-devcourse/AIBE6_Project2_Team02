@@ -24,7 +24,6 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Lo
             JOIN FETCH pm.project p
             WHERE pm.member.id = :memberId
               AND pm.memberStatus = 'ACTIVE'
-              AND pm.role IN ('LEADER', 'MANAGER')
               AND p.status = 'RECRUITING'
               AND p.recruitmentOpen = true
               AND p.deletedAt IS NULL
