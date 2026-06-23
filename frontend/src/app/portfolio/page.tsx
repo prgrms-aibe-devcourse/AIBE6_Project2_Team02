@@ -20,19 +20,40 @@ import {
   fetchPopularTechStacks,
   fetchPortfolioBookmark,
   fetchPortfolios,
+  fetchProjects,
   removePortfolioBookmark,
 } from '../../lib/api'
 import type { User } from '../../types'
+import { toPositionValue } from '../../constants/project'
 import { useAuth } from '../providers'
 
 const roleOptions = [
   { value: 'All', label: '전체' },
   ...leaderPositionOptions,
 ]
+const FEATURED_TALENT_LIMIT = 4
+
+function shuffleTalents(talents: User[]) {
+  return talents
+    .map((talent) => ({ talent, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ talent }) => talent)
+}
+
+function getOpenProjectPositionValues(projects: import('../../types').Project[]) {
+  return new Set(
+    projects.flatMap((project) =>
+      project.positions
+        .filter((position) => position.filled < position.total)
+        .map((position) => toPositionValue(position.role)),
+    ),
+  )
+}
 
 export default function TalentListingPage() {
   const { user: authUser, loading: authLoading } = useAuth()
   const portfolioRequestIdRef = useRef(0)
+  const featuredTalentRequestIdRef = useRef(0)
   const [paginatedTalents, setPaginatedTalents] = useState<User[]>([])
   const [featuredTalents, setFeaturedTalents] = useState<User[]>([])
   const [popularTechStacks, setPopularTechStacks] = useState<string[]>([])
@@ -70,12 +91,10 @@ export default function TalentListingPage() {
           setPaginatedTalents(pageData.content)
           setPageCount(pageData.totalPages)
           setTotalElements(pageData.totalElements)
-          setFeaturedTalents(pageData.content.filter((user) => user.featured))
         } else {
           setPaginatedTalents([])
           setPageCount(0)
           setTotalElements(0)
-          setFeaturedTalents([])
         }
       })
       .catch(() => {
@@ -83,7 +102,6 @@ export default function TalentListingPage() {
         setPaginatedTalents([])
         setPageCount(0)
         setTotalElements(0)
-        setFeaturedTalents([])
       })
       .finally(() => {
         if (requestId === portfolioRequestIdRef.current) {
@@ -91,6 +109,59 @@ export default function TalentListingPage() {
         }
       })
   }, [page, searchTerm, selectedRole, selectedTech])
+
+  useEffect(() => {
+    const requestId = ++featuredTalentRequestIdRef.current
+
+    if (authLoading || !authUser) {
+      setFeaturedTalents([])
+      return
+    }
+
+    Promise.all([
+      fetchProjects({
+        page: 0,
+        size: 100,
+        status: 'RECRUITING',
+      }),
+      fetchPortfolios({
+        page: 0,
+        size: 100,
+        search: searchTerm,
+        role: selectedRole,
+        tech: selectedTech,
+      }),
+    ])
+      .then(([projectPageData, portfolioPageData]) => {
+        if (requestId !== featuredTalentRequestIdRef.current) return
+
+        const myProjects =
+          projectPageData?.content.filter(
+            (project) => project.leader.id === String(authUser.memberId),
+          ) ?? []
+        const openPositions = getOpenProjectPositionValues(myProjects)
+
+        if (openPositions.size === 0) {
+          setFeaturedTalents([])
+          return
+        }
+
+        const matchedTalents =
+          portfolioPageData?.content.filter(
+            (talent) =>
+              talent.id !== String(authUser.memberId) &&
+              openPositions.has(toPositionValue(talent.role)),
+          ) ?? []
+
+        setFeaturedTalents(
+          shuffleTalents(matchedTalents).slice(0, FEATURED_TALENT_LIMIT),
+        )
+      })
+      .catch(() => {
+        if (requestId !== featuredTalentRequestIdRef.current) return
+        setFeaturedTalents([])
+      })
+  }, [authLoading, authUser, searchTerm, selectedRole, selectedTech])
 
   useEffect(() => {
     if (authLoading || !authUser) {
@@ -256,7 +327,7 @@ export default function TalentListingPage() {
             <Sparkles className="h-5 w-5 text-amber-500" /> 추천 포트폴리오
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredTalents.slice(0, 4).map((user) => (
+            {featuredTalents.map((user) => (
               <Link key={user.id} href={`/portfolio/${user.id}`}>
                 <Card className="listing-card group flex text-center hover:border-blue-300 hover:shadow-md">
                   <div className="relative inline-block mx-auto mb-4">
