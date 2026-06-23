@@ -16,7 +16,7 @@ public class GeminiService {
     private String apiKey;
 
     private static final String API_URL
-            ="https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent";
+            ="https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent";
 
     private String call(String prompt){
         if (apiKey == null || apiKey.isBlank()) {
