@@ -31,14 +31,11 @@ const categoryMap: Record<string, string> = {
   Other: '기타',
 }
 const statusMap: Record<string, string> = {
-  All: '전체',
   RECRUITING: '모집중',
-  CLOSED: '인원 마감',
   COMPLETED: '완료',
   STOPPED: '중단',
 }
 const categories = ['All', 'Web', 'Mobile', 'AI', 'Game', 'Other']
-const statuses = ['All', 'RECRUITING', 'CLOSED']
 
 export default function ProjectListingClient() {
   const searchParams = useSearchParams()
@@ -65,7 +62,6 @@ export default function ProjectListingClient() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [selectedTech, setSelectedTech] = useState<string>(initialTech || 'All')
-  const [selectedStatus, setSelectedStatus] = useState<string>('RECRUITING')
 
   const changeSearchTerm = (value: string) => {
     setPage(0)
@@ -80,11 +76,6 @@ export default function ProjectListingClient() {
   const changeTech = (value: string) => {
     setPage(0)
     setSelectedTech(value)
-  }
-
-  const changeStatus = (value: string) => {
-    setPage(0)
-    setSelectedStatus(value)
   }
 
   const handleToggleBookmark = async (
@@ -132,7 +123,6 @@ export default function ProjectListingClient() {
   useEffect(() => {
     setContentLoading(true)
     const requestId = ++projectRequestIdRef.current
-    const requestStatus = selectedStatus === 'All' ? 'RECRUITING,CLOSED' : selectedStatus
 
     fetchProjects({
       page,
@@ -140,7 +130,7 @@ export default function ProjectListingClient() {
       search: searchTerm,
       category: selectedCategory,
       tech: selectedTech,
-      status: requestStatus,
+      status: 'RECRUITING',
     })
       .then((pageData) => {
         if (requestId !== projectRequestIdRef.current) return
@@ -168,15 +158,10 @@ export default function ProjectListingClient() {
           setContentLoading(false)
         }
       })
-  }, [page, searchTerm, selectedCategory, selectedTech, selectedStatus])
+  }, [page, searchTerm, selectedCategory, selectedTech])
 
   useEffect(() => {
     const requestId = ++featuredProjectRequestIdRef.current
-
-    if (selectedStatus === 'CLOSED') {
-      setFeaturedProjects([])
-      return
-    }
 
     fetchProjects({
       page: 0,
@@ -195,7 +180,7 @@ export default function ProjectListingClient() {
         console.error('추천 프로젝트 로드 에러:', err)
         setFeaturedProjects([])
       })
-  }, [searchTerm, selectedCategory, selectedTech, selectedStatus])
+  }, [searchTerm, selectedCategory, selectedTech])
 
   useEffect(() => {
     if (authLoading || !authUser) {
@@ -253,19 +238,6 @@ export default function ProjectListingClient() {
                   className={`segment-option ${selectedCategory === cat ? 'segment-option-active' : 'segment-option-inactive'}`}
                 >
                   {categoryMap[cat]}
-                </button>
-              ))}
-            </div>
-
-            {/* Status Segmented Control */}
-            <div className="segment-control">
-              {statuses.map((status) => (
-                <button
-                  key={status}
-                  onClick={() => changeStatus(status)}
-                  className={`segment-option ${selectedStatus === status ? 'segment-option-active' : 'segment-option-inactive'}`}
-                >
-                  {statusMap[status]}
                 </button>
               ))}
             </div>
@@ -461,7 +433,6 @@ export default function ProjectListingClient() {
                     setSearchTerm('')
                     setSelectedCategory('All')
                     setSelectedTech('All')
-                    setSelectedStatus('All')
                   }}
                 >
                   필터 초기화
