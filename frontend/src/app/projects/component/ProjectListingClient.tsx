@@ -12,14 +12,16 @@ import { SearchField } from '../../../components/SearchField';
 import { Badge, Button, Card } from '../../../components/ui';
 import {
   addProjectBookmark,
+  fetchMyPortfolio,
   fetchPopularTechStacks,
   fetchProjectBookmark,
   fetchProjects,
   removeProjectBookmark,
 } from '../../../lib/api';
+import { toPositionValue } from '../../../constants/project';
 import { formatDate } from '../../../lib/date';
-import { formatProjectMemberCount } from '../../../lib/project';
-import type { Project } from '../../../types';
+import { countProjectMembers, formatProjectMemberCount } from '../../../lib/project';
+import type { Portfolio, Project } from '../../../types';
 import { useAuth } from '../../providers';
 
 const categoryMap: Record<string, string> = {
@@ -36,6 +38,64 @@ const statusMap: Record<string, string> = {
   STOPPED: '중단',
 }
 const categories = ['All', 'Web', 'Mobile', 'AI', 'Game', 'Other']
+const FEATURED_PROJECT_POOL_SIZE = 12
+
+function getRemainingMemberCount(project: Project) {
+  const { filled, total } = countProjectMembers(project.positions)
+
+  return Math.max(total - filled, 0)
+}
+
+function hasOpenDesiredPosition(
+  project: Project,
+  desiredPosition?: string | null,
+) {
+  if (!desiredPosition) return false
+
+  const normalizedDesiredPosition = toPositionValue(desiredPosition)
+
+  return project.positions.some(
+    (position) =>
+      toPositionValue(position.role) === normalizedDesiredPosition &&
+      position.filled < position.total,
+  )
+}
+
+function shuffleProjects(projects: Project[]) {
+  return projects
+    .map((project) => ({ project, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ project }) => project)
+}
+
+function buildFeaturedProjects(
+  projects: Project[],
+  portfolio: Portfolio | null,
+) {
+  const projectsWithVacancy = projects.filter(
+    (project) => getRemainingMemberCount(project) > 0,
+  )
+  const lowRemainingProjects = [...projectsWithVacancy]
+    .sort((a, b) => {
+      const remainingDiff =
+        getRemainingMemberCount(a) - getRemainingMemberCount(b)
+      if (remainingDiff !== 0) return remainingDiff
+
+      return Number(b.id) - Number(a.id)
+    })
+    .slice(0, FEATURED_PROJECT_POOL_SIZE)
+  const desiredPositionProjects = projectsWithVacancy.filter((project) =>
+    hasOpenDesiredPosition(project, portfolio?.desiredPosition),
+  )
+  const candidates = new Map<string, Project>()
+
+  lowRemainingProjects.forEach((project) => candidates.set(project.id, project))
+  desiredPositionProjects.forEach((project) =>
+    candidates.set(project.id, project),
+  )
+
+  return shuffleProjects(Array.from(candidates.values())).slice(0, 3)
+}
 
 export default function ProjectListingClient() {
   const searchParams = useSearchParams()
@@ -163,24 +223,29 @@ export default function ProjectListingClient() {
   useEffect(() => {
     const requestId = ++featuredProjectRequestIdRef.current
 
-    fetchProjects({
-      page: 0,
-      size: 3,
-      search: searchTerm,
-      category: selectedCategory,
-      tech: selectedTech,
-      status: 'RECRUITING',
-    })
-      .then((pageData) => {
+    Promise.all([
+      fetchProjects({
+        page: 0,
+        size: 100,
+        search: searchTerm,
+        category: selectedCategory,
+        tech: selectedTech,
+        status: 'RECRUITING',
+      }),
+      authUser ? fetchMyPortfolio().catch(() => null) : Promise.resolve(null),
+    ])
+      .then(([pageData, portfolio]) => {
         if (requestId !== featuredProjectRequestIdRef.current) return
-        setFeaturedProjects(pageData?.content ?? [])
+        setFeaturedProjects(
+          buildFeaturedProjects(pageData?.content ?? [], portfolio),
+        )
       })
       .catch((err) => {
         if (requestId !== featuredProjectRequestIdRef.current) return
         console.error('추천 프로젝트 로드 에러:', err)
         setFeaturedProjects([])
       })
-  }, [searchTerm, selectedCategory, selectedTech])
+  }, [authUser, searchTerm, selectedCategory, selectedTech])
 
   useEffect(() => {
     if (authLoading || !authUser) {
