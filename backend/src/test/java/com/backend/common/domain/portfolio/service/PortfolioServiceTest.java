@@ -17,6 +17,7 @@ import com.backend.common.domain.project.enums.ProjectStatus;
 import com.backend.common.domain.project.project.entity.Project;
 import com.backend.common.domain.project.project.entity.ProjectMember;
 import com.backend.common.domain.project.project.entity.ProjectMemberStatus;
+import com.backend.common.domain.project.project.entity.ProjectPosition;
 import com.backend.common.domain.project.project.entity.ProjectRole;
 import com.backend.common.domain.project.project.repository.ProjectMemberRepository;
 import com.backend.common.domain.techstack.entity.PortfolioTechStack;
@@ -245,7 +246,7 @@ class PortfolioServiceTest {
         Member proposer = mock(Member.class);
         ProjectProposal savedProposal = mock(ProjectProposal.class);
 
-        ProjectProposalCreateRequest request = new ProjectProposalCreateRequest(10L, "같이 하시죠");
+        ProjectProposalCreateRequest request = new ProjectProposalCreateRequest(10L, "BACKEND", "같이 하시죠");
 
         given(portfolioRepository.findByMemberId(2L)).willReturn(Optional.of(portfolio));
         given(portfolio.isPublished()).willReturn(true);
@@ -257,6 +258,11 @@ class PortfolioServiceTest {
         given(proposerMembership.getProject()).willReturn(project);
         given(project.getStatus()).willReturn(ProjectStatus.RECRUITING);
         given(project.isRecruitmentOpen()).willReturn(true);
+        given(project.getPositions()).willReturn(List.of(ProjectPosition.builder()
+                .role("BACKEND")
+                .total(1)
+                .build()));
+        given(projectMemberRepository.findByProjectId(10L)).willReturn(List.of());
         given(projectMemberRepository.existsByProjectIdAndMemberId(10L, 2L)).willReturn(false);
         given(projectProposalRepository.existsByProjectIdAndPortfolioId(10L, 50L)).willReturn(false);
         given(memberRepository.findById(1L)).willReturn(Optional.of(proposer));
@@ -275,7 +281,7 @@ class PortfolioServiceTest {
     @Test
     @DisplayName("제안 생성 실패 - 본인에게 제안 시 IllegalArgumentException 발생")
     void createProjectProposal_selfProposal_throws() {
-        ProjectProposalCreateRequest request = new ProjectProposalCreateRequest(10L, "자기 자신에게 제안");
+        ProjectProposalCreateRequest request = new ProjectProposalCreateRequest(10L, "BACKEND", "자기 자신에게 제안");
 
         assertThatThrownBy(() -> portfolioService.createProjectProposal(1L, 1L, request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -285,7 +291,7 @@ class PortfolioServiceTest {
     @Test
     @DisplayName("제안 생성 예외 - 공개된 포트폴리오가 없으면 ResourceNotFoundException 발생")
     void createProjectProposal_noPublishedPortfolio_throws() {
-        ProjectProposalCreateRequest request = new ProjectProposalCreateRequest(10L, "메시지");
+        ProjectProposalCreateRequest request = new ProjectProposalCreateRequest(10L, "BACKEND", "메시지");
 
         given(portfolioRepository.findByMemberId(2L)).willReturn(Optional.empty());
 

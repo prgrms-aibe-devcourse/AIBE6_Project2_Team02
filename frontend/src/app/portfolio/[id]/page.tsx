@@ -20,7 +20,7 @@ import {
 import { LoginModal } from '../../../components/LoginModal'
 import { ReportModal } from '../../../components/ReportModal'
 import { Badge, Button, Card, Modal } from '../../../components/ui'
-import { formatPositionLabel } from '../../../constants/project'
+import { formatPositionLabel, toPositionValue } from '../../../constants/project'
 import {
   addPortfolioBookmark,
   cancelProjectProposal,
@@ -87,6 +87,7 @@ export default function DeveloperProfilePage() {
     [],
   )
   const [selectedProjectId, setSelectedProjectId] = useState('')
+  const [selectedProposalPosition, setSelectedProposalPosition] = useState('')
   const [proposalMessage, setProposalMessage] = useState('')
   const [pendingSentProposals, setPendingSentProposals] = useState<
     SentProjectProposal[]
@@ -167,6 +168,10 @@ export default function DeveloperProfilePage() {
   const participatedProjects = projects.filter((p) =>
     p.teamMembers.some((m) => m.id === id),
   )
+  const selectedProposalProject = proposalProjects.find(
+    (project) => String(project.id) === selectedProjectId,
+  )
+  const proposalPositions = selectedProposalProject?.positions ?? []
 
   const handleOpenProposal = async () => {
     if (authLoading) return
@@ -180,9 +185,9 @@ export default function DeveloperProfilePage() {
     try {
       const proposalProjectData = await fetchProposalProjects()
       setProposalProjects(proposalProjectData)
-      setSelectedProjectId(
-        proposalProjectData.length > 0 ? String(proposalProjectData[0].id) : '',
-      )
+      const firstProject = proposalProjectData[0]
+      setSelectedProjectId(firstProject ? String(firstProject.id) : '')
+      setSelectedProposalPosition(firstProject?.positions[0]?.role ?? '')
     } catch (error) {
       setProposalProjects([])
       toast.error(
@@ -249,7 +254,12 @@ export default function DeveloperProfilePage() {
 
   const handleSubmitProposal = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!selectedProjectId || !proposalMessage.trim() || proposalSubmitting) {
+    if (
+      !selectedProjectId ||
+      !selectedProposalPosition ||
+      !proposalMessage.trim() ||
+      proposalSubmitting
+    ) {
       return
     }
 
@@ -257,12 +267,14 @@ export default function DeveloperProfilePage() {
     try {
       await createProjectProposal(id, {
         projectId: Number(selectedProjectId),
+        position: selectedProposalPosition,
         message: proposalMessage.trim(),
       })
       toast.success('프로젝트 제안을 보냈습니다.')
       const sentProposals = await fetchPendingSentProjectProposals(id)
       setPendingSentProposals(sentProposals)
       setIsProposalModalOpen(false)
+      setSelectedProposalPosition('')
       setProposalMessage('')
     } catch (error) {
       toast.error(
@@ -722,7 +734,14 @@ export default function DeveloperProfilePage() {
               </label>
               <select
                 value={selectedProjectId}
-                onChange={(event) => setSelectedProjectId(event.target.value)}
+                onChange={(event) => {
+                  const projectId = event.target.value
+                  const project = proposalProjects.find(
+                    (item) => String(item.id) === projectId,
+                  )
+                  setSelectedProjectId(projectId)
+                  setSelectedProposalPosition(project?.positions[0]?.role ?? '')
+                }}
                 className="form-select"
                 required
               >
@@ -735,6 +754,27 @@ export default function DeveloperProfilePage() {
             </div>
 
             <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                제안 포지션 <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selectedProposalPosition}
+                onChange={(event) =>
+                  setSelectedProposalPosition(event.target.value)
+                }
+                className="form-select mb-5"
+                required
+              >
+                {proposalPositions.map((position) => (
+                  <option
+                    key={position.role}
+                    value={toPositionValue(position.role)}
+                  >
+                    {formatPositionLabel(position.role)} ({position.filled}/
+                    {position.total})
+                  </option>
+                ))}
+              </select>
               <label className="mb-2 block text-sm font-medium text-slate-700">
                 제안 메시지 <span className="text-red-500">*</span>
               </label>
@@ -758,7 +798,12 @@ export default function DeveloperProfilePage() {
               <Button
                 type="submit"
                 variant="gradient"
-                disabled={proposalSubmitting || !proposalMessage.trim()}
+                disabled={
+                  proposalSubmitting ||
+                  !selectedProjectId ||
+                  !selectedProposalPosition ||
+                  !proposalMessage.trim()
+                }
               >
                 {proposalSubmitting ? '제안 보내는 중...' : '제안 보내기'}
               </Button>
