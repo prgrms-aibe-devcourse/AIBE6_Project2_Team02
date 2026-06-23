@@ -7,9 +7,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import {
-  Briefcase,
-  Bookmark,
   BookOpen,
+  Bookmark,
+  Briefcase,
   ChevronRight,
   ExternalLink,
   Figma,
@@ -27,9 +27,9 @@ import { fetchMyPortfolio, fetchReviews, withdrawMember } from '../../lib/api'
 import { formatDate } from '../../lib/date'
 import type { Portfolio, ReviewResponse } from '../../types'
 import { useAuth } from '../providers'
+import BookmarkTab from './components/BookmarkTab'
 import ProjectTab from './components/ProjectTab'
 import ProposalTab from './components/ProposalTab'
-import BookmarkTab from './components/BookmarkTab'
 
 // 이 페이지는 빌드할 때 미리 굽지 말고, 무조건 실서버에서 동적으로 렌더링하라고 강제하는 설정
 export const dynamic = 'force-dynamic'
@@ -429,11 +429,11 @@ export default function MyPage() {
                       <div>
                         {portfolio.isPublished ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-medium">
-                            공개
+                            포트폴리오 찾기 노출
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-xs font-medium">
-                            비공개
+                            포트폴리오 찾기 비노출
                           </span>
                         )}
                       </div>
