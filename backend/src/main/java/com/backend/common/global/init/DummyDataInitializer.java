@@ -110,47 +110,6 @@ public class DummyDataInitializer implements ApplicationRunner {
         List<Project> allProjects = projectRepository.findAll();
 
         // ----------------------------------------------------
-        // [프로젝트 서브 탭 1] 내가 올린 프로젝트 (OWNED) -> 총 6개 생성 (2페이지 검증)
-        // ----------------------------------------------------
-        for (int i = 1; i <= 6; i++) {
-            Project ownedProject = Project.builder()
-                    .leader(testUser)
-                    .title("내가 생성한 고도화 스쿼드 공고 " + i + "호")
-                    .description("레거시 청산을 위해 스프링 부트 4.0 환경에서 아키텍처 설계를 함께할 팀원을 모집합니다. " + i)
-                    .goal("Next.js App Router 릴리즈 및 모킹 통합 테스트 완공")
-                    .deadline(LocalDate.now().plusMonths(1))
-                    .build();
-
-            ownedProject.changeStatus(ProjectStatus.RECRUITING);
-            ownedProject.toggleRecruitment(true);
-
-            projectRepository.save(ownedProject);
-
-            ProjectMember ownedLeader = ProjectMember.builder()
-                    .project(ownedProject)
-                    .member(testUser)
-                    .position(PositionType.BACKEND)
-                    .role(ProjectRole.LEADER)
-                    .build();
-            projectMemberRepository.save(ownedLeader);
-
-            // [제안 필터 A 검증 연동] 유저가 생성한 1호 공고에 다른 더미 유저들이 벌크 지원 (총 6개 지원서 누적)
-            if (i == 1) {
-                String[] applicants = {"u2", "u6", "u1", "u3", "u4", "u15"};
-                PositionType[] positions = {PositionType.BACKEND, PositionType.FRONTEND, PositionType.FULL_STACK, PositionType.DESIGNER, PositionType.FRONTEND, PositionType.BACKEND};
-                for (int j = 0; j < applicants.length; j++) {
-                    ProjectApplication incomingApp = ProjectApplication.builder()
-                            .project(ownedProject)
-                            .applicant(members.get(applicants[j]))
-                            .position(positions[j])
-                            .message("안녕하세요! 제 보유 기술 스택을 바탕으로 공고 1호 팀에 합류하여 기여하고 싶습니다. 번호: " + (j + 1))
-                            .build();
-                    projectApplicationRepository.save(incomingApp);
-                }
-            }
-        }
-
-        // ----------------------------------------------------
         // [프로젝트 서브 탭 2] 내가 참여중인 프로젝트 (PARTICIPATING) -> 총 6개 할당 (2페이지 검증)
         // ----------------------------------------------------
         int participatingCount = Math.min(allProjects.size(), 6);
@@ -640,7 +599,19 @@ public class DummyDataInitializer implements ApplicationRunner {
                 project("AI 면접 코칭 서비스", "음성 인식과 LLM으로 모의 면접 피드백을 제공하는 서비스입니다.", "실시간 음성 분석, LLM 피드백 프롬프트 설계, 직군별 질문 데이터셋", "2026-08-25", "2026-06-04", true, "u18", List.of("u5"), List.of("Python", "OpenAI API", "Whisper", "FastAPI", "React")),
                 project("로컬 러닝 크루 매칭 앱", "동네에서 함께 뛸 러닝 메이트를 찾아주는 위치 기반 모바일 앱입니다.", "위치 기반 매칭 알고리즘, 러닝 기록 통계, 그룹 채팅과 일정 관리", "2026-09-30", "2026-05-28", true, "u19", List.of("u4"), List.of("React Native", "TypeScript", "Firebase", "Mapbox")),
                 project("오픈소스 디자인 시스템 - Aurora UI", "접근성과 커스터마이징을 우선하는 React 컴포넌트 라이브러리입니다.", "핵심 컴포넌트 30종 구현, Storybook 문서 사이트, 디자인 토큰 시스템", "2026-10-01", "2026-05-15", true, "u16", List.of("u6", "u20"), List.of("React", "TypeScript", "Storybook", "Tailwind CSS", "Figma")),
-                project("클라우드 비용 최적화 대시보드", "멀티 클라우드 비용을 분석하고 절감 포인트를 추천하는 FinOps 대시보드입니다.", "클라우드 비용 API 연동, 유휴 리소스 탐지, 비용 추이 시각화", "2026-05-20", "2026-04-02", false, "u17", List.of("u2"), List.of("Go", "React", "PostgreSQL", "Kubernetes", "Recharts"))
+                project("클라우드 비용 최적화 대시보드", "멀티 클라우드 비용을 분석하고 절감 포인트를 추천하는 FinOps 대시보드입니다.", "클라우드 비용 API 연동, 유휴 리소스 탐지, 비용 추이 시각화", "2026-05-20", "2026-04-02", false, "u17", List.of("u2"), List.of("Go", "React", "PostgreSQL", "Kubernetes", "Recharts")),
+                project("팀 회고 자동 정리 봇", "슬랙 대화와 회고 문서를 요약해 액션 아이템을 정리하는 AI 협업 도구입니다.", "Slack API 연동, 회고 템플릿 생성, 담당자별 액션 아이템 추적", "2026-08-18", "2026-06-11", true, "u5", List.of("u1", "u6"), List.of("Python", "OpenAI API", "FastAPI", "React", "PostgreSQL")),
+                project("개인 재무 루틴 앱 - 머니데이", "월별 예산과 소비 루틴을 함께 관리하는 모바일 가계부 앱입니다.", "반복 지출 자동 분류, 예산 알림, 월간 리포트 화면 구현", "2026-09-05", "2026-06-12", true, "u4", List.of("u19"), List.of("React Native", "TypeScript", "Firebase", "Figma")),
+                project("개발자 이력 검증 포트폴리오", "프로젝트 기여 기록과 코드 리뷰 이력을 한 화면에서 보여주는 웹 서비스입니다.", "GitHub OAuth 연동, 기여도 타임라인, 공개 포트폴리오 페이지 구축", "2026-10-12", "2026-06-13", true, "u15", List.of("u20"), List.of("Next.js", "TypeScript", "PostgreSQL", "Tailwind CSS", "Vercel")),
+                project("반려식물 관리 캘린더", "물주기와 분갈이 기록을 관리하고 상태 변화를 사진으로 남기는 생활 앱입니다.", "식물별 일정 관리, 이미지 업로드, 푸시 알림, 성장 기록 타임라인", "2026-08-28", "2026-06-14", true, "u10", List.of("u11"), List.of("Next.js", "Supabase", "React", "Tailwind CSS")),
+                project("오픈 데이터 시각화 랩", "공공 데이터를 수집해 지역별 변화와 트렌드를 시각화하는 대시보드입니다.", "데이터 수집 파이프라인, 필터 가능한 지도 차트, CSV 다운로드 기능", "2026-09-22", "2026-06-15", true, "u18", List.of("u2", "u17"), List.of("Python", "Spark", "React", "Recharts", "PostgreSQL")),
+                project("사내 지식 검색 엔진", "문서와 위키를 임베딩해 자연어로 검색할 수 있는 내부 지식 검색 서비스입니다.", "문서 크롤러, 벡터 검색 API, 권한 기반 검색 결과 필터링", "2026-10-20", "2026-06-16", true, "u17", List.of("u5"), List.of("Python", "LangChain", "OpenAI API", "Go", "PostgreSQL")),
+                project("인디 게임: 별빛 배달부", "작은 행성을 오가며 물건을 배달하는 픽셀 아트 어드벤처 게임입니다.", "핵심 이동 시스템, 5개 스테이지, 저장 기능, 사운드 효과 제작", "2026-11-01", "2026-06-17", true, "u8", List.of("u9", "u16"), List.of("Godot", "GDScript", "Aseprite", "FMOD")),
+                project("스터디 출석 체크 서비스", "온라인 스터디의 출석과 과제 제출을 자동으로 관리하는 웹 서비스입니다.", "스터디 그룹 관리, 출석 코드 발급, 과제 제출 현황 대시보드", "2026-07-30", "2026-06-18", true, "u20", List.of("u1", "u12"), List.of("React", "TypeScript", "Node.js", "MongoDB")),
+                project("마이크로서비스 관측성 샌드박스", "분산 서비스의 로그와 메트릭을 실습 환경에서 확인하는 교육용 프로젝트입니다.", "샘플 서비스 4종, OpenTelemetry 연동, 장애 주입 시나리오 작성", "2026-09-18", "2026-06-19", true, "u2", List.of("u17"), List.of("Go", "Kubernetes", "Docker", "gRPC", "Kafka")),
+                project("크리에이터 예약 판매 플랫폼", "소규모 창작자가 굿즈 예약 판매와 재고를 관리하는 커머스 플랫폼입니다.", "상품 관리, 예약 주문 플로우, 결제 전환 퍼널 분석, 관리자 화면", "2026-10-05", "2026-06-20", true, "u3", List.of("u6", "u11"), List.of("Next.js", "TypeScript", "Supabase", "Figma")),
+                project("동네 모임 추천 지도", "관심사와 위치를 기반으로 가까운 모임과 이벤트를 추천하는 지도 서비스입니다.", "지도 기반 탐색, 관심사 태그 추천, 모임 생성 및 참가 신청 기능", "2026-08-12", "2026-06-21", true, "u14", List.of("u13", "u4"), List.of("Vue.js", "TypeScript", "Firebase", "Mapbox")),
+                project("AI 학습 플래너", "학습 목표와 남은 시간을 바탕으로 주간 공부 계획을 자동 생성하는 서비스입니다.", "목표 입력 플로우, LLM 기반 계획 생성, 진행률 추적, 캘린더 연동", "2026-09-10", "2026-06-22", true, "u1", List.of("u5", "u18"), List.of("React", "OpenAI API", "Node.js", "PostgreSQL"))
         );
     }
 
