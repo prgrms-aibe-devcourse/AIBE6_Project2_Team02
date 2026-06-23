@@ -2,6 +2,7 @@ package com.backend.common.domain.portfolio.proposals.entity;
 
 import com.backend.common.domain.member.entity.Member;
 import com.backend.common.domain.portfolio.portfolio.entity.Portfolio;
+import com.backend.common.domain.project.enums.PositionType;
 import com.backend.common.domain.project.enums.SelectionStatus;
 import com.backend.common.domain.project.project.entity.Project;
 import jakarta.persistence.*;
@@ -41,6 +42,10 @@ public class ProjectProposal {
     private String message;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "position")
+    private PositionType position;
+
+    @Enumerated(EnumType.STRING)
     private SelectionStatus status; // PENDING, ACCEPTED, REJECTED, CANCELLED
 
     private LocalDateTime createdAt;
@@ -48,11 +53,12 @@ public class ProjectProposal {
 
     // ★ 생성자 기반 빌더 패턴 적용
     @Builder
-    public ProjectProposal(Project project, Portfolio portfolio, Member proposer, String message) {
+    public ProjectProposal(Project project, Portfolio portfolio, Member proposer, String message, PositionType position) {
         this.project = project;
         this.portfolio = portfolio;
         this.proposer = proposer;
         this.message = message;
+        this.position = position;
 
         // 비즈니스 룰: 제안서 처음 생성 시 상태와 시간 강제 초기화 (외부 빌더 비노출)
         this.status = SelectionStatus.PENDING;

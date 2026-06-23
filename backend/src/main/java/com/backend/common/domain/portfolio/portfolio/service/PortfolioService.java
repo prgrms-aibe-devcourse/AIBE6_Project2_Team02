@@ -180,7 +180,8 @@ public class PortfolioService {
         return projectMemberRepository.findProposalProjects(memberId).stream()
                 .map(ProjectMember::getProject)
                 .distinct()
-                .map(ProposalProjectResponse::from)
+                .map(project -> ProposalProjectResponse.from(project, getOpenProposalPositions(project)))
+                .filter(project -> !project.positions().isEmpty())
                 .toList();
     }
 
@@ -206,6 +207,10 @@ public class PortfolioService {
         if (request.projectId() == null) {
             throw new IllegalArgumentException("제안할 프로젝트를 선택해주세요.");
         }
+        PositionType proposalPosition = PositionType.fromDescriptionOrCode(request.position());
+        if (proposalPosition == PositionType.ERROR) {
+            throw new IllegalArgumentException("제안할 포지션을 선택해주세요.");
+        }
 
         Portfolio portfolio = portfolioRepository.findByMemberId(targetMemberId)
                 .filter(Portfolio::isPublished)
@@ -226,6 +231,7 @@ public class PortfolioService {
         }
         // ACTIVE는 이미 참여 중이라 차단, REMOVED(방출)는 재영입 불가로 차단,
         // LEFT(탈퇴)는 재영입 허용이므로 통과시킨다.
+        validateProposalPositionOpen(proposerMembership.getProject(), proposalPosition);
         projectMemberRepository.findByProjectIdAndMemberId(request.projectId(), targetMemberId)
                 .ifPresent(pm -> {
                     if (pm.getMemberStatus() == ProjectMemberStatus.ACTIVE) {
@@ -257,6 +263,7 @@ public class PortfolioService {
                 .portfolio(portfolio)
                 .proposer(proposer)
                 .message(message)
+                .position(proposalPosition)
                 .build());
 
         notificationService.notify(
@@ -297,9 +304,13 @@ public class PortfolioService {
         if (isAccept) {
             proposal.accept();
 
-            PositionType positionEnum = PositionType.fromDescriptionOrCode(
-                    proposal.getPortfolio().getDesiredPosition()
-            );
+            PositionType positionEnum = proposal.getPosition() != null
+                    ? proposal.getPosition()
+                    : PositionType.fromDescriptionOrCode(proposal.getPortfolio().getDesiredPosition());
+            if (positionEnum == PositionType.ERROR) {
+            throw new IllegalArgumentException("제안 포지션 정보가 올바르지 않습니다.");
+            }
+            validateProposalPositionOpen(proposal.getProject(), positionEnum);
 
             // 이전 참여 이력이 있으면(LEFT/REMOVED) 기존 행을 재사용한다.
             // (project_id, member_id) 유니크 제약이 있어 새 행을 만들면 안 됨.
@@ -371,6 +382,38 @@ public class PortfolioService {
 
         if (!hasVacancy) {
             project.updateRecruitmentOpen(false);
+        }
+    }
+
+    private List<ProposalProjectResponse.ProposalPositionResponse> getOpenProposalPositions(Project project) {
+        Map<String, Long> activeMemberCountByPosition = projectMemberRepository.findByProjectId(project.getId())
+                .stream()
+                .filter(member -> member.getMemberStatus() == ProjectMemberStatus.ACTIVE)
+                .collect(Collectors.groupingBy(
+                        member -> member.getPosition().name(),
+                        Collectors.counting()
+                ));
+
+        return project.getPositions().stream()
+                .map(position -> {
+                    PositionType role = PositionType.fromDescriptionOrCode(position.getRole());
+                    long filled = activeMemberCountByPosition.getOrDefault(role.name(), 0L);
+                    return new ProposalProjectResponse.ProposalPositionResponse(
+                            role.name(),
+                            filled,
+                            position.getTotal()
+                    );
+                })
+                .filter(position -> position.filled() < position.total())
+                .toList();
+    }
+
+    private void validateProposalPositionOpen(Project project, PositionType position) {
+        boolean hasOpenPosition = getOpenProposalPositions(project).stream()
+                .anyMatch(openPosition -> openPosition.role().equals(position.name()));
+
+        if (!hasOpenPosition) {
+            throw new IllegalArgumentException("모집 중인 포지션이 아니거나 이미 모집이 완료된 포지션입니다.");
         }
     }
 

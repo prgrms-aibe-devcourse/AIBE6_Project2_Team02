@@ -6,6 +6,7 @@ import { Briefcase, Check, MessageSquare, User, X } from 'lucide-react';
 import { useDialog } from '../../../components/DialogProvider';
 import { PaginationControls } from '../../../components/PaginationControls';
 import { Badge, Card } from '../../../components/ui';
+import { formatPositionLabel } from '../../../constants/project';
 
 type ProposalFilter = 'applications' | 'proposals'
 
@@ -24,6 +25,7 @@ interface MyPageProposalResponse {
   proposalId: number
   projectId: number
   projectTitle: string
+  position: string | null
   proposerName: string
   message: string
   status: string
@@ -304,6 +306,11 @@ export default function ProposalTabComponent({ user }: ProposalTabProps) {
                         <p className="text-sm font-bold text-blue-900 mb-0.5">
                           [{prop.projectTitle}] 팀 합류 제안
                         </p>
+                        {prop.position && (
+                            <p className="text-xs font-medium text-blue-700 mb-1">
+                              제안 포지션: {formatPositionLabel(prop.position)}
+                            </p>
+                        )}
                         <p className="text-sm text-slate-700">
                           "{prop.message}"{' '}
                           <span className="text-xs text-blue-600 underline ml-1">
