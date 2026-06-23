@@ -1,15 +1,33 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+
 import Link from 'next/link'
-import { ArrowLeft, Check, Code2, Globe, Github, BookOpen, Figma, Linkedin, Sparkles } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+
+import {
+  ArrowLeft,
+  BookOpen,
+  Check,
+  Code2,
+  Figma,
+  Github,
+  Globe,
+  Linkedin,
+  Sparkles,
+} from 'lucide-react'
+
 import { Button, Card, Input } from '../../../../components/ui'
-import { createPortfolio, fetchAllTechStacks, fetchMyPortfolio, generatePortfolioIntroduction } from '../../../../lib/api'
-import type { TechStackItem } from '../../../../types/tech-stack'
-import { useAuth } from '../../../providers'
 import { leaderPositionOptions } from '../../../../constants/project'
 import { useAiDraft } from '../../../../hooks/useAiDraft'
+import {
+  createPortfolio,
+  fetchAllTechStacks,
+  fetchMyPortfolio,
+  generatePortfolioIntroduction,
+} from '../../../../lib/api'
+import type { TechStackItem } from '../../../../types/tech-stack'
+import { useAuth } from '../../../providers'
 
 type LinkFields = {
   label: string
@@ -23,23 +41,68 @@ const DEVELOPER_POSITIONS = ['BACKEND', 'FRONTEND', 'FULL_STACK']
 function getLinkFields(position: string): LinkFields[] {
   if (DEVELOPER_POSITIONS.includes(position)) {
     return [
-      { label: 'GitHub', linkType: 'GITHUB', placeholder: 'https://github.com/username', icon: <Github className="w-4 h-4 text-slate-400" /> },
-      { label: '블로그', linkType: 'BLOG', placeholder: 'https://blog.example.com', icon: <BookOpen className="w-4 h-4 text-slate-400" /> },
-      { label: '배포 URL', linkType: 'DEPLOY', placeholder: 'https://myproject.vercel.app', icon: <Globe className="w-4 h-4 text-slate-400" /> },
+      {
+        label: 'GitHub',
+        linkType: 'GITHUB',
+        placeholder: 'https://github.com/username',
+        icon: <Github className="w-4 h-4 text-slate-400" />,
+      },
+      {
+        label: '블로그',
+        linkType: 'BLOG',
+        placeholder: 'https://blog.example.com',
+        icon: <BookOpen className="w-4 h-4 text-slate-400" />,
+      },
+      {
+        label: '배포 URL',
+        linkType: 'DEPLOY',
+        placeholder: 'https://myproject.vercel.app',
+        icon: <Globe className="w-4 h-4 text-slate-400" />,
+      },
     ]
   }
   if (position === 'DESIGNER') {
     return [
-      { label: 'Figma', linkType: 'FIGMA', placeholder: 'https://figma.com/file/...', icon: <Figma className="w-4 h-4 text-slate-400" /> },
-      { label: 'Behance', linkType: 'BEHANCE', placeholder: 'https://behance.net/username', icon: <Globe className="w-4 h-4 text-slate-400" /> },
-      { label: '개인 포폴 URL', linkType: 'PORTFOLIO_URL', placeholder: 'https://my-portfolio.com', icon: <Globe className="w-4 h-4 text-slate-400" /> },
+      {
+        label: 'Figma',
+        linkType: 'FIGMA',
+        placeholder: 'https://figma.com/file/...',
+        icon: <Figma className="w-4 h-4 text-slate-400" />,
+      },
+      {
+        label: 'Behance',
+        linkType: 'BEHANCE',
+        placeholder: 'https://behance.net/username',
+        icon: <Globe className="w-4 h-4 text-slate-400" />,
+      },
+      {
+        label: '개인 포폴 URL',
+        linkType: 'PORTFOLIO_URL',
+        placeholder: 'https://my-portfolio.com',
+        icon: <Globe className="w-4 h-4 text-slate-400" />,
+      },
     ]
   }
   if (position === 'PRODUCT_MANAGER') {
     return [
-      { label: '노션', linkType: 'NOTION', placeholder: 'https://notion.so/...', icon: <Globe className="w-4 h-4 text-slate-400" /> },
-      { label: '링크드인', linkType: 'LINKEDIN', placeholder: 'https://linkedin.com/in/username', icon: <Linkedin className="w-4 h-4 text-slate-400" /> },
-      { label: '개인 포폴 URL', linkType: 'PORTFOLIO_URL', placeholder: 'https://my-portfolio.com', icon: <Globe className="w-4 h-4 text-slate-400" /> },
+      {
+        label: '노션',
+        linkType: 'NOTION',
+        placeholder: 'https://notion.so/...',
+        icon: <Globe className="w-4 h-4 text-slate-400" />,
+      },
+      {
+        label: '링크드인',
+        linkType: 'LINKEDIN',
+        placeholder: 'https://linkedin.com/in/username',
+        icon: <Linkedin className="w-4 h-4 text-slate-400" />,
+      },
+      {
+        label: '개인 포폴 URL',
+        linkType: 'PORTFOLIO_URL',
+        placeholder: 'https://my-portfolio.com',
+        icon: <Globe className="w-4 h-4 text-slate-400" />,
+      },
     ]
   }
   return []
@@ -52,7 +115,11 @@ export default function PortfolioNewPage() {
   const [techStacks, setTechStacks] = useState<TechStackItem[]>([])
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [submitting, setSubmitting] = useState(false)
-  const [errors, setErrors] = useState<{ title?: string; desiredPosition?: string; general?: string }>({})
+  const [errors, setErrors] = useState<{
+    title?: string
+    desiredPosition?: string
+    general?: string
+  }>({})
   const [linkValues, setLinkValues] = useState<Record<string, string>>({})
 
   const [form, setForm] = useState({
@@ -65,7 +132,9 @@ export default function PortfolioNewPage() {
   const linkFields = getLinkFields(form.desiredPosition)
 
   useEffect(() => {
-    fetchAllTechStacks().then(setTechStacks).catch(() => setTechStacks([]))
+    fetchAllTechStacks()
+      .then(setTechStacks)
+      .catch(() => setTechStacks([]))
   }, [])
 
   useEffect(() => {
@@ -86,7 +155,7 @@ export default function PortfolioNewPage() {
 
   const toggleTechStack = (id: number) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id],
     )
   }
 
@@ -123,7 +192,8 @@ export default function PortfolioNewPage() {
       })
       router.push('/mypage')
     } catch (e) {
-      const msg = e instanceof Error ? e.message : '등록 중 오류가 발생했습니다.'
+      const msg =
+        e instanceof Error ? e.message : '등록 중 오류가 발생했습니다.'
       if (msg.includes('제목')) setErrors({ title: msg })
       else if (msg.includes('포지션')) setErrors({ desiredPosition: msg })
       else setErrors({ general: msg })
@@ -150,12 +220,13 @@ export default function PortfolioNewPage() {
           <ArrowLeft className="w-4 h-4" /> 마이페이지로 돌아가기
         </Link>
         <h1 className="text-2xl font-bold text-slate-900">포트폴리오 등록</h1>
-        <p className="text-slate-500 mt-1">나만의 포트폴리오를 등록하고 팀 제안을 받아보세요.</p>
+        <p className="text-slate-500 mt-1">
+          나만의 포트폴리오를 등록하고 팀 제안을 받아보세요.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
           {/* Left: 링크 & 공개 설정 */}
           <div className="lg:col-span-1 space-y-6">
             <Card className="p-6">
@@ -163,7 +234,9 @@ export default function PortfolioNewPage() {
                 <Globe className="w-4 h-4 text-blue-600" /> 링크
               </h3>
               {!form.desiredPosition ? (
-                <p className="text-xs text-slate-400">포지션을 먼저 선택해주세요.</p>
+                <p className="text-xs text-slate-400">
+                  포지션을 먼저 선택해주세요.
+                </p>
               ) : (
                 <div className="space-y-3">
                   {linkFields.map((field) => (
@@ -172,12 +245,19 @@ export default function PortfolioNewPage() {
                         {field.label}
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2">{field.icon}</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2">
+                          {field.icon}
+                        </span>
                         <Input
                           placeholder={field.placeholder}
                           className="pl-9"
                           value={linkValues[field.linkType] ?? ''}
-                          onChange={(e) => setLinkValues({ ...linkValues, [field.linkType]: e.target.value })}
+                          onChange={(e) =>
+                            setLinkValues({
+                              ...linkValues,
+                              [field.linkType]: e.target.value,
+                            })
+                          }
                         />
                       </div>
                     </div>
@@ -187,12 +267,16 @@ export default function PortfolioNewPage() {
             </Card>
 
             <Card className="p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">공개 설정</h3>
+              <h3 className="font-semibold text-slate-900 mb-4">
+                포트폴리오 찾기 노출 설정
+              </h3>
               <label className="flex items-center justify-between cursor-pointer">
-                <span className="text-sm text-slate-600">포트폴리오 공개</span>
+                <span className="text-sm text-slate-600">노출</span>
                 <button
                   type="button"
-                  onClick={() => setForm({ ...form, isPublished: !form.isPublished })}
+                  onClick={() =>
+                    setForm({ ...form, isPublished: !form.isPublished })
+                  }
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     form.isPublished ? 'bg-blue-600' : 'bg-slate-200'
                   }`}
@@ -206,8 +290,8 @@ export default function PortfolioNewPage() {
               </label>
               <p className="text-xs text-slate-400 mt-2">
                 {form.isPublished
-                  ? '다른 사용자에게 포트폴리오가 공개됩니다.'
-                  : '나만 볼 수 있는 비공개 상태입니다.'}
+                  ? '포트폴리오 찾기에 노출됩니다.'
+                  : '포트폴리오 찾기에 노출되지 않습니다.'}
               </p>
             </Card>
           </div>
@@ -224,10 +308,14 @@ export default function PortfolioNewPage() {
                   <Input
                     placeholder="포트폴리오 제목을 입력해주세요"
                     value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, title: e.target.value })
+                    }
                     className={errors.title ? 'border-red-400' : ''}
                   />
-                  {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
+                  {errors.title && (
+                    <p className="text-xs text-red-500 mt-1">{errors.title}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-1.5 block">
@@ -240,16 +328,24 @@ export default function PortfolioNewPage() {
                   >
                     <option value="">포지션을 선택해주세요</option>
                     {leaderPositionOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
                     ))}
                   </select>
-                  {errors.desiredPosition && <p className="text-xs text-red-500 mt-1">{errors.desiredPosition}</p>}
+                  {errors.desiredPosition && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {errors.desiredPosition}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-1.5">
                     <Code2 className="w-4 h-4 text-blue-600" /> 기술 스택
                   </label>
-                  <p className="text-xs text-slate-400 mb-2">사용할 수 있는 기술 스택을 선택해주세요.</p>
+                  <p className="text-xs text-slate-400 mb-2">
+                    사용할 수 있는 기술 스택을 선택해주세요.
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {techStacks.map((ts) => {
                       const selected = selectedIds.includes(ts.id)
@@ -273,7 +369,9 @@ export default function PortfolioNewPage() {
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-sm font-medium text-slate-700">소개</label>
+                    <label className="text-sm font-medium text-slate-700">
+                      소개
+                    </label>
                     <button
                       type="button"
                       onClick={introductionDraft.run}
@@ -289,17 +387,23 @@ export default function PortfolioNewPage() {
                     placeholder="자신을 소개해주세요. 경험, 관심사, 목표 등을 자유롭게 작성해보세요."
                     className="form-textarea resize-none placeholder:text-slate-500 focus-visible:ring-2"
                     value={form.introduction}
-                    onChange={(e) => setForm({ ...form, introduction: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, introduction: e.target.value })
+                    }
                   />
                 </div>
               </div>
             </Card>
 
-            {errors.general && <p className="text-sm text-red-500">{errors.general}</p>}
+            {errors.general && (
+              <p className="text-sm text-red-500">{errors.general}</p>
+            )}
 
             <div className="flex justify-end gap-3 pt-2">
               <Link href="/mypage">
-                <Button type="button" variant="outline">취소</Button>
+                <Button type="button" variant="outline">
+                  취소
+                </Button>
               </Link>
               <Button type="submit" disabled={submitting}>
                 {submitting ? '등록 중...' : '포트폴리오 등록'}
